@@ -56,6 +56,7 @@ func _on_make_tin_requested() -> void:
     
 func _on_boat_button_pressed() -> void:
     print("Boat clicked")
+    get_viewport().gui_release_focus()
     $ModalLayer/Dimmer.show()
     $ModalLayer/FishingScreen.show()
 

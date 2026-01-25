@@ -1,0 +1,88 @@
+[
+  {
+    "id": "rod_strength",
+    "name": "Stronger Rod",
+    "desc": "+1 fish per catch.",
+    "category": "fishing",
+    "requires": {},
+    "base_cost": 10,
+    "cost_mult": 1.5,
+    "max_level": 5,
+    "effects": [
+      { "type": "catch_add", "value": 1 }
+    ]
+  },
+  {
+    "id": "bait_bucket",
+    "name": "Better Bait",
+    "desc": "+1 fish per catch.",
+    "category": "fishing",
+    "requires": {
+      "upgrades": {
+        "rod_strength": 5
+      }
+    },
+    "base_cost": 25,
+    "cost_mult": 1.6,
+    "max_level": 5,
+    "effects": [
+      { "type": "catch_add", "value": 1 }
+    ]
+  },
+  {
+    "id": "fish_sale_price",
+    "name": "Street Vendor Network",
+    "desc": "+$2 per fish sold.",
+    "category": "fishing",
+    "requires": {},
+    "base_cost": 30,
+    "cost_mult": 1.7,
+    "max_level": -1,
+    "effects": [
+      { "type": "fish_sell_add", "value": 2 }
+    ]
+  },
+  {
+    "id": "fish_bulk_sales",
+    "name": "Bulk Fish Crates",
+    "desc": "Sell +1 extra fish per tick.",
+    "category": "fishing",
+    "requires": {},
+    "base_cost": 60,
+    "cost_mult": 1.8,
+    "max_level": -1,
+    "effects": [
+      { "type": "fish_sell_count_add", "value": 1 }
+    ]
+  },
+  {
+    "id": "tin_sale_price",
+    "name": "Premium Labels",
+    "desc": "+$2 per tin sold.",
+    "category": "cannery",
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 80,
+    "cost_mult": 1.6,
+    "max_level": -1,
+    "effects": [
+      { "type": "tin_sell_add", "value": 2 }
+    ]
+  },
+  {
+    "id": "cannery_efficiency",
+    "name": "Cannery Flow",
+    "desc": "Tins sell for +$5.",
+    "category": "cannery",
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 150,
+    "cost_mult": 1.8,
+    "max_level": 3,
+    "effects": [
+      { "type": "tin_sell_add", "value": 5 }
+    ]
+  }
+]

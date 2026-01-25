@@ -24,20 +24,89 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CatchButton" type="Button" parent="Root"]
+[node name="Minigame" type="Control" parent="Root"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -43.5
-offset_top = -15.5
-offset_right = 43.5
-offset_bottom = 15.5
+offset_left = -320.0
+offset_top = -60.0
+offset_right = 320.0
+offset_bottom = 60.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Catch Fish"
+
+[node name="InstructionLabel" type="Label" parent="Root/Minigame"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -140.0
+offset_top = -40.0
+offset_right = 140.0
+offset_bottom = -16.0
+text = "Click or press Space in the green zone"
+horizontal_alignment = 1
+
+[node name="ResultLabel" type="Label" parent="Root/Minigame"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = 16.0
+offset_right = 140.0
+offset_bottom = 40.0
+horizontal_alignment = 1
+visible = false
+
+[node name="BarContainer" type="Control" parent="Root/Minigame"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -8.0
+offset_right = 300.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BarRed" type="ColorRect" parent="Root/Minigame/BarContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.75, 0.2, 0.2, 1)
+
+[node name="BarGreen" type="ColorRect" parent="Root/Minigame/BarContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 0.2
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_right = 0.0
+color = Color(0.2, 0.75, 0.2, 1)
+
+[node name="Cursor" type="ColorRect" parent="Root/Minigame/BarContainer"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = -6.0
+offset_right = 4.0
+offset_bottom = 6.0
+color = Color(1, 1, 1, 1)
 
 [node name="CloseButton" parent="Root" instance=ExtResource("2_ob6uv")]
 layout_mode = 1
@@ -46,5 +115,4 @@ offset_top = 0.0
 offset_right = 0.0
 offset_bottom = 40.0
 
-[connection signal="pressed" from="Root/CatchButton" to="." method="_on_catch_button_pressed"]
 [connection signal="close_requested" from="Root/CloseButton" to="." method="_on_close_button_close_requested"]
