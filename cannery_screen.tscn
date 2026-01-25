@@ -1,0 +1,33 @@
+[gd_scene load_steps=3 format=3 uid="uid://cslnphk10k46d"]
+
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://scenes/ui/close_button.tscn" id="1_5roqh"]
+[ext_resource type="Script" uid="uid://75uiw81bay38" path="res://cannery_screen.gd" id="1_cxpxi"]
+
+[node name="CanneryScreen" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cxpxi")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 2
+
+[node name="CloseButton" parent="Control" instance=ExtResource("1_5roqh")]
+layout_mode = 1
+offset_left = -40.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 40.0
+
+[node name="MakeTinButton" type="Button" parent="Control"]
+layout_mode = 0
+offset_left = 462.0
+offset_top = 289.0
+offset_right = 620.0
+offset_bottom = 365.0
+text = "Make tin"
+
+[connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
+[connection signal="pressed" from="Control/MakeTinButton" to="." method="_on_make_tin_button_pressed"]

@@ -1,0 +1,21 @@
+extends PanelContainer
+
+signal make_tin_requested
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+    pass # Replace with function body.
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+    pass
+
+
+
+func _on_close_button_close_requested() -> void:
+    get_parent().get_node("Dimmer").hide()
+    hide()
+
+
+func _on_make_tin_button_pressed() -> void:
+    make_tin_requested.emit()

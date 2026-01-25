@@ -1,0 +1,34 @@
+[gd_scene load_steps=3 format=3 uid="uid://bklywcol1l173"]
+
+[ext_resource type="Script" uid="uid://w336lpj6rl4g" path="res://upgrade_screen.gd" id="1_scxlh"]
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://scenes/ui/close_button.tscn" id="2_ovwte"]
+
+[node name="UpgradeScreen" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scxlh")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 2
+
+[node name="CloseButton" parent="Control" instance=ExtResource("2_ovwte")]
+layout_mode = 1
+offset_left = -40.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 40.0
+
+[node name="UnlockCanneryButton" type="Button" parent="Control"]
+modulate = Color(0.1308257, 0.30630776, 0.27452406, 1)
+layout_mode = 0
+offset_left = 489.0
+offset_top = 189.0
+offset_right = 660.0
+offset_bottom = 220.0
+text = "Unlock Cannery - $50"
+
+[connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
+[connection signal="pressed" from="Control/UnlockCanneryButton" to="." method="_on_unlock_cannery_button_pressed"]

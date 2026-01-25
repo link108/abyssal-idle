@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3 uid="uid://c0c5uueyrmmcq"]
+
+[ext_resource type="Script" uid="uid://bkd78ymw6dhat" path="res://scenes/ui/close_button.gd" id="1_6el1d"]
+
+[node name="CloseButton" type="Button"]
+modulate = Color(0.75141644, 0, 0.08883705, 1)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -50.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 50.0
+grow_horizontal = 0
+size_flags_horizontal = 8
+size_flags_vertical = 0
+focus_mode = 0
+text = "X"
+script = ExtResource("1_6el1d")
+metadata/_edit_horizontal_guides_ = [-99.0]
