@@ -8,6 +8,7 @@ signal crew_discovered
 signal crew_unlocked
 
 const UPGRADE_DATA_PATH := "res://data/upgrades.json"
+const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 
 # Economy
@@ -47,6 +48,73 @@ var upgrade_levels: Dictionary = {}
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     _load_upgrades()
+
+func save_game() -> void:
+    var data := {
+        "version": 1,
+        "fish_count": fish_count,
+        "tin_count": tin_count,
+        "money": money,
+        "lifetime_money_earned": lifetime_money_earned,
+        "sell_mode": int(sell_mode),
+        "is_cannery_discovered": is_cannery_discovered,
+        "is_cannery_unlocked": is_cannery_unlocked,
+        "is_crew_discovered": is_crew_discovered,
+        "is_crew_unlocked": is_crew_unlocked,
+        "upgrade_levels": upgrade_levels,
+        "crew_trip_active": crew_trip_active,
+        "crew_trip_remaining": crew_trip_remaining
+    }
+    var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+    file.store_string(JSON.stringify(data))
+    file.close()
+
+func load_game() -> bool:
+    if not FileAccess.file_exists(SAVE_PATH):
+        return false
+    var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+    var raw := file.get_as_text()
+    file.close()
+    var parsed = JSON.parse_string(raw)
+    if typeof(parsed) != TYPE_DICTIONARY:
+        return false
+    _apply_save(parsed)
+    changed.emit()
+    return true
+
+func new_game() -> void:
+    fish_count = 0
+    tin_count = 0
+    money = 0
+    lifetime_money_earned = 0
+    sell_mode = SellMode.FISH
+    is_cannery_discovered = false
+    is_cannery_unlocked = false
+    is_crew_discovered = false
+    is_crew_unlocked = false
+    upgrade_levels.clear()
+    crew_trip_active = false
+    crew_trip_remaining = 0.0
+    crew_trip_paused = false
+    changed.emit()
+    save_game()
+
+func save_exists() -> bool:
+    return FileAccess.file_exists(SAVE_PATH)
+
+func _apply_save(data: Dictionary) -> void:
+    fish_count = int(data.get("fish_count", 0))
+    tin_count = int(data.get("tin_count", 0))
+    money = int(data.get("money", 0))
+    lifetime_money_earned = int(data.get("lifetime_money_earned", 0))
+    sell_mode = int(data.get("sell_mode", 0))
+    is_cannery_discovered = bool(data.get("is_cannery_discovered", false))
+    is_cannery_unlocked = bool(data.get("is_cannery_unlocked", false))
+    is_crew_discovered = bool(data.get("is_crew_discovered", false))
+    is_crew_unlocked = bool(data.get("is_crew_unlocked", false))
+    upgrade_levels = data.get("upgrade_levels", {})
+    crew_trip_active = bool(data.get("crew_trip_active", false))
+    crew_trip_remaining = float(data.get("crew_trip_remaining", 0.0))
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:

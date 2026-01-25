@@ -2,10 +2,12 @@ extends Control
 
 
 const SELL_INTERVAL := 1.0  # seconds
+const AUTOSAVE_INTERVAL := 30.0
 
 @onready var fishing_screen := $ModalLayer/FishingScreen
 @onready var cannery_screen := $ModalLayer/CanneryScreen
 @onready var upgrade_screen := $ModalLayer/UpgradeScreen
+@onready var start_screen := $ModalLayer/StartScreen
 @onready var fish_label := $FishLabel
 @onready var tin_label := $TinLabel
 @onready var money_label := $MoneyLabel
@@ -16,6 +18,8 @@ const SELL_INTERVAL := 1.0  # seconds
 @onready var crew_status_label := $CrewStatusLabel
 @onready var crew_select_button := $CrewSelectButton
 
+var sell_timer: Timer
+var autosave_timer: Timer
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -25,17 +29,18 @@ func _ready() -> void:
     fishing_screen.fish_caught.connect(_on_fish_caught)
     cannery_screen.make_tin_requested.connect(_on_make_tin_requested)
     GameState.cannery_unlocked.connect(_on_cannery_unlocked)
-    var sell_timer := Timer.new()
-    sell_timer.wait_time = SELL_INTERVAL
-    sell_timer.autostart = true
-    sell_timer.timeout.connect(_on_sell_tick)
-    add_child(sell_timer)
+    start_screen.load_requested.connect(_on_load_requested)
+    start_screen.new_requested.connect(_on_new_requested)
+    start_screen.set_has_save(GameState.save_exists())
     cannery_button.visible = GameState.is_cannery_unlocked
     _update_hud()
     fishing_screen.visibility_changed.connect(_on_fishing_visibility_changed)
 
 func _on_sell_tick() -> void:
     GameState.sell_tick()
+
+func _on_autosave_tick() -> void:
+    GameState.save_game()
 
 func _update_hud() -> void:
     fish_label.text = "Fish: %d" % GameState.fish_count
@@ -76,6 +81,14 @@ func _on_upgrade_button_pressed() -> void:
 func _on_market_button_pressed() -> void:
     $ModalLayer/Dimmer.show()
     $ModalLayer/MarketScreen.show()
+
+func _on_load_requested() -> void:
+    GameState.load_game()
+    _start_game()
+
+func _on_new_requested() -> void:
+    GameState.new_game()
+    _start_game()
 
 func _on_crew_button_pressed() -> void:
     if GameState.crew_unlock_is_visible() and GameState.can_purchase_crew():
@@ -127,3 +140,23 @@ func _update_crew_ui() -> void:
         crew_progress.visible = false
         crew_status_label.visible = false
         crew_select_button.visible = false
+
+func _start_game() -> void:
+    start_screen.hide()
+    $ModalLayer/Dimmer.hide()
+    _ensure_timers()
+    _update_hud()
+
+func _ensure_timers() -> void:
+    if sell_timer == null:
+        sell_timer = Timer.new()
+        sell_timer.wait_time = SELL_INTERVAL
+        sell_timer.autostart = true
+        sell_timer.timeout.connect(_on_sell_tick)
+        add_child(sell_timer)
+    if autosave_timer == null:
+        autosave_timer = Timer.new()
+        autosave_timer.wait_time = AUTOSAVE_INTERVAL
+        autosave_timer.autostart = true
+        autosave_timer.timeout.connect(_on_autosave_tick)
+        add_child(autosave_timer)

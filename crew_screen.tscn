@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://c3t6dvk2v86xg"]
 
-[ext_resource type="Script" uid="uid://c1w0e4h4v6a0e" path="res://crew_screen.gd" id="1_wg5a0"]
+[ext_resource type="Script" uid="uid://devq33b0jn3a2" path="res://crew_screen.gd" id="1_wg5a0"]
 [ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://scenes/ui/close_button.tscn" id="2_2hgpr"]
 
 [node name="CrewScreen" type="PanelContainer"]

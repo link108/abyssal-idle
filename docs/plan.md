@@ -3,15 +3,15 @@
 Use this checklist as a living plan. Check items as they ship.
 
 ## Milestone 1: Core Loop (Playable)
-- [ ] Fishing minigame (timing bar) with manual catch.
+- [x] Fishing minigame (timing bar) with manual catch.
 - [ ] Tin creation flow (process + add ingredients).
-- [ ] Basic market sell mode toggle (fish vs tins).
-- [ ] Upgrade list from JSON (buy, cost scaling, levels).
+- [x] Basic market sell mode toggle (fish vs tins).
+- [x] Upgrade list from JSON (buy, cost scaling, levels).
 - [ ] Save/load (persist money, inventory, upgrades).
 
 ## Milestone 2: Automation Tier 1-2
-- [ ] Add crew trips on fishing screen (send button, return timer).
-- [ ] Crew upgrades: faster trips, bigger catches.
+- [x] Add crew trips on main screen (send button, return timer).
+- [x] Crew upgrades: faster trips, bigger catches.
 - [ ] Optional: multiple crew slots.
 - [ ] Optional: crew hiring with stats/specialties.
 - [ ] Crew speed upgrades.

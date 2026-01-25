@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://dfp7shhr7k6y7"]
+[gd_scene load_steps=8 format=3 uid="uid://dfp7shhr7k6y7"]
 
 [ext_resource type="Script" uid="uid://b6v8aehavifo6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://dmwgj1chql5js" path="res://fishing_screen.tscn" id="2_0xm2m"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bklywcol1l173" path="res://upgrade_screen.tscn" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://cuycoalmdivpd" path="res://market_screen.tscn" id="5_lquwl"]
 [ext_resource type="PackedScene" uid="uid://c3t6dvk2v86xg" path="res://crew_screen.tscn" id="6_0v6ff"]
+[ext_resource type="PackedScene" path="res://start_screen.tscn" id="7_3bknm"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -158,6 +159,9 @@ visible = false
 
 [node name="CrewScreen" parent="ModalLayer" instance=ExtResource("6_0v6ff")]
 visible = false
+
+[node name="StartScreen" parent="ModalLayer" instance=ExtResource("7_3bknm")]
+visible = true
 
 [node name="FishLabel" type="Label" parent="."]
 layout_mode = 1
