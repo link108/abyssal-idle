@@ -10,12 +10,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
     pass
 
-
-
 func _on_close_button_close_requested() -> void:
     get_parent().get_node("Dimmer").hide()
     hide()
-
 
 func _on_make_tin_button_pressed() -> void:
     make_tin_requested.emit()

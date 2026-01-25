@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://dfp7shhr7k6y7"]
+[gd_scene load_steps=6 format=3 uid="uid://dfp7shhr7k6y7"]
 
 [ext_resource type="Script" uid="uid://b6v8aehavifo6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://dmwgj1chql5js" path="res://fishing_screen.tscn" id="2_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://cslnphk10k46d" path="res://cannery_screen.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://bklywcol1l173" path="res://upgrade_screen.tscn" id="4_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://cuycoalmdivpd" path="res://market_screen.tscn" id="5_lquwl"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -30,18 +31,8 @@ offset_top = 118.0
 offset_right = 286.0
 offset_bottom = 198.0
 focus_mode = 0
-flat = true
-
-[node name="BoatLabel" type="Label" parent="BoatButton"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 text = "BOAT"
-horizontal_alignment = 1
-vertical_alignment = 1
+flat = true
 
 [node name="bg" type="ColorRect" parent="BoatButton"]
 modulate = Color(0.93882304, 0.25400537, 0.5964142, 0.49019608)
@@ -55,10 +46,10 @@ mouse_filter = 2
 
 [node name="CanneryButton" type="Button" parent="."]
 layout_mode = 0
-offset_left = 802.0
-offset_top = 225.0
-offset_right = 862.0
-offset_bottom = 425.0
+offset_left = 848.0
+offset_top = 233.0
+offset_right = 921.0
+offset_bottom = 433.0
 text = "Cannery"
 
 [node name="bg" type="ColorRect" parent="CanneryButton"]
@@ -90,6 +81,24 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.7372549, 0.17254902, 0.64705884, 0.4745098)
 
+[node name="MarketButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 505.0
+offset_top = 466.0
+offset_right = 646.0
+offset_bottom = 536.0
+text = "Market"
+
+[node name="ColorRect" type="ColorRect" parent="MarketButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.21568628, 0.5686275, 0.827451, 0.5137255)
+
 [node name="ModalLayer" type="CanvasLayer" parent="."]
 
 [node name="Dimmer" type="ColorRect" parent="ModalLayer"]
@@ -111,10 +120,15 @@ visible = false
 [node name="UpgradeScreen" parent="ModalLayer" instance=ExtResource("4_1bvp3")]
 visible = false
 
+[node name="MarketScreen" parent="ModalLayer" instance=ExtResource("5_lquwl")]
+visible = false
+
 [node name="FishLabel" type="Label" parent="."]
 layout_mode = 1
-offset_right = 49.0
-offset_bottom = 23.0
+offset_left = 20.0
+offset_top = 15.0
+offset_right = 69.0
+offset_bottom = 38.0
 text = "Fish: 0"
 
 [node name="MoneyLabel" type="Label" parent="."]
@@ -144,3 +158,4 @@ text = "Total Earnings: $0"
 [connection signal="pressed" from="BoatButton" to="." method="_on_boat_button_pressed"]
 [connection signal="pressed" from="CanneryButton" to="." method="_on_cannery_button_pressed"]
 [connection signal="pressed" from="UpgradeButton" to="." method="_on_upgrade_button_pressed"]
+[connection signal="pressed" from="MarketButton" to="." method="_on_market_button_pressed"]

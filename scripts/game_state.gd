@@ -53,11 +53,17 @@ func sell_tick() -> void:
         SellMode.FISH:
             if fish_count > 0:
                 fish_count -= 1
-                _add_money(2)
+                _add_money(20)
         SellMode.TINS:
             if tin_count > 0:
                 tin_count -= 1
                 _add_money(10)
+    changed.emit()
+
+func set_sell_mode(mode: SellMode) -> void:
+    if sell_mode == mode:
+        return
+    sell_mode = mode
     changed.emit()
 
 #########
