@@ -1,5 +1,18 @@
 [
   {
+    "id": "unlock_cannery",
+    "name": "Unlock Cannery",
+    "desc": "Open the cannery to start tinning fish.",
+    "category": "core",
+    "requires": {},
+    "base_cost": 200,
+    "cost_mult": 1.0,
+    "max_level": 1,
+    "effects": [
+      { "type": "unlock_cannery", "value": 1 }
+    ]
+  },
+  {
     "id": "rod_strength",
     "name": "Stronger Rod",
     "desc": "+1 fish per catch.",
@@ -53,6 +66,60 @@
     "max_level": -1,
     "effects": [
       { "type": "fish_sell_count_add", "value": 1 }
+    ]
+  },
+  {
+    "id": "green_zone_size",
+    "name": "Steadier Hands",
+    "desc": "Increase the green zone size.",
+    "category": "fishing",
+    "requires": {},
+    "base_cost": 15,
+    "cost_mult": 1.45,
+    "max_level": 15,
+    "effects": [
+      { "type": "green_zone_add_pct", "value": 0.06 }
+    ]
+  },
+  {
+    "id": "crew_trip_speed",
+    "name": "Faster Skipper",
+    "desc": "Crew returns sooner.",
+    "category": "fishing",
+    "requires": {},
+    "base_cost": 40,
+    "cost_mult": 1.5,
+    "max_level": 10,
+    "effects": [
+      { "type": "crew_trip_duration_mult", "value": -0.06 }
+    ]
+  },
+  {
+    "id": "crew_trip_yield",
+    "name": "Bigger Nets",
+    "desc": "+1 fish per crew trip.",
+    "category": "fishing",
+    "requires": {},
+    "base_cost": 50,
+    "cost_mult": 1.6,
+    "max_level": -1,
+    "effects": [
+      { "type": "crew_trip_catch_add", "value": 1 }
+    ]
+  },
+  {
+    "id": "crew_auto_send",
+    "name": "Auto Captain",
+    "desc": "Crew automatically goes out when idle.",
+    "category": "fishing",
+    "requires": {
+      "crew": true
+    },
+    "base_cost": 120,
+    "cost_mult": 2.0,
+    "max_level": 1,
+    "effects": [
+      { "type": "crew_auto_send", "value": 1 }
     ]
   },
   {

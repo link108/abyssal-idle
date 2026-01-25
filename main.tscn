@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://dfp7shhr7k6y7"]
+[gd_scene load_steps=7 format=3 uid="uid://dfp7shhr7k6y7"]
 
 [ext_resource type="Script" uid="uid://b6v8aehavifo6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://dmwgj1chql5js" path="res://fishing_screen.tscn" id="2_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://cslnphk10k46d" path="res://cannery_screen.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://bklywcol1l173" path="res://upgrade_screen.tscn" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://cuycoalmdivpd" path="res://market_screen.tscn" id="5_lquwl"]
+[ext_resource type="PackedScene" uid="uid://c3t6dvk2v86xg" path="res://crew_screen.tscn" id="6_0v6ff"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -99,6 +100,38 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.21568628, 0.5686275, 0.827451, 0.5137255)
 
+[node name="CrewButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 370.0
+offset_right = 190.0
+offset_bottom = 410.0
+text = "Crew"
+
+[node name="CrewProgress" type="ProgressBar" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 418.0
+offset_right = 190.0
+offset_bottom = 434.0
+max_value = 1.0
+
+[node name="CrewStatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 438.0
+offset_right = 190.0
+offset_bottom = 460.0
+text = "Crew locked"
+
+[node name="CrewSelectButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 466.0
+offset_right = 190.0
+offset_bottom = 496.0
+text = "Crew Roster"
+
 [node name="ModalLayer" type="CanvasLayer" parent="."]
 
 [node name="Dimmer" type="ColorRect" parent="ModalLayer"]
@@ -121,6 +154,9 @@ visible = false
 visible = false
 
 [node name="MarketScreen" parent="ModalLayer" instance=ExtResource("5_lquwl")]
+visible = false
+
+[node name="CrewScreen" parent="ModalLayer" instance=ExtResource("6_0v6ff")]
 visible = false
 
 [node name="FishLabel" type="Label" parent="."]
@@ -159,3 +195,5 @@ text = "Total Earnings: $0"
 [connection signal="pressed" from="CanneryButton" to="." method="_on_cannery_button_pressed"]
 [connection signal="pressed" from="UpgradeButton" to="." method="_on_upgrade_button_pressed"]
 [connection signal="pressed" from="MarketButton" to="." method="_on_market_button_pressed"]
+[connection signal="pressed" from="CrewButton" to="." method="_on_crew_button_pressed"]
+[connection signal="pressed" from="CrewSelectButton" to="." method="_on_crew_select_button_pressed"]

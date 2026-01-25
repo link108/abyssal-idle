@@ -18,6 +18,7 @@ func _ready() -> void:
     _bar_width = bar_container.size.x
     _cursor_width = cursor.size.x
     _reset_cursor()
+    visibility_changed.connect(_on_visibility_changed)
 
 func _process(delta: float) -> void:
     _bar_width = bar_container.size.x
@@ -26,7 +27,7 @@ func _process(delta: float) -> void:
         _cursor_x = 0.0
     cursor.position.x = _cursor_x
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
     if not visible:
         return
     if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
@@ -52,7 +53,9 @@ func _reset_cursor() -> void:
 
 func _randomize_green_zone() -> void:
     _bar_width = bar_container.size.x
-    var green_width: float = green_zone.size.x
+    var green_ratio: float = GameState.get_green_zone_ratio()
+    var green_width: float = max(10.0, _bar_width * green_ratio)
+    green_zone.size.x = green_width
     var max_x: float = max(0.0, _bar_width - green_width)
     green_zone.position.x = _rng.randf_range(0.0, max_x)
 
@@ -72,3 +75,7 @@ func _show_result(success: bool) -> void:
 func _on_close_button_close_requested() -> void:
     get_parent().get_node("Dimmer").hide()
     hide()
+
+func _on_visibility_changed() -> void:
+    if visible:
+        _reset_cursor()

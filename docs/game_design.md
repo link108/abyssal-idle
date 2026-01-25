@@ -51,6 +51,11 @@ A cozy-to-unsettling idle management game about a seaside cannery that scales in
 - Money.
 - Ingredients (garlic, chili, oil, salt).
 
+### Crew Trips
+- Player clicks “Send Crew” on the main screen.
+- Crew returns after a timer; fish are awarded on return only.
+- Upgrades affect trip duration and catch amount.
+
 ### Processing Methods
 - Raw, smoked, fermented, aged, skinned.
 - Each method affects value and tone.
@@ -76,6 +81,10 @@ A cozy-to-unsettling idle management game about a seaside cannery that scales in
 ### Ending B: Sustainable
 - Maintain ocean health above threshold while reaching final milestone.
 - Final descent reveals a stable equilibrium.
+
+## Future Notes
+- Crew members can visit and apply for jobs with stats and specialties.
+- Boats have limited slots; upgrades increase crew capacity.
 
 ## Monetization / Scope
 - 6-12 months solo dev.

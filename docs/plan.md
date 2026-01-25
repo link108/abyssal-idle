@@ -10,7 +10,10 @@ Use this checklist as a living plan. Check items as they ship.
 - [ ] Save/load (persist money, inventory, upgrades).
 
 ## Milestone 2: Automation Tier 1-2
-- [ ] Hire crew: auto-play fishing minigame on timer.
+- [ ] Add crew trips on fishing screen (send button, return timer).
+- [ ] Crew upgrades: faster trips, bigger catches.
+- [ ] Optional: multiple crew slots.
+- [ ] Optional: crew hiring with stats/specialties.
 - [ ] Crew speed upgrades.
 - [ ] Crew quality upgrades (better average outcome).
 

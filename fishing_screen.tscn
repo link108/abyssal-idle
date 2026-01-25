@@ -108,6 +108,7 @@ offset_right = 4.0
 offset_bottom = 6.0
 color = Color(1, 1, 1, 1)
 
+
 [node name="CloseButton" parent="Root" instance=ExtResource("2_ob6uv")]
 layout_mode = 1
 offset_left = -40.0

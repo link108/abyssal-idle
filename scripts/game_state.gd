@@ -3,8 +3,12 @@ extends Node
 signal changed
 signal cannery_unlocked
 signal cannery_discovered
+signal crew_trip_updated
+signal crew_discovered
+signal crew_unlocked
 
 const UPGRADE_DATA_PATH := "res://data/upgrades.json"
+const GREEN_ZONE_BASE_RATIO := 0.10
 
 # Economy
 var fish_count: int = 0
@@ -18,9 +22,22 @@ var is_cannery_discovered: bool = false
 var is_cannery_unlocked: bool = false
 var lifetime_money_earned: int = 0
 
+# Crew unlock
+const CREW_UNLOCK_COST := 120
+const CREW_DISCOVERY_EARNED := 80
+var is_crew_discovered: bool = false
+var is_crew_unlocked: bool = false
+
 # Market
 enum SellMode { FISH, TINS }
 var sell_mode: SellMode = SellMode.FISH
+
+# Crew trips
+const CREW_TRIP_BASE_DURATION := 12.0
+const CREW_TRIP_BASE_CATCH := 3
+var crew_trip_active: bool = false
+var crew_trip_remaining: float = 0.0
+var crew_trip_paused: bool = false
 
 # Upgrades
 var upgrade_defs: Array = []
@@ -33,7 +50,12 @@ func _ready() -> void:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-    pass
+    if crew_trip_active and not crew_trip_paused:
+        crew_trip_remaining = max(0.0, crew_trip_remaining - delta)
+        if crew_trip_remaining <= 0.0:
+            _complete_crew_trip()
+    if _should_auto_send_crew():
+        start_crew_trip()
 
 func catch_fish(amount: int = 1) -> void:
     var bonus := _get_effect_total("catch_add")
@@ -54,6 +76,7 @@ func _add_money(amount: int) -> void:
     money += amount
     lifetime_money_earned += amount
     _check_cannery_discovery()
+    _check_crew_discovery()
     changed.emit()
 
 func sell_tick() -> void:
@@ -102,6 +125,32 @@ func purchase_unlocked_cannery() -> bool:
     cannery_unlocked.emit()
     return true
 
+########
+# Crew
+########
+func _check_crew_discovery() -> void:
+    if is_crew_discovered:
+        return
+    if lifetime_money_earned >= CREW_DISCOVERY_EARNED:
+        is_crew_discovered = true
+        crew_discovered.emit()
+        changed.emit()
+
+func crew_unlock_is_visible() -> bool:
+    return is_crew_discovered and (not is_crew_unlocked)
+
+func can_purchase_crew() -> bool:
+    return crew_unlock_is_visible() and money >= CREW_UNLOCK_COST
+
+func purchase_unlocked_crew() -> bool:
+    if not can_purchase_crew():
+        return false
+    money -= CREW_UNLOCK_COST
+    is_crew_unlocked = true
+    crew_unlocked.emit()
+    changed.emit()
+    return true
+
 ################
 # Upgrade System
 ################
@@ -129,6 +178,8 @@ func get_upgrade_defs() -> Array:
     return upgrade_defs
 
 func get_upgrade_level(id: String) -> int:
+    if id == "unlock_cannery":
+        return 1 if is_cannery_unlocked else 0
     return int(upgrade_levels.get(id, 0))
 
 func get_upgrade_cost(id: String) -> int:
@@ -141,6 +192,8 @@ func get_upgrade_cost(id: String) -> int:
     return int(round(base_cost * pow(cost_mult, level)))
 
 func is_upgrade_maxed(id: String) -> bool:
+    if id == "unlock_cannery":
+        return is_cannery_unlocked
     var def = upgrade_defs_by_id.get(id, null)
     if def == null:
         return true
@@ -152,6 +205,8 @@ func is_upgrade_maxed(id: String) -> bool:
 func can_purchase_upgrade(id: String) -> bool:
     if is_upgrade_maxed(id):
         return false
+    if id == "unlock_cannery":
+        return can_purchase_cannery()
     var def = upgrade_defs_by_id.get(id, null)
     if def == null:
         return false
@@ -160,6 +215,8 @@ func can_purchase_upgrade(id: String) -> bool:
     return money >= get_upgrade_cost(id)
 
 func purchase_upgrade(id: String) -> bool:
+    if id == "unlock_cannery":
+        return purchase_unlocked_cannery()
     if not can_purchase_upgrade(id):
         return false
     var cost := get_upgrade_cost(id)
@@ -169,6 +226,8 @@ func purchase_upgrade(id: String) -> bool:
     return true
 
 func can_show_upgrade(def: Dictionary) -> bool:
+    if def.get("id", "") == "unlock_cannery":
+        return cannery_upgrade_is_visible()
     return _meets_requirements(def)
 
 func _meets_requirements(def: Dictionary) -> bool:
@@ -176,6 +235,8 @@ func _meets_requirements(def: Dictionary) -> bool:
     if reqs.is_empty():
         return true
     if reqs.get("cannery", false) and not is_cannery_unlocked:
+        return false
+    if reqs.get("crew", false) and not is_crew_unlocked:
         return false
     var upgrade_reqs: Dictionary = reqs.get("upgrades", {})
     for req_id in upgrade_reqs.keys():
@@ -201,6 +262,23 @@ func _get_effect_total(effect_type: String) -> int:
                 total += int(effect.get("value", 0)) * level
     return total
 
+func _get_effect_total_float(effect_type: String) -> float:
+    var total := 0.0
+    for def in upgrade_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        var id := str(def.get("id", ""))
+        var level := get_upgrade_level(id)
+        if level <= 0:
+            continue
+        var effects: Array = def.get("effects", [])
+        for effect in effects:
+            if typeof(effect) != TYPE_DICTIONARY:
+                continue
+            if effect.get("type", "") == effect_type:
+                total += float(effect.get("value", 0.0)) * level
+    return total
+
 func get_fish_sell_price() -> int:
     return 20 + _get_effect_total("fish_sell_add")
 
@@ -209,3 +287,56 @@ func get_tin_sell_price() -> int:
 
 func get_fish_sell_count() -> int:
     return 1 + _get_effect_total("fish_sell_count_add")
+
+func get_green_zone_ratio() -> float:
+    return min(1.0, GREEN_ZONE_BASE_RATIO + _get_effect_total_float("green_zone_add_pct"))
+
+##############
+# Crew Trips
+##############
+func can_start_crew_trip() -> bool:
+    return not crew_trip_active and is_crew_unlocked
+
+func start_crew_trip() -> bool:
+    if not can_start_crew_trip():
+        return false
+    crew_trip_active = true
+    crew_trip_remaining = get_crew_trip_duration()
+    crew_trip_updated.emit()
+    changed.emit()
+    return true
+
+func _complete_crew_trip() -> void:
+    crew_trip_active = false
+    crew_trip_remaining = 0.0
+    var catch_amount := get_crew_trip_catch()
+    fish_count += catch_amount
+    crew_trip_updated.emit()
+    changed.emit()
+
+func get_crew_trip_duration() -> float:
+    var mult := 1.0 + _get_effect_total_float("crew_trip_duration_mult")
+    return max(2.0, CREW_TRIP_BASE_DURATION * mult)
+
+func get_crew_trip_catch() -> int:
+    return CREW_TRIP_BASE_CATCH + _get_effect_total("crew_trip_catch_add")
+
+func _should_auto_send_crew() -> bool:
+    if crew_trip_paused:
+        return false
+    if not is_crew_unlocked:
+        return false
+    if crew_trip_active:
+        return false
+    return _get_effect_total("crew_auto_send") > 0
+
+func get_crew_trip_progress() -> float:
+    if not crew_trip_active:
+        return 0.0
+    var duration := get_crew_trip_duration()
+    if duration <= 0.0:
+        return 1.0
+    return 1.0 - (crew_trip_remaining / duration)
+
+func set_crew_trip_paused(paused: bool) -> void:
+    crew_trip_paused = paused

@@ -1,7 +1,5 @@
 extends PanelContainer
 
-signal unlock_cannery_requested
-@onready var unlock_cannery_btn := $Control/UnlockCanneryButton
 @onready var upgrades_list := $Control/ScrollContainer/UpgradesList
 
 # Called when the node enters the scene tree for the first time.
@@ -21,24 +19,7 @@ func _on_close_button_close_requested() -> void:
     hide()
 
 
-func _on_unlock_cannery_button_pressed() -> void:
-    unlock_cannery_requested.emit()
-    
 func _refresh() -> void:
-    # Visibility: only when discovered AND not purchased
-    unlock_cannery_btn.visible = GameState.cannery_upgrade_is_visible()
-
-    if unlock_cannery_btn.visible:
-        # Clickable state
-        unlock_cannery_btn.disabled = not GameState.can_purchase_cannery()
-
-        # Text: show cost or remaining amount
-        if GameState.can_purchase_cannery():
-            unlock_cannery_btn.text = "Unlock Cannery ($%d)" % GameState.CANNERY_UNLOCK_COST
-        else:
-            var remaining := GameState.CANNERY_UNLOCK_COST - GameState.money
-            unlock_cannery_btn.text = "Unlock Cannery (Need $%d)" % remaining
-
     _rebuild_upgrade_list()
 
 func _rebuild_upgrade_list() -> void:
