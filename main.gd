@@ -8,6 +8,8 @@ const AUTOSAVE_INTERVAL := 30.0
 @onready var cannery_screen := $ModalLayer/CanneryScreen
 @onready var upgrade_screen := $ModalLayer/UpgradeScreen
 @onready var start_screen := $ModalLayer/StartScreen
+@onready var inventory_screen := $ModalLayer/InventoryScreen
+@onready var recipe_screen := $ModalLayer/RecipeScreen
 @onready var fish_label := $FishLabel
 @onready var tin_label := $TinLabel
 @onready var money_label := $MoneyLabel
@@ -47,6 +49,7 @@ func _update_hud() -> void:
     tin_label.text = "Tins: %d" % GameState.tin_count
     money_label.text = "Money: $%d" % GameState.money
     lifetime_earnings_label.text = "Total Earnings: $%d" % GameState.lifetime_money_earned
+    cannery_button.visible = GameState.is_cannery_unlocked
     _update_crew_ui()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -61,7 +64,8 @@ func _on_cannery_unlocked() -> void:
     cannery_button.show()
 
 func _on_make_tin_requested() -> void:
-    GameState.make_tin()
+    # Cannery screen handles tin creation (method/ingredient).
+    pass
     
 func _on_boat_button_pressed() -> void:
     print("Boat clicked")
@@ -81,6 +85,14 @@ func _on_upgrade_button_pressed() -> void:
 func _on_market_button_pressed() -> void:
     $ModalLayer/Dimmer.show()
     $ModalLayer/MarketScreen.show()
+
+func _on_inventory_button_pressed() -> void:
+    $ModalLayer/Dimmer.show()
+    inventory_screen.show()
+
+func _on_recipes_button_pressed() -> void:
+    $ModalLayer/Dimmer.show()
+    recipe_screen.show()
 
 func _on_load_requested() -> void:
     GameState.load_game()

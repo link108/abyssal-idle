@@ -15,6 +15,9 @@ const GREEN_ZONE_BASE_RATIO := 0.10
 var fish_count: int = 0
 var tin_count: int = 0
 var money: int = 0
+var garlic_count: int = 0
+var tin_inventory: Dictionary = {}
+var recipes_unlocked: Array = []
 
 # Upgrades: Cannery
 const CANNERY_UNLOCK_COST := 200
@@ -32,6 +35,7 @@ var is_crew_unlocked: bool = false
 # Market
 enum SellMode { FISH, TINS }
 var sell_mode: SellMode = SellMode.FISH
+const GARLIC_PRICE := 5
 
 # Crew trips
 const CREW_TRIP_BASE_DURATION := 12.0
@@ -39,6 +43,7 @@ const CREW_TRIP_BASE_CATCH := 3
 var crew_trip_active: bool = false
 var crew_trip_remaining: float = 0.0
 var crew_trip_paused: bool = false
+var _rng := RandomNumberGenerator.new()
 
 # Upgrades
 var upgrade_defs: Array = []
@@ -48,6 +53,7 @@ var upgrade_levels: Dictionary = {}
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     _load_upgrades()
+    _rng.randomize()
 
 func save_game() -> void:
     var data := {
@@ -55,6 +61,7 @@ func save_game() -> void:
         "fish_count": fish_count,
         "tin_count": tin_count,
         "money": money,
+        "garlic_count": garlic_count,
         "lifetime_money_earned": lifetime_money_earned,
         "sell_mode": int(sell_mode),
         "is_cannery_discovered": is_cannery_discovered,
@@ -62,6 +69,8 @@ func save_game() -> void:
         "is_crew_discovered": is_crew_discovered,
         "is_crew_unlocked": is_crew_unlocked,
         "upgrade_levels": upgrade_levels,
+        "tin_inventory": tin_inventory,
+        "recipes_unlocked": recipes_unlocked,
         "crew_trip_active": crew_trip_active,
         "crew_trip_remaining": crew_trip_remaining
     }
@@ -86,6 +95,9 @@ func new_game() -> void:
     fish_count = 0
     tin_count = 0
     money = 0
+    garlic_count = 0
+    tin_inventory.clear()
+    recipes_unlocked.clear()
     lifetime_money_earned = 0
     sell_mode = SellMode.FISH
     is_cannery_discovered = false
@@ -106,6 +118,7 @@ func _apply_save(data: Dictionary) -> void:
     fish_count = int(data.get("fish_count", 0))
     tin_count = int(data.get("tin_count", 0))
     money = int(data.get("money", 0))
+    garlic_count = int(data.get("garlic_count", 0))
     lifetime_money_earned = int(data.get("lifetime_money_earned", 0))
     sell_mode = int(data.get("sell_mode", 0))
     is_cannery_discovered = bool(data.get("is_cannery_discovered", false))
@@ -113,6 +126,8 @@ func _apply_save(data: Dictionary) -> void:
     is_crew_discovered = bool(data.get("is_crew_discovered", false))
     is_crew_unlocked = bool(data.get("is_crew_unlocked", false))
     upgrade_levels = data.get("upgrade_levels", {})
+    tin_inventory = data.get("tin_inventory", {})
+    recipes_unlocked = data.get("recipes_unlocked", [])
     crew_trip_active = bool(data.get("crew_trip_active", false))
     crew_trip_remaining = float(data.get("crew_trip_remaining", 0.0))
 
@@ -138,6 +153,35 @@ func make_tin() -> bool:
     changed.emit()
     return true
 
+func make_tin_with(_method_id: String, _ingredient_id: String) -> bool:
+    if fish_count <= 0:
+        return false
+    if _ingredient_id != "none" and garlic_count <= 0:
+        return false
+    fish_count -= 1
+    tin_count += 1
+    if _ingredient_id == "garlic":
+        garlic_count -= 1
+    var key: String = _make_tin_key(_method_id, _ingredient_id)
+    tin_inventory[key] = int(tin_inventory.get(key, 0)) + 1
+    _unlock_recipe(_method_id, _ingredient_id)
+    changed.emit()
+    return true
+
+func _remove_random_tin() -> void:
+    if tin_inventory.is_empty():
+        return
+    var keys: Array = tin_inventory.keys()
+    if keys.is_empty():
+        return
+    var idx: int = _rng.randi_range(0, keys.size() - 1)
+    var key: String = str(keys[idx])
+    var count: int = int(tin_inventory.get(key, 0))
+    if count <= 1:
+        tin_inventory.erase(key)
+    else:
+        tin_inventory[key] = count - 1
+
 func _add_money(amount: int) -> void:
     if amount <= 0:
         return
@@ -146,6 +190,17 @@ func _add_money(amount: int) -> void:
     _check_cannery_discovery()
     _check_crew_discovery()
     changed.emit()
+
+func buy_garlic(count: int) -> bool:
+    if count <= 0:
+        return false
+    var cost: int = GARLIC_PRICE * count
+    if money < cost:
+        return false
+    money -= cost
+    garlic_count += count
+    changed.emit()
+    return true
 
 func sell_tick() -> void:
     match sell_mode:
@@ -157,6 +212,7 @@ func sell_tick() -> void:
         SellMode.TINS:
             if tin_count > 0:
                 tin_count -= 1
+                _remove_random_tin()
                 _add_money(get_tin_sell_price())
     changed.emit()
 
@@ -358,6 +414,48 @@ func get_fish_sell_count() -> int:
 
 func get_green_zone_ratio() -> float:
     return min(1.0, GREEN_ZONE_BASE_RATIO + _get_effect_total_float("green_zone_add_pct"))
+
+################
+# Inventory/Recipes
+################
+func get_inventory_items() -> Array:
+    var items: Array = []
+    items.append({"name": "Fish", "count": fish_count})
+    items.append({"name": "Garlic", "count": garlic_count})
+    for key in tin_inventory.keys():
+        var label := "Tin: %s" % _format_recipe_from_key(str(key))
+        items.append({"name": label, "count": int(tin_inventory[key])})
+    return items
+
+func get_recipe_list() -> Array:
+    return recipes_unlocked
+
+func _unlock_recipe(method_id: String, ingredient_id: String) -> void:
+    var label := _format_recipe(method_id, ingredient_id)
+    if not recipes_unlocked.has(label):
+        recipes_unlocked.append(label)
+
+func _make_tin_key(method_id: String, ingredient_id: String) -> String:
+    return "%s|%s" % [method_id, ingredient_id]
+
+func _format_recipe_from_key(key: String) -> String:
+    var parts := key.split("|")
+    if parts.size() < 2:
+        return _title(key)
+    return _format_recipe(parts[0], parts[1])
+
+func _format_recipe(method_id: String, ingredient_id: String) -> String:
+    var method_name := _title(method_id)
+    var ingredient_name := "Plain" if ingredient_id == "none" else _title(ingredient_id)
+    return "%s + %s" % [method_name, ingredient_name]
+
+func _title(text: String) -> String:
+    var parts := text.replace("_", " ").split(" ")
+    for i in range(parts.size()):
+        var p: String = parts[i]
+        if p.length() > 0:
+            parts[i] = p.substr(0, 1).to_upper() + p.substr(1)
+    return " ".join(parts)
 
 ##############
 # Crew Trips

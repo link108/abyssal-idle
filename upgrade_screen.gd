@@ -48,14 +48,16 @@ func _create_upgrade_card(def: Dictionary) -> Control:
     hbox.add_child(vbox)
 
     var name_label := Label.new()
-    var level := GameState.get_upgrade_level(def.get("id", ""))
-    var max_level := int(def.get("max_level", 1))
-    var level_text := ""
+    var id_str: String = str(def.get("id", ""))
+    var level: int = GameState.get_upgrade_level(id_str)
+    var max_level: int = int(def.get("max_level", 1))
+    var level_text: String = ""
     if max_level < 0:
         level_text = " (Lv %d)" % level
     elif max_level > 1:
         level_text = " (Lv %d/%d)" % [level, max_level]
-    name_label.text = "%s%s" % [str(def.get("name", "Upgrade")), level_text]
+    var name_text: String = str(def.get("name", "Upgrade"))
+    name_label.text = "%s%s" % [name_text, level_text]
     vbox.add_child(name_label)
 
     var desc_label := Label.new()
@@ -64,8 +66,8 @@ func _create_upgrade_card(def: Dictionary) -> Control:
 
     var buy_btn := Button.new()
     buy_btn.text = _get_upgrade_button_text(def)
-    buy_btn.disabled = not GameState.can_purchase_upgrade(def.get("id", ""))
-    buy_btn.pressed.connect(_on_buy_pressed.bind(def.get("id", "")))
+    buy_btn.disabled = not GameState.can_purchase_upgrade(id_str)
+    buy_btn.pressed.connect(_on_buy_pressed.bind(id_str))
     hbox.add_child(buy_btn)
 
     return card

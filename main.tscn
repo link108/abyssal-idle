@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://dfp7shhr7k6y7"]
+[gd_scene load_steps=10 format=3 uid="uid://dfp7shhr7k6y7"]
 
 [ext_resource type="Script" uid="uid://b6v8aehavifo6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://dmwgj1chql5js" path="res://fishing_screen.tscn" id="2_0xm2m"]
@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" uid="uid://cuycoalmdivpd" path="res://market_screen.tscn" id="5_lquwl"]
 [ext_resource type="PackedScene" uid="uid://c3t6dvk2v86xg" path="res://crew_screen.tscn" id="6_0v6ff"]
 [ext_resource type="PackedScene" path="res://start_screen.tscn" id="7_3bknm"]
+[ext_resource type="PackedScene" path="res://inventory_screen.tscn" id="8_2s3yr"]
+[ext_resource type="PackedScene" path="res://recipe_screen.tscn" id="9_6k8b2"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -133,6 +135,22 @@ offset_right = 190.0
 offset_bottom = 496.0
 text = "Crew Roster"
 
+[node name="InventoryButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 670.0
+offset_top = 470.0
+offset_right = 790.0
+offset_bottom = 510.0
+text = "Inventory"
+
+[node name="RecipesButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 670.0
+offset_top = 520.0
+offset_right = 790.0
+offset_bottom = 560.0
+text = "Recipes"
+
 [node name="ModalLayer" type="CanvasLayer" parent="."]
 
 [node name="Dimmer" type="ColorRect" parent="ModalLayer"]
@@ -162,6 +180,12 @@ visible = false
 
 [node name="StartScreen" parent="ModalLayer" instance=ExtResource("7_3bknm")]
 visible = true
+
+[node name="InventoryScreen" parent="ModalLayer" instance=ExtResource("8_2s3yr")]
+visible = false
+
+[node name="RecipeScreen" parent="ModalLayer" instance=ExtResource("9_6k8b2")]
+visible = false
 
 [node name="FishLabel" type="Label" parent="."]
 layout_mode = 1
@@ -201,3 +225,5 @@ text = "Total Earnings: $0"
 [connection signal="pressed" from="MarketButton" to="." method="_on_market_button_pressed"]
 [connection signal="pressed" from="CrewButton" to="." method="_on_crew_button_pressed"]
 [connection signal="pressed" from="CrewSelectButton" to="." method="_on_crew_select_button_pressed"]
+[connection signal="pressed" from="InventoryButton" to="." method="_on_inventory_button_pressed"]
+[connection signal="pressed" from="RecipesButton" to="." method="_on_recipes_button_pressed"]

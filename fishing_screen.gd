@@ -7,11 +7,13 @@ signal fish_caught(amount: int)
 @onready var green_zone := $Root/Minigame/BarContainer/BarGreen
 @onready var cursor := $Root/Minigame/BarContainer/Cursor
 @onready var result_label := $Root/Minigame/ResultLabel
+@onready var catch_button := $Root/Minigame/CatchButton
 
 var _cursor_x: float = 0.0
 var _bar_width: float = 0.0
 var _cursor_width: float = 0.0
 var _rng := RandomNumberGenerator.new()
+var _result_tween: Tween
 
 func _ready() -> void:
     _rng.randomize()
@@ -19,6 +21,11 @@ func _ready() -> void:
     _cursor_width = cursor.size.x
     _reset_cursor()
     visibility_changed.connect(_on_visibility_changed)
+    catch_button.pressed.connect(_on_catch_button_pressed)
+    bar_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    green_zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    cursor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    result_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _process(delta: float) -> void:
     _bar_width = bar_container.size.x
@@ -32,8 +39,9 @@ func _input(event: InputEvent) -> void:
         return
     if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
         _attempt_catch()
-    elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        _attempt_catch()
+
+func _on_catch_button_pressed() -> void:
+    _attempt_catch()
 
 func _attempt_catch() -> void:
     var cursor_center: float = _cursor_x + (_cursor_width * 0.5)
@@ -68,9 +76,12 @@ func _show_result(success: bool) -> void:
     else:
         result_label.text = "You scared the fish away!"
         result_label.modulate = Color(0.9, 0.2, 0.2, 1)
-    var tween := create_tween()
-    tween.tween_property(result_label, "modulate:a", 0.0, 0.6)
-    tween.finished.connect(func(): result_label.visible = false)
+    if _result_tween != null:
+        _result_tween.kill()
+    _result_tween = create_tween()
+    _result_tween.tween_interval(0.5)
+    _result_tween.tween_property(result_label, "modulate:a", 0.0, 0.8)
+    _result_tween.finished.connect(func(): result_label.visible = false)
 
 func _on_close_button_close_requested() -> void:
     get_parent().get_node("Dimmer").hide()

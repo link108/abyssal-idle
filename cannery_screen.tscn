@@ -29,5 +29,43 @@ offset_right = 620.0
 offset_bottom = 365.0
 text = "Make tin"
 
+[node name="MethodLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 140.0
+offset_right = 460.0
+offset_bottom = 160.0
+text = "Method"
+
+[node name="MethodSelect" type="OptionButton" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 165.0
+offset_right = 560.0
+offset_bottom = 195.0
+
+[node name="IngredientLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 210.0
+offset_right = 460.0
+offset_bottom = 230.0
+text = "Ingredient"
+
+[node name="IngredientSelect" type="OptionButton" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 235.0
+offset_right = 560.0
+offset_bottom = 265.0
+
+[node name="GarlicCountLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 270.0
+offset_right = 560.0
+offset_bottom = 290.0
+text = "Garlic: 0"
+
 [connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
 [connection signal="pressed" from="Control/MakeTinButton" to="." method="_on_make_tin_button_pressed"]

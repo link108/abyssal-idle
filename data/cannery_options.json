@@ -1,0 +1,10 @@
+{
+  "methods": [
+    { "id": "raw", "name": "Raw" },
+    { "id": "smoked", "name": "Smoked" }
+  ],
+  "ingredients": [
+    { "id": "none", "name": "None" },
+    { "id": "garlic", "name": "Garlic" }
+  ]
+}
