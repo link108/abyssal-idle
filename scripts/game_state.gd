@@ -10,6 +10,7 @@ signal crew_unlocked
 const UPGRADE_DATA_PATH := "res://data/upgrades.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
+const TIN_MAKE_BASE_TIME := 3.0
 
 # Economy
 var fish_count: int = 0
@@ -415,6 +416,10 @@ func get_fish_sell_count() -> int:
 func get_green_zone_ratio() -> float:
     return min(1.0, GREEN_ZONE_BASE_RATIO + _get_effect_total_float("green_zone_add_pct"))
 
+func get_tin_make_time() -> float:
+    var time := TIN_MAKE_BASE_TIME + _get_effect_total_float("tin_time_add")
+    return max(0.5, time)
+
 ################
 # Inventory/Recipes
 ################
@@ -448,6 +453,9 @@ func _format_recipe(method_id: String, ingredient_id: String) -> String:
     var method_name := _title(method_id)
     var ingredient_name := "Plain" if ingredient_id == "none" else _title(ingredient_id)
     return "%s + %s" % [method_name, ingredient_name]
+
+func format_recipe(method_id: String, ingredient_id: String) -> String:
+    return _format_recipe(method_id, ingredient_id)
 
 func _title(text: String) -> String:
     var parts := text.replace("_", " ").split(" ")

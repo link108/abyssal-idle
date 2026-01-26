@@ -7,28 +7,41 @@ const OPTIONS_PATH := "res://data/cannery_options.json"
 @onready var method_select := $Control/MethodSelect
 @onready var ingredient_select := $Control/IngredientSelect
 @onready var garlic_label := $Control/GarlicCountLabel
+@onready var make_tin_button := $Control/MakeTinButton
+@onready var make_tin_progress := $Control/MakeTinButton/MakeTinProgress
+@onready var last_made_label := $Control/LastMadeLabel
 
 var methods: Array = []
 var ingredients: Array = []
+var _cooldown_remaining: float = 0.0
+var _cooldown_total: float = 0.0
 
 func _ready() -> void:
     _load_options()
     _populate_options()
     GameState.changed.connect(_refresh_counts)
     _refresh_counts()
+    make_tin_progress.show_percentage = false
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-    pass
+    if _cooldown_remaining > 0.0:
+        _cooldown_remaining = max(0.0, _cooldown_remaining - delta)
+        _update_cooldown_ui()
 
 func _on_close_button_close_requested() -> void:
     get_parent().get_node("Dimmer").hide()
     hide()
 
 func _on_make_tin_button_pressed() -> void:
+    if _cooldown_remaining > 0.0:
+        return
     var method_id: String = _get_selected_id(method_select, "raw")
     var ingredient_id: String = _get_selected_id(ingredient_select, "none")
-    GameState.make_tin_with(method_id, ingredient_id)
+    var made := GameState.make_tin_with(method_id, ingredient_id)
+    if made:
+        _start_cooldown()
+        last_made_label.text = "Made: %s" % GameState.format_recipe(method_id, ingredient_id)
     make_tin_requested.emit()
     _refresh_counts()
 
@@ -67,3 +80,25 @@ func _get_selected_id(option: OptionButton, fallback: String) -> String:
 
 func _refresh_counts() -> void:
     garlic_label.text = "Garlic: %d" % GameState.garlic_count
+
+func _start_cooldown() -> void:
+    _cooldown_total = GameState.get_tin_make_time()
+    _cooldown_remaining = _cooldown_total
+    _update_cooldown_ui()
+
+func _update_cooldown_ui() -> void:
+    var ready := _cooldown_remaining <= 0.0
+    make_tin_button.disabled = not ready
+    make_tin_button.modulate = Color(1, 1, 1, 1) if ready else Color(0.6, 0.6, 0.6, 1)
+    if _cooldown_total <= 0.0:
+        make_tin_progress.value = 1.0
+        make_tin_button.text = "Make tin"
+    else:
+        var progress: float = 1.0 - (_cooldown_remaining / _cooldown_total)
+        var clamped: float = clamp(progress, 0.0, 1.0)
+        make_tin_progress.value = clamped
+        var pct: int = int(round(clamped * 100.0))
+        if ready or pct >= 100:
+            make_tin_button.text = "Make tin"
+        else:
+            make_tin_button.text = "%d%%" % pct

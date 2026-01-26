@@ -151,5 +151,20 @@
     "effects": [
       { "type": "tin_sell_add", "value": 5 }
     ]
+  },
+  {
+    "id": "tin_speed",
+    "name": "Faster Line",
+    "desc": "Reduce tinning time.",
+    "category": "cannery",
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 90,
+    "cost_mult": 1.6,
+    "max_level": 10,
+    "effects": [
+      { "type": "tin_time_add", "value": -0.2 }
+    ]
   }
 ]
