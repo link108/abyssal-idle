@@ -19,6 +19,9 @@ var money: int = 0
 var garlic_count: int = 0
 var tin_inventory: Dictionary = {}
 var recipes_unlocked: Array = []
+var tin_cooldown_remaining: float = 0.0
+var tin_method_id: String = "raw"
+var tin_ingredient_id: String = "none"
 
 # Upgrades: Cannery
 const CANNERY_UNLOCK_COST := 200
@@ -140,6 +143,10 @@ func _process(delta: float) -> void:
             _complete_crew_trip()
     if _should_auto_send_crew():
         start_crew_trip()
+    if tin_cooldown_remaining > 0.0:
+        tin_cooldown_remaining = max(0.0, tin_cooldown_remaining - delta)
+    if get_auto_tin_enabled() and _can_auto_tin():
+        try_make_tin(tin_method_id, tin_ingredient_id)
 
 func catch_fish(amount: int = 1) -> void:
     var bonus := _get_effect_total("catch_add")
@@ -167,6 +174,16 @@ func make_tin_with(_method_id: String, _ingredient_id: String) -> bool:
     tin_inventory[key] = int(tin_inventory.get(key, 0)) + 1
     _unlock_recipe(_method_id, _ingredient_id)
     changed.emit()
+    return true
+
+func try_make_tin(method_id: String, ingredient_id: String) -> bool:
+    if not can_make_tin():
+        return false
+    if not is_cannery_unlocked:
+        return false
+    if not make_tin_with(method_id, ingredient_id):
+        return false
+    start_tin_cooldown()
     return true
 
 func _remove_random_tin() -> void:
@@ -419,6 +436,28 @@ func get_green_zone_ratio() -> float:
 func get_tin_make_time() -> float:
     var time := TIN_MAKE_BASE_TIME + _get_effect_total_float("tin_time_add")
     return max(0.5, time)
+
+func get_auto_tin_enabled() -> bool:
+    return _get_effect_total("auto_tin") > 0
+
+func can_make_tin() -> bool:
+    return tin_cooldown_remaining <= 0.0
+
+func start_tin_cooldown() -> void:
+    tin_cooldown_remaining = get_tin_make_time()
+
+func set_tin_selection(method_id: String, ingredient_id: String) -> void:
+    tin_method_id = method_id
+    tin_ingredient_id = ingredient_id
+
+func _can_auto_tin() -> bool:
+    if not can_make_tin():
+        return false
+    if fish_count <= 0:
+        return false
+    if tin_ingredient_id != "none" and garlic_count <= 0:
+        return false
+    return true
 
 ################
 # Inventory/Recipes

@@ -166,5 +166,20 @@
     "effects": [
       { "type": "tin_time_add", "value": -0.2 }
     ]
+  },
+  {
+    "id": "auto_tin",
+    "name": "Auto Tin Line",
+    "desc": "Automatically makes tins using current selections.",
+    "category": "cannery",
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 200,
+    "cost_mult": 2.0,
+    "max_level": 1,
+    "effects": [
+      { "type": "auto_tin", "value": 1 }
+    ]
   }
 ]
