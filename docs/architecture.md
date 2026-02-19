@@ -1,81 +1,38 @@
 # Abyssal Idle - Architecture
 
 ## Goals
-- Simple, data-driven systems.
-- Minimal scene coupling.
-- Easy to add content via JSON.
+- Keep runtime gameplay logic centralized and stable.
+- Keep content data-driven via JSON in `data/raw/`.
+- Make data validation + typed model mapping incremental and safe.
 
-## Project Structure
-res://
-  scenes/
-    main/
-      Main.tscn
-    ui/
-      close_button.tscn
-    minigames/
-      FishingMinigame.tscn
-  scripts/
-    game_state.gd
-    ui/
-      upgrade_screen.gd
-      market_screen.gd
-  data/
-    upgrades.json
-  docs/
-    game_design.md
-    architecture.md
-    plan.md
+## Current Structure (Refactored)
+- `res://main.tscn` + `res://main.gd`: top-level UI and game loop wiring
+- `res://src/core/game_state.gd`: core state + loading + progression logic
+- `res://src/requires/requires_eval.gd`: shared requirement evaluation
+- `res://src/ui/screens/*`: co-located screen scenes/scripts
+- `res://src/ui/components/*`: reusable UI components and style resources
+- `res://data/raw/*.json`: raw gameplay data definitions
 
-## Autoloads
-- GameState (global economy + upgrades + save later)
+## Runtime Data Loading (Current)
+- `GameState` loads raw JSON directly from `data/raw/`.
+- Loaded defs are stored as dictionaries and looked up by ID maps.
+- Requires gating is centralized in `RequiresEval`.
 
-## Core Systems
-### Economy (GameState)
-- fish_count, tin_count, money
-- sell_mode (fish/tins)
-- sell_tick() for passive sales
+## Data Loading & Validation Approach (Future)
+- Keep `data/raw/*.json` as source-of-truth content files.
+- Add lightweight schema checks in `src/data/validators.gd`:
+  - shape checks (required fields, basic types)
+  - cross-reference checks (IDs across files)
+  - clear, contextual warnings for fast authoring feedback
+- Add typed-ish model mapping in `src/data/models/`:
+  - parse raw dictionaries into explicit model objects
+  - keep `from_dict` parsing simple and deterministic
+- Add per-domain loaders in `src/data/loaders/`:
+  - file read + validation + model construction
+  - return arrays/maps ready for game systems
+- Add `src/data/data_registry.gd` as an integration point:
+  - centralized cache of loaded model sets
+  - single `load_all()` entrypoint for startup
+  - support dev-only reload/clear flows
 
-### Upgrades (GameState)
-- Loaded from `res://data/upgrades.json`
-- Effects:
-  - catch_add
-  - fish_sell_add
-  - fish_sell_count_add
-  - tin_sell_add
-
-### Upgrade UI
-- `upgrade_screen.gd` builds cards from JSON.
-- Uses GameState to check requirements and buy upgrades.
-
-## UI / Scenes
-- Main.tscn contains HUD + modal screens.
-- Modal screens:
-  - FishingScreen
-  - CanneryScreen
-  - MarketScreen
-  - UpgradeScreen
-
-## Data Format (Upgrades)
-```
-{
-  "id": "rod_strength",
-  "name": "Stronger Rod",
-  "desc": "+1 fish per catch.",
-  "category": "fishing",
-  "requires": {
-    "cannery": true,
-    "upgrades": { "rod_strength": 5 }
-  },
-  "base_cost": 10,
-  "cost_mult": 1.5,
-  "max_level": 5,
-  "effects": [
-    { "type": "catch_add", "value": 1 }
-  ]
-}
-```
-
-## Near-Term Additions
-- Save/load with versioning.
-- Ocean health system.
-- Fishing minigame scene with timing bar.
+This migration should be incremental: start with one dataset (fish), verify parity, then move other datasets.

@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://dvakv2dis8lu"]
+[gd_scene load_steps=3 format=3 uid="uid://bklywcol1l173"]
 
-[ext_resource type="Script" path="res://upgrade_screen.gd" id="1_scxlh"]
-[ext_resource type="PackedScene" uid="uid://db42gpj58q83b" path="res://scenes/ui/close_button.tscn" id="2_ovwte"]
+[ext_resource type="Script" uid="uid://w336lpj6rl4g" path="res://src/ui/screens/upgrade/upgrade_screen.gd" id="1_scxlh"]
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://src/ui/components/close_button/close_button.tscn" id="2_ovwte"]
 
 [node name="UpgradeScreen" type="PanelContainer"]
 anchors_preset = 15
@@ -31,7 +31,7 @@ offset_right = 0.0
 offset_bottom = 40.0
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Control"]
-layout_mode = 0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 40.0
@@ -40,12 +40,6 @@ offset_right = -40.0
 offset_bottom = -40.0
 horizontal_scroll_mode = 0
 
-[node name="UpgradesList" type="VBoxContainer" parent="Control/ScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 10
-
 [node name="ShowPurchasedToggle" type="CheckBox" parent="Control"]
 layout_mode = 0
 offset_left = 260.0
@@ -53,5 +47,13 @@ offset_top = 20.0
 offset_right = 480.0
 offset_bottom = 40.0
 text = "Show Purchased"
+
+[node name="UpgradesList" type="VBoxContainer" parent="Control/ScrollContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
 
 [connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]

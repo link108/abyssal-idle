@@ -1,8 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://dxtf71lf4i5ym"]
+[gd_scene load_steps=4 format=3 uid="uid://5qw6nmcayp4h"]
 
-[ext_resource type="Script" path="res://skill_tree_screen.gd" id="1_5m8x1"]
-[ext_resource type="PackedScene" uid="uid://db42gpj58q83b" path="res://scenes/ui/close_button.tscn" id="2_ovwte"]
-[ext_resource type="Script" path="res://skill_tree_graph.gd" id="3_4ys1c"]
+[ext_resource type="Script" uid="uid://dj3j6y7osw22f" path="res://src/ui/screens/skill_tree/skill_tree_screen.gd" id="1_5m8x1"]
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://src/ui/components/close_button/close_button.tscn" id="2_ovwte"]
+[ext_resource type="Script" uid="uid://cl5htsochc7wc" path="res://src/ui/screens/skill_tree/skill_tree_graph.gd" id="3_4ys1c"]
 
 [node name="SkillTreeScreen" type="PanelContainer"]
 anchors_preset = 15
@@ -23,8 +23,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 color = Color(0.06, 0.07, 0.09, 0.95)
+mouse_filter = 2
 
 [node name="CloseButton" parent="Control" instance=ExtResource("2_ovwte")]
 layout_mode = 1
@@ -41,6 +41,7 @@ offset_right = 260.0
 offset_bottom = 40.0
 text = "Reputation: 0"
 
+
 [node name="Graph" type="Control" parent="Control"]
 z_index = 1
 anchors_preset = 0
@@ -51,20 +52,26 @@ offset_top = 60.0
 offset_right = -40.0
 offset_bottom = -40.0
 script = ExtResource("3_4ys1c")
+mouse_filter = 0
 
 [node name="HoverPanel" type="PanelContainer" parent="Control"]
-z_index = 5
 layout_mode = 0
 offset_left = 725.0
 offset_top = 14.0
 offset_right = 1105.0
 offset_bottom = 104.0
+z_index = 5
 mouse_filter = 2
 
 [node name="HoverBg" type="ColorRect" parent="Control/HoverPanel"]
-layout_mode = 2
-mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0.08, 0.09, 0.11, 0.98)
+mouse_filter = 2
 
 [node name="HoverVBox" type="VBoxContainer" parent="Control/HoverPanel"]
 layout_mode = 2

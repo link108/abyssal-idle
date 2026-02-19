@@ -1,0 +1,157 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/ui/screens/collections/collections_screen.gd" id="1_a80ro"]
+[ext_resource type="PackedScene" path="res://src/ui/components/close_button/close_button.tscn" id="2_5k6as"]
+
+[node name="CollectionsScreen" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_a80ro")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 2
+
+[node name="CloseButton" parent="Control" instance=ExtResource("2_5k6as")]
+layout_mode = 1
+offset_left = -40.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 40.0
+
+[node name="Title" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 280.0
+offset_bottom = 44.0
+text = "Collections"
+
+[node name="MainRow" type="HBoxContainer" parent="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 60.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_constants/separation = 12
+
+[node name="Sidebar" type="PanelContainer" parent="Control/MainRow"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+
+[node name="SidebarMargin" type="MarginContainer" parent="Control/MainRow/Sidebar"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="SidebarVBox" type="VBoxContainer" parent="Control/MainRow/Sidebar/SidebarMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="CategoryLabel" type="Label" parent="Control/MainRow/Sidebar/SidebarMargin/SidebarVBox"]
+layout_mode = 2
+text = "Categories"
+
+[node name="FishButton" type="Button" parent="Control/MainRow/Sidebar/SidebarMargin/SidebarVBox"]
+layout_mode = 2
+text = "Fish"
+
+[node name="RecipesButton" type="Button" parent="Control/MainRow/Sidebar/SidebarMargin/SidebarVBox"]
+layout_mode = 2
+text = "Recipes"
+
+[node name="SidebarSpacer" type="Control" parent="Control/MainRow/Sidebar/SidebarMargin/SidebarVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Content" type="PanelContainer" parent="Control/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ContentMargin" type="MarginContainer" parent="Control/MainRow/Content"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="ContentVBox" type="VBoxContainer" parent="Control/MainRow/Content/ContentMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="CategoryTitle" type="Label" parent="Control/MainRow/Content/ContentMargin/ContentVBox"]
+layout_mode = 2
+text = "Fish Collection"
+
+[node name="BodyRow" type="HBoxContainer" parent="Control/MainRow/Content/ContentMargin/ContentVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="GridScroll" type="ScrollContainer" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="ItemGrid" type="GridContainer" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/GridScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 5
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="DetailPanel" type="PanelContainer" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+
+[node name="DetailMargin" type="MarginContainer" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="DetailVBox" type="VBoxContainer" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="DetailName" type="Label" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+text = "Select an entry"
+autowrap_mode = 3
+
+[node name="DetailMeta" type="Label" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+text = "Choose a discovered fish or recipe to view details."
+autowrap_mode = 3
+
+[node name="DetailDescription" type="Label" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+text = "Undiscovered entries stay hidden but provide hints."
+autowrap_mode = 3
+
+[node name="DetailExtra" type="Label" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="DetailSpacer" type="Control" parent="Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]

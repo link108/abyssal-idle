@@ -1,10 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://d4los7mrqwlwc"]
+[gd_scene load_steps=6 format=3 uid="uid://cuycoalmdivpd"]
 
-[ext_resource type="Script" path="res://market_screen.gd" id="1_yt0j7"]
-[ext_resource type="PackedScene" uid="uid://db42gpj58q83b" path="res://scenes/ui/close_button.tscn" id="2_7fa8d"]
-[ext_resource type="StyleBox" path="res://scenes/ui/button_color_normal.tres" id="3_4idej"]
-[ext_resource type="ButtonGroup" path="res://scenes/ui/market-sell-button-group.tres" id="3_7fa8d"]
-[ext_resource type="StyleBox" path="res://scenes/ui/button_color_pressed.tres" id="4_s7xmv"]
+[ext_resource type="Script" uid="uid://by05ycqgenspy" path="res://src/ui/screens/market/market_screen.gd" id="1_yt0j7"]
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://src/ui/components/close_button/close_button.tscn" id="2_7fa8d"]
+[ext_resource type="StyleBox" uid="uid://e0qv2iqvjwn" path="res://src/ui/components/styles/button_color_normal.tres" id="3_4idej"]
+[ext_resource type="ButtonGroup" uid="uid://dlyf4rrsi7gse" path="res://src/ui/components/styles/market-sell-button-group.tres" id="3_7fa8d"]
+[ext_resource type="StyleBox" uid="uid://dr88dhdndumkx" path="res://src/ui/components/styles/button_color_pressed.tres" id="4_s7xmv"]
 
 [node name="MarketScreen" type="PanelContainer"]
 anchors_preset = 15
@@ -27,7 +27,7 @@ offset_right = 0.0
 offset_bottom = 40.0
 
 [node name="LeftPanel" type="Control" parent="Control"]
-anchors_preset = 0
+layout_mode = 0
 offset_left = 40.0
 offset_top = 60.0
 offset_right = 260.0
@@ -35,26 +35,27 @@ offset_bottom = -40.0
 
 [node name="SellTitle" type="Label" parent="Control/LeftPanel"]
 layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
 offset_right = 200.0
 offset_bottom = 20.0
 text = "Sell"
 
 [node name="SellButtons" type="VBoxContainer" parent="Control/LeftPanel"]
 layout_mode = 0
+offset_left = 0.0
 offset_top = 30.0
 offset_right = 200.0
 offset_bottom = 120.0
 theme_override_constants/separation = 10
 
 [node name="SellFishButton" type="Button" parent="Control/LeftPanel/SellButtons"]
-layout_mode = 2
 toggle_mode = true
 button_pressed = true
 button_group = ExtResource("3_7fa8d")
 text = "Sell Fish"
 
 [node name="SellTinsButton" type="Button" parent="Control/LeftPanel/SellButtons"]
-layout_mode = 2
 toggle_mode = true
 button_group = ExtResource("3_7fa8d")
 text = "Sell Tins"
@@ -68,7 +69,7 @@ offset_bottom = -40.0
 color = Color(0.3, 0.3, 0.3, 1)
 
 [node name="RightPanel" type="Control" parent="Control"]
-anchors_preset = 0
+layout_mode = 0
 offset_left = 320.0
 offset_top = 60.0
 offset_right = -40.0
@@ -76,29 +77,35 @@ offset_bottom = -40.0
 
 [node name="BuyTitle" type="Label" parent="Control/RightPanel"]
 layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
 offset_right = 200.0
 offset_bottom = 20.0
 text = "Buy"
 
 [node name="ItemGrid" type="GridContainer" parent="Control/RightPanel"]
 layout_mode = 0
+offset_left = 0.0
 offset_top = 30.0
 offset_right = 300.0
 offset_bottom = 200.0
+columns = 4
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
-columns = 4
 
 [node name="GarlicSlot" type="PanelContainer" parent="Control/RightPanel/ItemGrid"]
 custom_minimum_size = Vector2(72, 72)
-layout_mode = 2
 
 [node name="GarlicButton" type="Button" parent="Control/RightPanel/ItemGrid/GarlicSlot"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 text = "Garlic"
 
 [node name="QtyLabel" type="Label" parent="Control/RightPanel"]
 layout_mode = 0
+offset_left = 0.0
 offset_top = 220.0
 offset_right = 200.0
 offset_bottom = 240.0
@@ -106,50 +113,48 @@ text = "Quantity"
 
 [node name="QtyButtons" type="HBoxContainer" parent="Control/RightPanel"]
 layout_mode = 0
+offset_left = 0.0
 offset_top = 245.0
 offset_right = 460.0
 offset_bottom = 275.0
 theme_override_constants/separation = 6
 
 [node name="Qty1" type="Button" parent="Control/RightPanel/QtyButtons"]
-layout_mode = 2
 toggle_mode = true
 button_pressed = true
 text = "1"
 
 [node name="Qty5" type="Button" parent="Control/RightPanel/QtyButtons"]
-layout_mode = 2
 toggle_mode = true
 text = "5"
 
 [node name="Qty10" type="Button" parent="Control/RightPanel/QtyButtons"]
-layout_mode = 2
 toggle_mode = true
 text = "10"
 
 [node name="Qty25" type="Button" parent="Control/RightPanel/QtyButtons"]
-layout_mode = 2
 toggle_mode = true
 text = "25"
 
 [node name="Qty50" type="Button" parent="Control/RightPanel/QtyButtons"]
-layout_mode = 2
 toggle_mode = true
 text = "50"
 
 [node name="Qty100" type="Button" parent="Control/RightPanel/QtyButtons"]
-layout_mode = 2
 toggle_mode = true
 text = "100"
 
 [node name="HoverLabel" type="Label" parent="Control/RightPanel"]
 layout_mode = 0
+offset_left = 0.0
 offset_top = 290.0
 offset_right = 400.0
 offset_bottom = 310.0
+text = ""
 
 [node name="GarlicCountLabel" type="Label" parent="Control/RightPanel"]
 layout_mode = 0
+offset_left = 0.0
 offset_top = 320.0
 offset_right = 200.0
 offset_bottom = 340.0

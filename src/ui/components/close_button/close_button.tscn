@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://db42gpj58q83b"]
+[gd_scene load_steps=2 format=3 uid="uid://c0c5uueyrmmcq"]
 
-[ext_resource type="Script" path="res://scenes/ui/close_button.gd" id="1_6el1d"]
+[ext_resource type="Script" uid="uid://bkd78ymw6dhat" path="res://src/ui/components/close_button/close_button.gd" id="1_6el1d"]
 
 [node name="CloseButton" type="Button"]
 modulate = Color(0.75141644, 0, 0.08883705, 1)

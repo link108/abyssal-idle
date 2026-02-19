@@ -12,12 +12,12 @@
 - `item_owned_at_least`
 
 ## Migrated files
-- `data/upgrades.json`
-- `data/fish.json`
-- `data/items.json`
-- `data/equipment.json`
-- `data/recipes.json`
-- `data/processes.json`
+- `data/raw/upgrades.json`
+- `data/raw/fish.json`
+- `data/raw/items.json`
+- `data/raw/equipment.json`
+- `data/raw/recipes.json`
+- `data/raw/processes.json`
 
 Notes:
 - `unlock_conditions` and `unlock_condition` were migrated to `requires` where present.

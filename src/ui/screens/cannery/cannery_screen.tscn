@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1t4dfnt7vvot"]
+[gd_scene load_steps=3 format=3 uid="uid://cslnphk10k46d"]
 
-[ext_resource type="PackedScene" uid="uid://db42gpj58q83b" path="res://scenes/ui/close_button.tscn" id="1_5roqh"]
-[ext_resource type="Script" path="res://cannery_screen.gd" id="1_cxpxi"]
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://src/ui/components/close_button/close_button.tscn" id="1_5roqh"]
+[ext_resource type="Script" uid="uid://75uiw81bay38" path="res://src/ui/screens/cannery/cannery_screen.gd" id="1_cxpxi"]
 
 [node name="CanneryScreen" type="PanelContainer"]
 anchors_preset = 15
@@ -34,11 +34,9 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-max_value = 1.0
 value = 1.0
+max_value = 1.0
+mouse_filter = 2
 show_percentage = false
 
 [node name="MethodLabel" type="Label" parent="Control"]
@@ -85,6 +83,7 @@ offset_left = 340.0
 offset_top = 295.0
 offset_right = 560.0
 offset_bottom = 315.0
+text = ""
 
 [connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
 [connection signal="pressed" from="Control/MakeTinButton" to="." method="_on_make_tin_button_pressed"]

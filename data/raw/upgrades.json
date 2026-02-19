@@ -1,0 +1,840 @@
+[
+  {
+    "upgrade_id": "unlock_cannery",
+    "display_name": "Unlock Cannery",
+    "description": "Open the cannery to start tinning fish.",
+    "category": "core",
+    "tier": 0,
+    "max_level": 1,
+    "base_cost": 200,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "effects": [
+      {
+        "type": "unlock_cannery",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "rod_strength",
+    "display_name": "Stronger Rod",
+    "description": "+1 fish per catch.",
+    "category": "fishing",
+    "tier": 1,
+    "max_level": 5,
+    "base_cost": 10,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.5
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "effects": [
+      {
+        "type": "catch_add",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "bait_bucket",
+    "display_name": "Better Bait",
+    "description": "+1 fish per catch.",
+    "category": "fishing",
+    "tier": 1,
+    "max_level": 5,
+    "base_cost": 25,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.6
+    },
+    "requires": [
+      {
+        "type": "upgrade_level_at_least",
+        "upgrade_id": "rod_strength",
+        "value": 5
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "rod_strength"
+      }
+    ],
+    "effects": [
+      {
+        "type": "catch_add",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "fish_sale_price",
+    "display_name": "Street Vendor Network",
+    "description": "+$2 per fish sold.",
+    "category": "fishing",
+    "tier": 1,
+    "max_level": -1,
+    "base_cost": 30,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.7
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "bait_bucket"
+      }
+    ],
+    "effects": [
+      {
+        "type": "fish_sell_add",
+        "value": 2
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "fish_bulk_sales",
+    "display_name": "Bulk Fish Crates",
+    "description": "Sell +1 extra fish per tick.",
+    "category": "fishing",
+    "tier": 2,
+    "max_level": -1,
+    "base_cost": 60,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.8
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "fish_sale_price"
+      }
+    ],
+    "effects": [
+      {
+        "type": "fish_sell_count_add",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "green_zone_size",
+    "display_name": "Steadier Hands",
+    "description": "Increase the green zone size.",
+    "category": "fishing",
+    "tier": 1,
+    "max_level": 15,
+    "base_cost": 15,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.45
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "fish_bulk_sales"
+      }
+    ],
+    "effects": [
+      {
+        "type": "green_zone_add_pct",
+        "value": 0.06
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "crew_trip_speed",
+    "display_name": "Faster Skipper",
+    "description": "Crew returns sooner.",
+    "category": "fishing",
+    "tier": 2,
+    "max_level": 10,
+    "base_cost": 40,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.5
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "green_zone_size"
+      }
+    ],
+    "effects": [
+      {
+        "type": "crew_trip_duration_mult",
+        "value": -0.06
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "crew_trip_yield",
+    "display_name": "Bigger Nets",
+    "description": "+1 fish per crew trip.",
+    "category": "fishing",
+    "tier": 2,
+    "max_level": -1,
+    "base_cost": 50,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.6
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "crew_trip_speed"
+      }
+    ],
+    "effects": [
+      {
+        "type": "crew_trip_catch_add",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "crew_auto_send",
+    "display_name": "Auto Captain",
+    "description": "Crew automatically goes out when idle.",
+    "category": "fishing",
+    "tier": 2,
+    "max_level": 1,
+    "base_cost": 120,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 2
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "crew_unlocked"
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "crew_trip_yield"
+      }
+    ],
+    "effects": [
+      {
+        "type": "crew_auto_send",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "tin_sale_price",
+    "display_name": "Premium Labels",
+    "description": "+$2 per tin sold.",
+    "category": "cannery",
+    "tier": 2,
+    "max_level": -1,
+    "base_cost": 80,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.6
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      }
+    ],
+    "effects": [
+      {
+        "type": "tin_sell_add",
+        "value": 2
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "cannery_efficiency",
+    "display_name": "Cannery Flow",
+    "description": "Tins sell for +$5.",
+    "category": "cannery",
+    "tier": 2,
+    "max_level": 3,
+    "base_cost": 150,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.8
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "tin_sale_price"
+      }
+    ],
+    "effects": [
+      {
+        "type": "tin_sell_add",
+        "value": 5
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "tin_speed",
+    "display_name": "Faster Line",
+    "description": "Reduce tinning time.",
+    "category": "cannery",
+    "tier": 2,
+    "max_level": 10,
+    "base_cost": 90,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1.6
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "cannery_efficiency"
+      }
+    ],
+    "effects": [
+      {
+        "type": "tin_time_add",
+        "value": -0.2
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "auto_tin",
+    "display_name": "Auto Tin Line",
+    "description": "Automatically makes tins using current selections.",
+    "category": "cannery",
+    "tier": 3,
+    "max_level": 1,
+    "base_cost": 200,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 2
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "upgrade_purchased",
+        "upgrade_id": "tin_speed"
+      }
+    ],
+    "effects": [
+      {
+        "type": "auto_tin",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "sust_harvest_standards",
+    "display_name": "Sustainable Harvesting Standards",
+    "description": "Lower pressure and stabilize the ocean (reduced catches).",
+    "category": "policy",
+    "tier": 3,
+    "max_level": 1,
+    "base_cost": 300,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_1"
+      }
+    ],
+    "effects": [
+      {
+        "type": "ocean_pressure_mult",
+        "value": -0.3
+      },
+      {
+        "type": "ocean_regen_mult",
+        "value": 0.2
+      },
+      {
+        "type": "catch_mult",
+        "value": -0.15
+      }
+    ],
+    "exclusive_group_id": "policy_1",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1010
+    },
+    "policy_stage": 1
+  },
+  {
+    "upgrade_id": "ind_overdrive",
+    "display_name": "Industrial Overdrive",
+    "description": "Boost catches and automation at the cost of pressure.",
+    "category": "policy",
+    "tier": 3,
+    "max_level": 1,
+    "base_cost": 300,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_1"
+      }
+    ],
+    "effects": [
+      {
+        "type": "catch_mult",
+        "value": 0.35
+      },
+      {
+        "type": "tin_time_add",
+        "value": -0.6
+      },
+      {
+        "type": "ocean_pressure_mult",
+        "value": 0.25
+      }
+    ],
+    "exclusive_group_id": "policy_1",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1011
+    },
+    "policy_stage": 1
+  },
+  {
+    "upgrade_id": "sust_small_batch",
+    "display_name": "Small-Batch Artisan Processing",
+    "description": "Higher margins at the cost of speed.",
+    "category": "policy",
+    "tier": 3,
+    "max_level": 1,
+    "base_cost": 450,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_2"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_2",
+        "stage": 1
+      }
+    ],
+    "effects": [
+      {
+        "type": "tin_sell_add",
+        "value": 3
+      },
+      {
+        "type": "tin_time_add",
+        "value": 0.6
+      }
+    ],
+    "exclusive_group_id": "policy_2",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1020
+    },
+    "policy_stage": 2
+  },
+  {
+    "upgrade_id": "ind_conveyor",
+    "display_name": "High-Speed Conveyor Lines",
+    "description": "Fast throughput with lower per-unit value.",
+    "category": "policy",
+    "tier": 3,
+    "max_level": 1,
+    "base_cost": 450,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_2"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_2",
+        "stage": 1
+      }
+    ],
+    "effects": [
+      {
+        "type": "tin_time_add",
+        "value": -1.2
+      },
+      {
+        "type": "tin_sell_add",
+        "value": 1
+      }
+    ],
+    "exclusive_group_id": "policy_2",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1021
+    },
+    "policy_stage": 2
+  },
+  {
+    "upgrade_id": "sust_protected_zones",
+    "display_name": "Marine Protected Zones",
+    "description": "Reduce pressure and raise regeneration.",
+    "category": "policy",
+    "tier": 4,
+    "max_level": 1,
+    "base_cost": 650,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_3"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_3",
+        "stage": 2
+      }
+    ],
+    "effects": [
+      {
+        "type": "ocean_pressure_mult",
+        "value": -0.1
+      },
+      {
+        "type": "ocean_regen_mult",
+        "value": 0.25
+      },
+      {
+        "type": "catch_mult",
+        "value": -0.15
+      }
+    ],
+    "exclusive_group_id": "policy_3",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1030
+    },
+    "policy_stage": 3
+  },
+  {
+    "upgrade_id": "ind_open_expansion",
+    "display_name": "Open Expansion Mandate",
+    "description": "Scale output with higher pressure.",
+    "category": "policy",
+    "tier": 4,
+    "max_level": 1,
+    "base_cost": 650,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_3"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_3",
+        "stage": 2
+      }
+    ],
+    "effects": [
+      {
+        "type": "catch_mult",
+        "value": 0.3
+      },
+      {
+        "type": "ocean_pressure_mult",
+        "value": 0.15
+      }
+    ],
+    "exclusive_group_id": "policy_3",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1031
+    },
+    "policy_stage": 3
+  },
+  {
+    "upgrade_id": "sust_local_crews",
+    "display_name": "Skilled Local Crews",
+    "description": "Higher craft, slower trips.",
+    "category": "policy",
+    "tier": 4,
+    "max_level": 1,
+    "base_cost": 900,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_4"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_4",
+        "stage": 3
+      }
+    ],
+    "effects": [
+      {
+        "type": "ocean_pressure_mult",
+        "value": -0.1
+      },
+      {
+        "type": "crew_trip_duration_mult",
+        "value": 0.15
+      }
+    ],
+    "exclusive_group_id": "policy_4",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1040
+    },
+    "policy_stage": 4
+  },
+  {
+    "upgrade_id": "ind_auto_fleet",
+    "display_name": "Automated Fleet Expansion",
+    "description": "Faster trips and larger hauls.",
+    "category": "policy",
+    "tier": 4,
+    "max_level": 1,
+    "base_cost": 900,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_4"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_4",
+        "stage": 3
+      }
+    ],
+    "effects": [
+      {
+        "type": "crew_trip_duration_mult",
+        "value": -0.25
+      },
+      {
+        "type": "crew_trip_catch_add",
+        "value": 2
+      }
+    ],
+    "exclusive_group_id": "policy_4",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1041
+    },
+    "policy_stage": 4
+  },
+  {
+    "upgrade_id": "sust_certified_label",
+    "display_name": "Certified Sustainable Label",
+    "description": "Modest value boost with regen support.",
+    "category": "policy",
+    "tier": 5,
+    "max_level": 1,
+    "base_cost": 1200,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_5"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_5",
+        "stage": 4
+      }
+    ],
+    "effects": [
+      {
+        "type": "tin_sell_add",
+        "value": 3
+      },
+      {
+        "type": "ocean_regen_mult",
+        "value": 0.1
+      }
+    ],
+    "exclusive_group_id": "policy_5",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1050
+    },
+    "policy_stage": 5
+  },
+  {
+    "upgrade_id": "ind_commodity_dominance",
+    "display_name": "Commodity Dominance",
+    "description": "Aggressive pricing with higher pressure.",
+    "category": "policy",
+    "tier": 5,
+    "max_level": 1,
+    "base_cost": 1200,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "flag_true",
+        "flag": "cannery_unlocked"
+      },
+      {
+        "type": "exclusive_group_unchosen",
+        "group_id": "policy_5"
+      },
+      {
+        "type": "policy_stage_at_least",
+        "group_id": "policy_5",
+        "stage": 4
+      }
+    ],
+    "effects": [
+      {
+        "type": "fish_sell_add",
+        "value": 2
+      },
+      {
+        "type": "tin_sell_add",
+        "value": 2
+      },
+      {
+        "type": "ocean_pressure_mult",
+        "value": 0.2
+      }
+    ],
+    "exclusive_group_id": "policy_5",
+    "exclusive_choice": true,
+    "ui": {
+      "sort_order": 1051
+    },
+    "policy_stage": 5
+  }
+]

@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://cgt02mnxbbx6o"]
+[gd_scene load_steps=3 format=3 uid="uid://dmwgj1chql5js"]
 
-[ext_resource type="Script" path="res://fishing_screen.gd" id="1_vb1tx"]
-[ext_resource type="PackedScene" uid="uid://db42gpj58q83b" path="res://scenes/ui/close_button.tscn" id="2_ob6uv"]
+[ext_resource type="Script" uid="uid://br8ucif5ij81c" path="res://src/ui/screens/fishing/fishing_screen.gd" id="1_vb1tx"]
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://src/ui/components/close_button/close_button.tscn" id="2_ob6uv"]
 
 [node name="FishingScreen" type="PanelContainer"]
 anchors_preset = 15
@@ -40,22 +40,21 @@ grow_vertical = 2
 
 [node name="InstructionLabel" type="Label" parent="Root/Minigame"]
 layout_mode = 1
-anchors_preset = 5
+anchors_preset = 8
 anchor_left = 0.5
+anchor_top = 0.0
 anchor_right = 0.5
+anchor_bottom = 0.0
 offset_left = -140.0
 offset_top = -40.0
 offset_right = 140.0
 offset_bottom = -16.0
-grow_horizontal = 2
-grow_vertical = 2
 text = "Click or press Space in the green zone"
 horizontal_alignment = 1
 
 [node name="ResultLabel" type="Label" parent="Root/Minigame"]
-visible = false
 layout_mode = 1
-anchors_preset = 7
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -64,9 +63,8 @@ offset_left = -140.0
 offset_top = 16.0
 offset_right = 140.0
 offset_bottom = 40.0
-grow_horizontal = 2
-grow_vertical = 2
 horizontal_alignment = 1
+visible = false
 
 [node name="BarContainer" type="Control" parent="Root/Minigame"]
 layout_mode = 1
@@ -87,27 +85,28 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 color = Color(0.75, 0.2, 0.2, 1)
 
 [node name="BarGreen" type="ColorRect" parent="Root/Minigame/BarContainer"]
 layout_mode = 1
-anchors_preset = -1
+anchors_preset = 15
 anchor_right = 0.2
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 0.0
+offset_right = 0.0
 color = Color(0.2, 0.75, 0.2, 1)
 
 [node name="Cursor" type="ColorRect" parent="Root/Minigame/BarContainer"]
 layout_mode = 1
-anchors_preset = 9
+anchors_preset = 1
+anchor_left = 0.0
+anchor_right = 0.0
 anchor_bottom = 1.0
+offset_left = 0.0
 offset_top = -6.0
 offset_right = 4.0
 offset_bottom = 6.0
-grow_horizontal = 0
+color = Color(1, 1, 1, 1)
 
 [node name="CatchButton" type="Button" parent="Root/Minigame"]
 layout_mode = 1
@@ -120,9 +119,8 @@ offset_left = -50.0
 offset_top = 20.0
 offset_right = 50.0
 offset_bottom = 50.0
-grow_horizontal = 2
-grow_vertical = 2
 text = "Catch"
+
 
 [node name="CloseButton" parent="Root" instance=ExtResource("2_ob6uv")]
 layout_mode = 1
