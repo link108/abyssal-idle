@@ -24,11 +24,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "prepare_brine",
+      "clean",
+      "mix",
       "brine_cure",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "brined",
@@ -41,7 +41,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "weeping_lanternjaw"
   },
   {
     "recipe_id": "smoked_lanternjaw_ash_pepper_oil",
@@ -72,12 +73,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "dry_salt",
-      "smoke_fish",
-      "infuse_oil",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "salt_cure",
+      "smoke",
+      "infuse",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "smoked",
@@ -90,11 +91,12 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "weeping_lanternjaw"
   },
   {
     "recipe_id": "lanternjaw_pate_sea_fennel",
-    "display_name": "Lanternjaw Pâté with Sea-Fennel",
+    "display_name": "Lanternjaw P\u00e2t\u00e9 with Sea-Fennel",
     "rarity": "Uncommon",
     "tier": 2,
     "required_fish_name": "Weeping Lanternjaw",
@@ -121,12 +123,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "poach_fish",
-      "blend_into_pate",
-      "season",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "poach",
+      "blend",
+      "mix",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "spread",
@@ -138,7 +140,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "weeping_lanternjaw"
   },
   {
     "recipe_id": "pickled_lanternjaw_tongue_murk_vinegar",
@@ -169,12 +172,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_special_cut",
-      "prepare_pickling_liquid",
+      "clean",
+      "extract",
+      "mix",
       "pickle",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "pickled",
@@ -187,7 +190,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "weeping_lanternjaw"
   },
   {
     "recipe_id": "choirfin_golden_oil",
@@ -214,11 +218,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "poach_fish",
-      "pack_in_tin",
-      "cover_with_oil",
-      "seal_can"
+      "clean",
+      "poach",
+      "tin_pack",
+      "pack_in_oil",
+      "tin_seal"
     ],
     "tags": [
       "oily",
@@ -230,7 +234,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "choirfin_seraph"
   },
   {
     "recipe_id": "fermented_choirfin_fillets",
@@ -257,12 +262,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "fillet_fish",
+      "clean",
+      "cut",
       "salt_cure",
       "ferment",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "fermented",
@@ -274,7 +279,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "choirfin_seraph"
   },
   {
     "recipe_id": "choirfin_sea_garlic_preserve",
@@ -301,11 +307,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "poach_fish",
-      "infuse_oil",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "poach",
+      "infuse",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "garlicky",
@@ -317,7 +323,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "choirfin_seraph"
   },
   {
     "recipe_id": "choirfin_roe_spread",
@@ -348,12 +355,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "extract_roe",
-      "blend_into_spread",
-      "season",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "extract",
+      "blend",
+      "mix",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "spread",
@@ -366,7 +373,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "choirfin_seraph"
   },
   {
     "recipe_id": "candied_choirfin_spine_cuts",
@@ -393,13 +401,13 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_special_cut",
+      "clean",
+      "extract",
       "brine_cure",
-      "glaze_with_syrup",
+      "simmer",
       "dry",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "sweet_savory",
@@ -411,7 +419,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "choirfin_seraph"
   },
   {
     "recipe_id": "gloommaw_steaks_thick_brine",
@@ -438,12 +447,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "cut_steaks",
-      "prepare_brine",
+      "clean",
+      "cut",
+      "mix",
       "brine_cure",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "brined",
@@ -455,7 +464,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "gloommaw_devourer"
   },
   {
     "recipe_id": "blackened_gloommaw_belly",
@@ -482,12 +492,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_belly",
-      "season",
-      "sear_blacken",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "cut",
+      "mix",
+      "sear",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "spicy",
@@ -499,7 +509,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "gloommaw_devourer"
   },
   {
     "recipe_id": "gloommaw_liver_confit",
@@ -530,12 +541,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_special_cut",
-      "slow_confit",
-      "pack_in_tin",
-      "cover_with_oil",
-      "seal_can"
+      "clean",
+      "extract",
+      "confit",
+      "tin_pack",
+      "pack_in_oil",
+      "tin_seal"
     ],
     "tags": [
       "confit",
@@ -548,7 +559,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "gloommaw_devourer"
   },
   {
     "recipe_id": "obsidian_smoked_gloommaw",
@@ -575,12 +587,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "dry_salt",
-      "smoke_fish",
-      "pack_in_tin",
-      "cover_with_oil",
-      "seal_can"
+      "clean",
+      "salt_cure",
+      "smoke",
+      "tin_pack",
+      "pack_in_oil",
+      "tin_seal"
     ],
     "tags": [
       "smoked",
@@ -592,7 +604,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "gloommaw_devourer"
   },
   {
     "recipe_id": "gloommaw_blood_sausage",
@@ -623,12 +636,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "extract_blood",
-      "mix_sausage_filling",
-      "cook_sausage",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "extract",
+      "mix",
+      "sear",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "sausaged",
@@ -640,7 +653,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "gloommaw_devourer"
   },
   {
     "recipe_id": "veilscale_simple_brine",
@@ -663,10 +677,10 @@
       }
     ],
     "processes": [
-      "clean_fish",
+      "clean",
       "brine_cure",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "brined",
@@ -678,7 +692,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "veilscale_mourner"
   },
   {
     "recipe_id": "dried_veilscale_strips",
@@ -701,11 +716,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
+      "clean",
       "salt_cure",
       "dry",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "dried",
@@ -717,7 +732,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "veilscale_mourner"
   },
   {
     "recipe_id": "spiced_veilscale_flakes",
@@ -744,12 +760,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "poach_fish",
-      "flake",
-      "season",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "poach",
+      "cut",
+      "mix",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "spiced",
@@ -761,7 +777,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "veilscale_mourner"
   },
   {
     "recipe_id": "veilscale_bitter_kelp_oil",
@@ -788,11 +805,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "poach_fish",
-      "infuse_oil",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "poach",
+      "infuse",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "oily",
@@ -805,7 +822,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "veilscale_mourner"
   },
   {
     "recipe_id": "abysswyrm_royal_cuts_dark_oil",
@@ -832,12 +850,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_special_cut",
-      "poach_fish",
-      "pack_in_tin",
-      "cover_with_oil",
-      "seal_can"
+      "clean",
+      "extract",
+      "poach",
+      "tin_pack",
+      "pack_in_oil",
+      "tin_seal"
     ],
     "tags": [
       "luxury",
@@ -850,7 +868,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "crowned_abysswyrm"
   },
   {
     "recipe_id": "crowned_abysswyrm_spiced_medallions",
@@ -877,12 +896,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "slice_medallions",
-      "season",
-      "sear_blacken",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "cut",
+      "mix",
+      "sear",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "spiced",
@@ -894,7 +913,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "crowned_abysswyrm"
   },
   {
     "recipe_id": "abysswyrm_bone_broth_reduction",
@@ -921,12 +941,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "extract_bones",
-      "simmer_broth",
-      "reduce",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "extract",
+      "simmer",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "broth",
@@ -938,7 +957,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "crowned_abysswyrm"
   },
   {
     "recipe_id": "iridescent_wyrm_fillet_ink_sauce",
@@ -965,12 +985,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "fillet_fish",
-      "poach_fish",
-      "prepare_sauce",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "cut",
+      "poach",
+      "mix",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "inky",
@@ -982,7 +1002,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "crowned_abysswyrm"
   },
   {
     "recipe_id": "abysswyrm_heart_preserve",
@@ -1009,12 +1030,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_special_cut",
-      "quick_sear",
-      "preserve_in_oil",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "extract",
+      "sear",
+      "pack_in_oil",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "forbidden",
@@ -1027,7 +1048,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "crowned_abysswyrm"
   },
   {
     "recipe_id": "haddrel_clear_oil",
@@ -1050,11 +1072,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "poach_fish",
-      "pack_in_tin",
-      "cover_with_oil",
-      "seal_can"
+      "clean",
+      "poach",
+      "tin_pack",
+      "pack_in_oil",
+      "tin_seal"
     ],
     "tags": [
       "oily",
@@ -1066,7 +1088,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "shiverglass_haddrel"
   },
   {
     "recipe_id": "cracked_haddrel_sea_salt",
@@ -1093,11 +1116,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "season",
-      "quick_sear",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "mix",
+      "sear",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "crisp",
@@ -1109,7 +1132,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "shiverglass_haddrel"
   },
   {
     "recipe_id": "haddrel_crystal_roe_paste",
@@ -1140,12 +1164,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "extract_roe",
-      "blend_into_paste",
-      "season",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "extract",
+      "blend",
+      "mix",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "roe",
@@ -1157,7 +1181,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "shiverglass_haddrel"
   },
   {
     "recipe_id": "smoked_haddrel_shavings",
@@ -1184,12 +1209,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "dry_salt",
-      "smoke_fish",
-      "shave",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "salt_cure",
+      "smoke",
+      "cut",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "smoked",
@@ -1201,7 +1226,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "shiverglass_haddrel"
   },
   {
     "recipe_id": "skulker_mustard_brine",
@@ -1224,10 +1250,10 @@
       }
     ],
     "processes": [
-      "clean_fish",
+      "clean",
       "brine_cure",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "mustardy",
@@ -1239,7 +1265,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "thousand_eyed_skulker"
   },
   {
     "recipe_id": "thousand_eyed_fillet_mash",
@@ -1270,13 +1297,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "fillet_fish",
-      "poach_fish",
-      "mash",
-      "season",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "cut",
+      "poach",
+      "mix",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "spread",
@@ -1288,7 +1314,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "thousand_eyed_skulker"
   },
   {
     "recipe_id": "skulker_charred_kelp",
@@ -1315,11 +1342,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "char_kelp",
-      "poach_fish",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "sear",
+      "poach",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "charred",
@@ -1331,7 +1358,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "thousand_eyed_skulker"
   },
   {
     "recipe_id": "spicy_skulker_eye_relish",
@@ -1362,12 +1390,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_special_cut",
-      "prepare_relish",
+      "clean",
+      "extract",
+      "mix",
       "pickle",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "spicy",
@@ -1380,7 +1408,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "thousand_eyed_skulker"
   },
   {
     "recipe_id": "cathedral_cod_creamed_brine",
@@ -1411,11 +1440,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "poach_fish",
-      "prepare_creamed_brine",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "poach",
+      "mix",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "creamy",
@@ -1427,7 +1456,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "pale_cathedral_cod"
   },
   {
     "recipe_id": "cod_vault_cuts_white_pepper",
@@ -1454,12 +1484,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "cut_steaks",
-      "season",
-      "poach_fish",
-      "pack_in_tin",
-      "seal_can"
+      "clean",
+      "cut",
+      "mix",
+      "poach",
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "peppery",
@@ -1471,7 +1501,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "pale_cathedral_cod"
   },
   {
     "recipe_id": "pale_cod_liver_preserve",
@@ -1498,12 +1529,12 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "trim_special_cut",
-      "slow_confit",
-      "pack_in_tin",
-      "cover_with_oil",
-      "seal_can"
+      "clean",
+      "extract",
+      "confit",
+      "tin_pack",
+      "pack_in_oil",
+      "tin_seal"
     ],
     "tags": [
       "confit",
@@ -1516,7 +1547,8 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "pale_cathedral_cod"
   },
   {
     "recipe_id": "cathedral_cod_sea_onion",
@@ -1543,11 +1575,11 @@
       }
     ],
     "processes": [
-      "clean_fish",
-      "prepare_brine",
+      "clean",
+      "mix",
       "brine_cure",
-      "pack_in_tin",
-      "seal_can"
+      "tin_pack",
+      "tin_seal"
     ],
     "tags": [
       "brined",
@@ -1559,6 +1591,7 @@
         "type": "always",
         "value": true
       }
-    ]
+    ],
+    "required_fish_id": "pale_cathedral_cod"
   }
 ]

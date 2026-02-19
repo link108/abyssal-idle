@@ -63,9 +63,9 @@ func _randomize_green_zone() -> void:
     _bar_width = bar_container.size.x
     var green_ratio: float = GameState.get_green_zone_ratio()
     var green_width: float = max(10.0, _bar_width * green_ratio)
-    green_zone.size.x = green_width
     var max_x: float = max(0.0, _bar_width - green_width)
-    green_zone.position.x = _rng.randf_range(0.0, max_x)
+    green_zone.set_deferred("size", Vector2(green_width, green_zone.size.y))
+    green_zone.set_deferred("position", Vector2(_rng.randf_range(0.0, max_x), green_zone.position.y))
 
 func _show_result(success: bool) -> void:
     result_label.visible = true

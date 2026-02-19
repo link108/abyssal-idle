@@ -379,9 +379,170 @@
     "source": "vendor",
     "requires": [
       {
-        "type": "upgrade_purchased",
-        "value": "smoker"
+        "type": "always",
+        "value": true
       }
     ]
+  },
+  {
+    "category": "base",
+    "rarity": "Common",
+    "base_cost": 2,
+    "sell_value": 1,
+    "tags": [
+      "liquid",
+      "rare"
+    ],
+    "stack_size": 999,
+    "is_consumable": true,
+    "is_craftable": false,
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "ingredient_id": "blood",
+    "display_name": "Blood",
+    "description": "Rich fish blood used in sauces and curing."
+  },
+  {
+    "category": "base",
+    "rarity": "Common",
+    "base_cost": 4,
+    "sell_value": 2,
+    "tags": [
+      "dairy",
+      "rich"
+    ],
+    "stack_size": 999,
+    "is_consumable": true,
+    "is_craftable": false,
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "ingredient_id": "cream_base",
+    "display_name": "Cream Base",
+    "description": "Thick creamy base for rich brines."
+  },
+  {
+    "category": "base",
+    "rarity": "Common",
+    "base_cost": 5,
+    "sell_value": 2,
+    "tags": [
+      "sauce",
+      "dark"
+    ],
+    "stack_size": 999,
+    "is_consumable": true,
+    "is_craftable": false,
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "ingredient_id": "ink_sauce",
+    "display_name": "Ink Sauce",
+    "description": "Dark ink sauce with mineral depth."
+  },
+  {
+    "category": "base",
+    "rarity": "Common",
+    "base_cost": 3,
+    "sell_value": 1,
+    "tags": [
+      "oil",
+      "bitter"
+    ],
+    "stack_size": 999,
+    "is_consumable": true,
+    "is_craftable": false,
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "ingredient_id": "kelp_oil_bitter",
+    "display_name": "Bitter Kelp Oil",
+    "description": "Kelp oil with a sharp bitter finish."
+  },
+  {
+    "category": "base",
+    "rarity": "Common",
+    "base_cost": 4,
+    "sell_value": 2,
+    "tags": [
+      "brine",
+      "spice"
+    ],
+    "stack_size": 999,
+    "is_consumable": true,
+    "is_craftable": false,
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "ingredient_id": "mustard_brine_thick",
+    "display_name": "Thick Mustard Brine",
+    "description": "Viscous mustard brine with heat."
+  },
+  {
+    "category": "base",
+    "rarity": "Common",
+    "base_cost": 3,
+    "sell_value": 1,
+    "tags": [
+      "herb",
+      "aromatic"
+    ],
+    "stack_size": 999,
+    "is_consumable": true,
+    "is_craftable": false,
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "ingredient_id": "sea_fennel",
+    "display_name": "Sea Fennel",
+    "description": "Aromatic sea fennel fronds."
+  },
+  {
+    "category": "base",
+    "rarity": "Common",
+    "base_cost": 3,
+    "sell_value": 1,
+    "tags": [
+      "sweet",
+      "syrup"
+    ],
+    "stack_size": 999,
+    "is_consumable": true,
+    "is_craftable": false,
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "ingredient_id": "sweet_syrup",
+    "display_name": "Sweet Syrup",
+    "description": "Sweet syrup for glazing and balance."
   }
 ]

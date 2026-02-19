@@ -21,6 +21,58 @@ offset_top = 0.0
 offset_right = 0.0
 offset_bottom = 40.0
 
+[node name="ProcessPanel" type="VBoxContainer" parent="Control"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 110.0
+offset_right = 300.0
+offset_bottom = 370.0
+theme_override_constants/separation = 8
+
+[node name="PrepGroup" type="VBoxContainer" parent="Control/ProcessPanel"]
+layout_mode = 2
+
+[node name="PrepLabel" type="Label" parent="Control/ProcessPanel/PrepGroup"]
+layout_mode = 2
+text = "Prep (max 2)"
+
+[node name="PrepList" type="VBoxContainer" parent="Control/ProcessPanel/PrepGroup"]
+layout_mode = 2
+
+[node name="TransformGroup" type="VBoxContainer" parent="Control/ProcessPanel"]
+layout_mode = 2
+
+[node name="TransformLabel" type="Label" parent="Control/ProcessPanel/TransformGroup"]
+layout_mode = 2
+text = "Transform (max 1)"
+
+[node name="TransformList" type="VBoxContainer" parent="Control/ProcessPanel/TransformGroup"]
+layout_mode = 2
+
+[node name="HeatGroup" type="VBoxContainer" parent="Control/ProcessPanel"]
+layout_mode = 2
+
+[node name="HeatLabel" type="Label" parent="Control/ProcessPanel/HeatGroup"]
+layout_mode = 2
+text = "Heat (optional)"
+
+[node name="HeatList" type="VBoxContainer" parent="Control/ProcessPanel/HeatGroup"]
+layout_mode = 2
+
+[node name="PreserveGroup" type="VBoxContainer" parent="Control/ProcessPanel"]
+layout_mode = 2
+
+[node name="PreserveLabel" type="Label" parent="Control/ProcessPanel/PreserveGroup"]
+layout_mode = 2
+text = "Preserve (optional)"
+
+[node name="PreserveList" type="VBoxContainer" parent="Control/ProcessPanel/PreserveGroup"]
+layout_mode = 2
+
+[node name="FinishLabel" type="Label" parent="Control/ProcessPanel"]
+layout_mode = 2
+text = "Finish: Pack + Seal"
+
 [node name="MakeTinButton" type="Button" parent="Control"]
 layout_mode = 0
 offset_left = 620.0

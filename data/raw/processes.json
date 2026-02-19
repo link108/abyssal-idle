@@ -1,11 +1,13 @@
 [
   {
-    "process_id": "clean_fish",
-    "display_name": "Clean Fish",
+    "process_id": "clean",
+    "display_name": "Clean",
     "category": "prep",
     "description": "Remove scales, organs, and unwanted parts.",
     "base_duration_s": 5,
-    "required_equipment": [],
+    "required_equipment": [
+      "knife"
+    ],
     "adds_tags": [
       "cleaned"
     ],
@@ -18,16 +20,16 @@
     ]
   },
   {
-    "process_id": "fillet_fish",
-    "display_name": "Fillet Fish",
+    "process_id": "cut",
+    "display_name": "Cut",
     "category": "prep",
-    "description": "Separate the flesh into clean cuts.",
+    "description": "Cut fish into usable portions.",
     "base_duration_s": 6,
     "required_equipment": [
-      "fillet_station"
+      "knife"
     ],
     "adds_tags": [
-      "filleted"
+      "cut"
     ],
     "quality_modifier": 1,
     "requires": [
@@ -38,36 +40,156 @@
     ]
   },
   {
-    "process_id": "cut_steaks",
-    "display_name": "Cut Steaks",
+    "process_id": "extract",
+    "display_name": "Extract",
     "category": "prep",
-    "description": "Slice fish into thick steak cuts.",
-    "base_duration_s": 6,
-    "required_equipment": [
-      "butcher_block"
-    ],
-    "adds_tags": [
-      "steak_cut"
-    ],
-    "quality_modifier": 1,
-    "requires": [
-      {
-        "type": "always",
-        "value": true
-      }
-    ]
-  },
-  {
-    "process_id": "trim_special_cut",
-    "display_name": "Trim Special Cut",
-    "category": "prep",
-    "description": "Extract rare parts such as liver, heart, or roe.",
+    "description": "Extract special cuts and components.",
     "base_duration_s": 8,
     "required_equipment": [
-      "precision_tools"
+      "knife"
     ],
     "adds_tags": [
-      "special_cut"
+      "extracted"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "mix",
+    "display_name": "Mix",
+    "category": "transform",
+    "description": "Combine ingredients into a uniform mixture.",
+    "base_duration_s": 4,
+    "required_equipment": [
+      "mixing_vat"
+    ],
+    "adds_tags": [
+      "mixed"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "blend",
+    "display_name": "Blend",
+    "category": "transform",
+    "description": "Blend into a smooth texture.",
+    "base_duration_s": 6,
+    "required_equipment": [
+      "blender"
+    ],
+    "adds_tags": [
+      "blended"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "infuse",
+    "display_name": "Infuse",
+    "category": "transform",
+    "description": "Infuse ingredients for layered flavor.",
+    "base_duration_s": 7,
+    "required_equipment": [
+      "mixing_vat"
+    ],
+    "adds_tags": [
+      "infused"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "sear",
+    "display_name": "Sear",
+    "category": "heat",
+    "description": "Quick high-heat sear.",
+    "base_duration_s": 7,
+    "required_equipment": [
+      "stove"
+    ],
+    "adds_tags": [
+      "seared"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "simmer",
+    "display_name": "Simmer",
+    "category": "heat",
+    "description": "Slow, gentle simmering.",
+    "base_duration_s": 11,
+    "required_equipment": [
+      "stove"
+    ],
+    "adds_tags": [
+      "simmered"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "poach",
+    "display_name": "Poach",
+    "category": "heat",
+    "description": "Poach in seasoned liquid.",
+    "base_duration_s": 8,
+    "required_equipment": [
+      "stove"
+    ],
+    "adds_tags": [
+      "poached"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "smoke",
+    "display_name": "Smoke",
+    "category": "heat",
+    "description": "Slow smoke for deep flavor.",
+    "base_duration_s": 15,
+    "required_equipment": [
+      "smoker"
+    ],
+    "adds_tags": [
+      "smoked"
     ],
     "quality_modifier": 2,
     "requires": [
@@ -78,18 +200,18 @@
     ]
   },
   {
-    "process_id": "prepare_brine",
-    "display_name": "Prepare Brine",
-    "category": "liquid",
-    "description": "Mix salt and water into preserving brine.",
-    "base_duration_s": 4,
+    "process_id": "confit",
+    "display_name": "Confit",
+    "category": "heat",
+    "description": "Slow cook in oil at low heat.",
+    "base_duration_s": 20,
     "required_equipment": [
-      "mixing_vat"
+      "confit_station"
     ],
     "adds_tags": [
-      "brine_ready"
+      "confit"
     ],
-    "quality_modifier": 0,
+    "quality_modifier": 2,
     "requires": [
       {
         "type": "always",
@@ -100,8 +222,8 @@
   {
     "process_id": "brine_cure",
     "display_name": "Brine Cure",
-    "category": "preservation",
-    "description": "Submerge fish in brine for preservation.",
+    "category": "preserve",
+    "description": "Cure in brine to preserve and season.",
     "base_duration_s": 12,
     "required_equipment": [
       "curing_barrel"
@@ -120,8 +242,8 @@
   {
     "process_id": "salt_cure",
     "display_name": "Salt Cure",
-    "category": "preservation",
-    "description": "Cure fish using dry salt.",
+    "category": "preserve",
+    "description": "Dry salt cure to preserve.",
     "base_duration_s": 10,
     "required_equipment": [
       "drying_rack"
@@ -138,78 +260,18 @@
     ]
   },
   {
-    "process_id": "smoke_fish",
-    "display_name": "Smoke Fish",
-    "category": "heat",
-    "description": "Slow-smoke fish for deep flavor.",
-    "base_duration_s": 15,
+    "process_id": "dry",
+    "display_name": "Dry",
+    "category": "preserve",
+    "description": "Air dry to remove moisture.",
+    "base_duration_s": 14,
     "required_equipment": [
-      "smoker"
+      "drying_rack"
     ],
     "adds_tags": [
-      "smoked"
-    ],
-    "quality_modifier": 2,
-    "requires": [
-      {
-        "type": "always",
-        "value": true
-      }
-    ]
-  },
-  {
-    "process_id": "poach_fish",
-    "display_name": "Poach Fish",
-    "category": "heat",
-    "description": "Gently cook fish in liquid.",
-    "base_duration_s": 8,
-    "required_equipment": [
-      "stove"
-    ],
-    "adds_tags": [
-      "poached"
+      "dried"
     ],
     "quality_modifier": 1,
-    "requires": [
-      {
-        "type": "always",
-        "value": true
-      }
-    ]
-  },
-  {
-    "process_id": "slow_confit",
-    "display_name": "Slow Confit",
-    "category": "heat",
-    "description": "Cook slowly in oil at low temperature.",
-    "base_duration_s": 20,
-    "required_equipment": [
-      "confit_station"
-    ],
-    "adds_tags": [
-      "confit"
-    ],
-    "quality_modifier": 3,
-    "requires": [
-      {
-        "type": "always",
-        "value": true
-      }
-    ]
-  },
-  {
-    "process_id": "ferment",
-    "display_name": "Ferment",
-    "category": "aging",
-    "description": "Allow fish to ferment over time.",
-    "base_duration_s": 30,
-    "required_equipment": [
-      "fermentation_crock"
-    ],
-    "adds_tags": [
-      "fermented"
-    ],
-    "quality_modifier": 3,
     "requires": [
       {
         "type": "always",
@@ -220,54 +282,14 @@
   {
     "process_id": "pickle",
     "display_name": "Pickle",
-    "category": "preservation",
-    "description": "Preserve fish in acidic solution.",
+    "category": "preserve",
+    "description": "Pickle in acidic brine.",
     "base_duration_s": 14,
     "required_equipment": [
       "pickling_jar"
     ],
     "adds_tags": [
       "pickled"
-    ],
-    "quality_modifier": 2,
-    "requires": [
-      {
-        "type": "always",
-        "value": true
-      }
-    ]
-  },
-  {
-    "process_id": "sear_blacken",
-    "display_name": "Sear & Blacken",
-    "category": "heat",
-    "description": "Cook at high heat for charred crust.",
-    "base_duration_s": 7,
-    "required_equipment": [
-      "iron_pan"
-    ],
-    "adds_tags": [
-      "blackened"
-    ],
-    "quality_modifier": 2,
-    "requires": [
-      {
-        "type": "always",
-        "value": true
-      }
-    ]
-  },
-  {
-    "process_id": "blend_into_pate",
-    "display_name": "Blend into Pâté",
-    "category": "refine",
-    "description": "Blend cooked fish into a smooth spread.",
-    "base_duration_s": 6,
-    "required_equipment": [
-      "blender"
-    ],
-    "adds_tags": [
-      "spread"
     ],
     "quality_modifier": 1,
     "requires": [
@@ -278,16 +300,56 @@
     ]
   },
   {
-    "process_id": "pack_in_tin",
-    "display_name": "Pack in Tin",
-    "category": "finishing",
-    "description": "Place prepared fish into tin.",
+    "process_id": "pack_in_oil",
+    "display_name": "Pack In Oil",
+    "category": "preserve",
+    "description": "Pack in oil for flavor and preservation.",
+    "base_duration_s": 6,
+    "required_equipment": [
+      "mixing_vat"
+    ],
+    "adds_tags": [
+      "oil_packed"
+    ],
+    "quality_modifier": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "ferment",
+    "display_name": "Ferment",
+    "category": "preserve",
+    "description": "Ferment to develop deep umami.",
+    "base_duration_s": 30,
+    "required_equipment": [
+      "fermentation_crock"
+    ],
+    "adds_tags": [
+      "fermented"
+    ],
+    "quality_modifier": 2,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "process_id": "tin_pack",
+    "display_name": "Tin Pack",
+    "category": "finish",
+    "description": "Pack into tins for sealing.",
     "base_duration_s": 3,
     "required_equipment": [
       "canning_table"
     ],
     "adds_tags": [
-      "tinned"
+      "packed"
     ],
     "quality_modifier": 0,
     "requires": [
@@ -298,10 +360,10 @@
     ]
   },
   {
-    "process_id": "seal_can",
-    "display_name": "Seal Can",
-    "category": "finishing",
-    "description": "Hermetically seal the tin.",
+    "process_id": "tin_seal",
+    "display_name": "Tin Seal",
+    "category": "finish",
+    "description": "Seal tins for storage.",
     "base_duration_s": 4,
     "required_equipment": [
       "canning_press"

@@ -1,5 +1,26 @@
 [
   {
+    "equipment_id": "knife",
+    "display_name": "Knife",
+    "category": "prep",
+    "description": "Basic knife for cleaning and cutting.",
+    "tier": 1,
+    "base_cost": 30,
+    "upgradeable": false,
+    "max_level": 1,
+    "base_speed_multiplier": 1,
+    "capacity": 1,
+    "tags": [
+      "prep"
+    ],
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
     "equipment_id": "fillet_station",
     "display_name": "Fillet Station",
     "category": "prep",
@@ -257,7 +278,7 @@
     "equipment_id": "blender",
     "display_name": "Industrial Blender",
     "category": "refine",
-    "description": "High-speed blender for pâtés and spreads.",
+    "description": "High-speed blender for p\u00e2t\u00e9s and spreads.",
     "tier": 2,
     "base_cost": 350,
     "upgradeable": true,

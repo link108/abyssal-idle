@@ -204,7 +204,7 @@ func _update_prestige_button() -> void:
 func _update_ocean_health_ui() -> void:
     var ratio: float = GameState.get_ocean_health_ratio()
     var bar_size: Vector2 = ocean_health_bar.size
-    ocean_health_fill.size = Vector2(bar_size.x * ratio, bar_size.y)
+    ocean_health_fill.set_deferred("size", Vector2(bar_size.x * ratio, bar_size.y))
     ocean_health_fill.color = _get_ocean_health_color(ratio)
 
 func _get_ocean_health_color(ratio: float) -> Color:

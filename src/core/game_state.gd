@@ -44,6 +44,7 @@ const SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL := 0.01
 const INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL := 1
 const INDUSTRIAL_TIN_TIME_ADD_PER_LEVEL := -0.1
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
+const DataRegistry = preload("res://src/data/data_registry.gd")
 
 # Economy
 var fish_count: int = 0
@@ -77,7 +78,8 @@ var meta_state: Dictionary = {
     "discovered_fish_ids": [],
     "fish_lifetime_stats": {},
     "discovered_recipe_ids": [],
-    "recipe_lifetime_stats": {}
+    "recipe_lifetime_stats": {},
+    "owned_equipment_ids": []
 }
 
 # Upgrades: Cannery
@@ -123,6 +125,19 @@ var fish_name_to_id: Dictionary = {}
 var recipe_defs: Array = []
 var recipe_defs_by_id: Dictionary = {}
 var recipe_ids_by_fish_id: Dictionary = {}
+var process_defs: Array = []
+var process_defs_by_id: Dictionary = {}
+var equipment_defs: Array = []
+var equipment_defs_by_id: Dictionary = {}
+var selected_processes: Dictionary = {
+    "prep": [],
+    "transform": [],
+    "heat": [],
+    "preserve": []
+}
+var last_tin_process_ids: Array = []
+var last_tin_process_tags: Array = []
+var _data_validated: bool = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -130,8 +145,26 @@ func _ready() -> void:
     _load_skill_tree()
     _load_fish_defs()
     _load_recipe_defs()
-    _validate_requires_data_dev()
+    _load_process_defs()
+    _load_equipment_defs()
+    _ensure_default_equipment_ownership()
+    _run_data_validation()
     _rng.randomize()
+
+func _run_data_validation() -> void:
+    if _data_validated:
+        return
+    _data_validated = true
+    if not OS.is_debug_build():
+        return
+    var validators_script: Script = load("res://src/data/validators.gd")
+    if validators_script == null:
+        push_error("Data validation: failed to load res://src/data/validators.gd")
+        assert(false)
+        return
+    var registry := DataRegistry.new()
+    registry.load_all(true)
+    validators_script.call("validate_all", registry)
 
 func save_game() -> void:
     var data := {
@@ -222,7 +255,8 @@ func new_game() -> void:
         "discovered_fish_ids": [],
         "fish_lifetime_stats": {},
         "discovered_recipe_ids": [],
-        "recipe_lifetime_stats": {}
+        "recipe_lifetime_stats": {},
+        "owned_equipment_ids": []
     }
     reputation_changed.emit()
     skills_changed.emit()
@@ -329,6 +363,8 @@ func _normalize_meta_state() -> void:
         meta_state["discovered_recipe_ids"] = []
     if not meta_state.has("recipe_lifetime_stats"):
         meta_state["recipe_lifetime_stats"] = {}
+    if not meta_state.has("owned_equipment_ids"):
+        meta_state["owned_equipment_ids"] = []
     if typeof(meta_state["discovered_fish_ids"]) != TYPE_ARRAY:
         meta_state["discovered_fish_ids"] = []
     if typeof(meta_state["fish_lifetime_stats"]) != TYPE_DICTIONARY:
@@ -337,6 +373,8 @@ func _normalize_meta_state() -> void:
         meta_state["discovered_recipe_ids"] = []
     if typeof(meta_state["recipe_lifetime_stats"]) != TYPE_DICTIONARY:
         meta_state["recipe_lifetime_stats"] = {}
+    if typeof(meta_state["owned_equipment_ids"]) != TYPE_ARRAY:
+        meta_state["owned_equipment_ids"] = []
     var discovered: Array = meta_state["discovered_fish_ids"]
     var all_stats: Dictionary = meta_state["fish_lifetime_stats"]
     for fish_id in all_stats.keys():
@@ -355,6 +393,17 @@ func _normalize_meta_state() -> void:
         if int(stats.get("produced", 0)) > 0 and not discovered_recipes.has(str(recipe_id)):
             discovered_recipes.append(str(recipe_id))
     meta_state["discovered_recipe_ids"] = discovered_recipes
+
+func _ensure_default_equipment_ownership() -> void:
+    var owned: Array = meta_state.get("owned_equipment_ids", [])
+    if typeof(owned) != TYPE_ARRAY:
+        owned = []
+    if not owned.is_empty():
+        return
+    var equipment_ids: Array = []
+    for equipment_id in equipment_defs_by_id.keys():
+        equipment_ids.append(str(equipment_id))
+    meta_state["owned_equipment_ids"] = equipment_ids
 
 func _normalize_policy_state() -> void:
     if typeof(chosen_exclusive_groups) != TYPE_DICTIONARY:
@@ -432,6 +481,9 @@ func make_tin_with(_method_id: String, _ingredient_id: String) -> bool:
     tin_count += 1
     if _ingredient_id == "garlic":
         garlic_count -= 1
+    var process_sequence: Array = build_process_sequence()
+    last_tin_process_ids = process_sequence
+    last_tin_process_tags = get_process_tags(process_sequence)
     var consumed_fish_id := _consume_fish_from_stock()
     if consumed_fish_id != "":
         _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", 1)
@@ -670,8 +722,10 @@ func _load_recipe_defs() -> void:
         if recipe_id == "":
             continue
         recipe_defs_by_id[recipe_id] = recipe_def
-        var required_fish_name := str(recipe_def.get("required_fish_name", ""))
-        var fish_id := str(fish_name_to_id.get(required_fish_name, ""))
+        var fish_id := str(recipe_def.get("required_fish_id", ""))
+        if fish_id == "":
+            var required_fish_name := str(recipe_def.get("required_fish_name", ""))
+            fish_id = str(fish_name_to_id.get(required_fish_name, ""))
         if fish_id == "":
             continue
         if not recipe_ids_by_fish_id.has(fish_id):
@@ -679,6 +733,46 @@ func _load_recipe_defs() -> void:
         var ids: Array = recipe_ids_by_fish_id[fish_id]
         ids.append(recipe_id)
         recipe_ids_by_fish_id[fish_id] = ids
+
+func _load_process_defs() -> void:
+    process_defs.clear()
+    process_defs_by_id.clear()
+    if not FileAccess.file_exists(PROCESS_DATA_PATH):
+        return
+    var file := FileAccess.open(PROCESS_DATA_PATH, FileAccess.READ)
+    if file == null:
+        return
+    var parsed = JSON.parse_string(file.get_as_text())
+    if typeof(parsed) != TYPE_ARRAY:
+        return
+    process_defs = parsed
+    for process_def in process_defs:
+        if typeof(process_def) != TYPE_DICTIONARY:
+            continue
+        var process_id := str(process_def.get("process_id", ""))
+        if process_id == "":
+            continue
+        process_defs_by_id[process_id] = process_def
+
+func _load_equipment_defs() -> void:
+    equipment_defs.clear()
+    equipment_defs_by_id.clear()
+    if not FileAccess.file_exists(EQUIPMENT_DATA_PATH):
+        return
+    var file := FileAccess.open(EQUIPMENT_DATA_PATH, FileAccess.READ)
+    if file == null:
+        return
+    var parsed = JSON.parse_string(file.get_as_text())
+    if typeof(parsed) != TYPE_ARRAY:
+        return
+    equipment_defs = parsed
+    for equipment_def in equipment_defs:
+        if typeof(equipment_def) != TYPE_DICTIONARY:
+            continue
+        var equipment_id := str(equipment_def.get("equipment_id", ""))
+        if equipment_id == "":
+            continue
+        equipment_defs_by_id[equipment_id] = equipment_def
 
 func _validate_requires_data_dev() -> void:
     if not OS.is_debug_build():
@@ -773,6 +867,88 @@ func get_collection_fish_defs() -> Array:
 
 func get_collection_recipe_defs() -> Array:
     return recipe_defs
+
+func get_process_defs() -> Array:
+    return process_defs
+
+func get_process_defs_by_category() -> Dictionary:
+    var out: Dictionary = {
+        "prep": [],
+        "transform": [],
+        "heat": [],
+        "preserve": [],
+        "finish": []
+    }
+    for process_def in process_defs:
+        if typeof(process_def) != TYPE_DICTIONARY:
+            continue
+        var category := str(process_def.get("category", ""))
+        if not out.has(category):
+            out[category] = []
+        var entries: Array = out[category]
+        entries.append(process_def)
+        out[category] = entries
+    return out
+
+func get_process_def(process_id: String) -> Dictionary:
+    var def: Dictionary = process_defs_by_id.get(process_id, {})
+    if typeof(def) != TYPE_DICTIONARY:
+        return {}
+    return def
+
+func set_selected_processes(category: String, process_ids: Array) -> void:
+    if not selected_processes.has(category):
+        selected_processes[category] = []
+    selected_processes[category] = process_ids.duplicate()
+
+func get_selected_processes(category: String) -> Array:
+    if not selected_processes.has(category):
+        return []
+    return (selected_processes[category] as Array).duplicate()
+
+func build_process_sequence() -> Array:
+    var sequence: Array = []
+    var prep: Array = selected_processes.get("prep", [])
+    var transform: Array = selected_processes.get("transform", [])
+    var heat: Array = selected_processes.get("heat", [])
+    var preserve: Array = selected_processes.get("preserve", [])
+    for pid in prep:
+        sequence.append(str(pid))
+    if transform.size() > 0:
+        sequence.append(str(transform[0]))
+    if heat.size() > 0:
+        sequence.append(str(heat[0]))
+    if preserve.size() > 0:
+        sequence.append(str(preserve[0]))
+    sequence.append("tin_pack")
+    sequence.append("tin_seal")
+    return sequence
+
+func get_process_tags(process_ids: Array) -> Array:
+    var tags: Array = []
+    for pid in process_ids:
+        var process_def: Dictionary = get_process_def(str(pid))
+        if process_def.is_empty():
+            continue
+        var adds_tags: Array = process_def.get("adds_tags", [])
+        if typeof(adds_tags) != TYPE_ARRAY:
+            continue
+        for tag in adds_tags:
+            if typeof(tag) != TYPE_STRING:
+                continue
+            if not tags.has(tag):
+                tags.append(tag)
+    return tags
+
+func owns_equipment(equipment_id: String) -> bool:
+    if equipment_id == "":
+        return false
+    var owned: Array = meta_state.get("owned_equipment_ids", [])
+    return owned.has(equipment_id)
+
+func get_owned_equipment_ids() -> Array:
+    var owned: Array = meta_state.get("owned_equipment_ids", [])
+    return owned.duplicate()
 
 func is_fish_discovered(fish_id: String) -> bool:
     var discovered: Array = meta_state.get("discovered_fish_ids", [])

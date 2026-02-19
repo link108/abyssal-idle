@@ -836,5 +836,71 @@
       "sort_order": 1051
     },
     "policy_stage": 5
+  },
+  {
+    "upgrade_id": "reinforced_net",
+    "display_name": "Reinforced Net",
+    "description": "Tackle stronger deep-sea predators.",
+    "category": "fishing",
+    "tier": 3,
+    "max_level": 1,
+    "base_cost": 350,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "effects": [],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "pressure_hull",
+    "display_name": "Pressure Hull",
+    "description": "Withstand crushing abyssal depths.",
+    "category": "fishing",
+    "tier": 4,
+    "max_level": 1,
+    "base_cost": 500,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "effects": [],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
+  },
+  {
+    "upgrade_id": "silt_sonar",
+    "display_name": "Silt Sonar",
+    "description": "Detect movement in heavy siltfields.",
+    "category": "fishing",
+    "tier": 2,
+    "max_level": 1,
+    "base_cost": 250,
+    "cost_model": {
+      "type": "exponential",
+      "mult": 1
+    },
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "effects": [],
+    "exclusive_group_id": null,
+    "exclusive_choice": false
   }
 ]
