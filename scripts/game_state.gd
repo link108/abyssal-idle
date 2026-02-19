@@ -18,7 +18,7 @@ const RECIPE_DATA_PATH := "res://data/recipes.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
-const SAVE_VERSION := 9
+const SAVE_VERSION := 10
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -281,6 +281,8 @@ func _migrate_save(version: int) -> void:
     if version < 9:
         _normalize_meta_state()
         _reconcile_recipe_state()
+    if version < 10:
+        _reset_recipe_tracking_from_inventory()
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -386,7 +388,7 @@ func make_tin_with(_method_id: String, _ingredient_id: String) -> bool:
     if recipe_id != "":
         _mark_recipe_discovered(recipe_id)
         _increment_recipe_lifetime_stat(recipe_id, "produced", 1)
-    var key: String = recipe_id if recipe_id != "" else _make_tin_key(_method_id, _ingredient_id)
+    var key: String = _make_tin_key(_method_id, _ingredient_id)
     tin_inventory[key] = int(tin_inventory.get(key, 0)) + 1
     _unlock_recipe(recipe_id, _method_id, _ingredient_id)
     changed.emit()
@@ -836,10 +838,6 @@ func _reconcile_fish_stock() -> void:
 
 func _reconcile_recipe_state() -> void:
     var discovered: Array = meta_state.get("discovered_recipe_ids", [])
-    for entry in recipes_unlocked:
-        var recipe_id := str(entry)
-        if recipe_defs_by_id.has(recipe_id) and not discovered.has(recipe_id):
-            discovered.append(recipe_id)
     meta_state["discovered_recipe_ids"] = discovered
 
     var all_stats: Dictionary = meta_state.get("recipe_lifetime_stats", {})
@@ -855,6 +853,23 @@ func _reconcile_recipe_state() -> void:
         if inv_count > produced:
             stats["produced"] = inv_count
         all_stats[recipe_id] = stats
+    meta_state["recipe_lifetime_stats"] = all_stats
+
+func _reset_recipe_tracking_from_inventory() -> void:
+    var discovered: Array = []
+    var all_stats: Dictionary = {}
+    for key in tin_inventory.keys():
+        var recipe_id := str(key)
+        if not recipe_defs_by_id.has(recipe_id):
+            continue
+        if not discovered.has(recipe_id):
+            discovered.append(recipe_id)
+        var produced := int(tin_inventory[key])
+        all_stats[recipe_id] = {
+            "produced": produced,
+            "revenue_generated": 0
+        }
+    meta_state["discovered_recipe_ids"] = discovered
     meta_state["recipe_lifetime_stats"] = all_stats
 
 func get_skill_defs() -> Array:

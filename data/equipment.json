@@ -1,0 +1,243 @@
+[
+  {
+    "equipment_id": "fillet_station",
+    "display_name": "Fillet Station",
+    "category": "prep",
+    "description": "A reinforced cutting table designed for precise filleting.",
+    "tier": 1,
+    "base_cost": 150,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 1,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 100 }
+    ],
+    "tags": ["precision", "prep"]
+  },
+  {
+    "equipment_id": "butcher_block",
+    "display_name": "Butcher Block",
+    "category": "prep",
+    "description": "Heavy wooden block for cutting steaks and large fish.",
+    "tier": 1,
+    "base_cost": 120,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 1,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 75 }
+    ],
+    "tags": ["heavy_cut", "prep"]
+  },
+  {
+    "equipment_id": "precision_tools",
+    "display_name": "Precision Tools",
+    "category": "prep",
+    "description": "Fine instruments for extracting rare cuts.",
+    "tier": 2,
+    "base_cost": 300,
+    "upgradeable": true,
+    "max_level": 2,
+    "base_speed_multiplier": 1.0,
+    "capacity": 1,
+    "unlock_conditions": [
+      { "type": "depth_tier_at_least", "value": 2 }
+    ],
+    "tags": ["special_cut"]
+  },
+  {
+    "equipment_id": "mixing_vat",
+    "display_name": "Mixing Vat",
+    "category": "liquid",
+    "description": "Large vat for preparing brine and sauces.",
+    "tier": 1,
+    "base_cost": 80,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 2,
+    "unlock_conditions": [
+      { "type": "always", "value": true }
+    ],
+    "tags": ["liquid_processing"]
+  },
+  {
+    "equipment_id": "curing_barrel",
+    "display_name": "Curing Barrel",
+    "category": "preservation",
+    "description": "Barrel used for brine curing fish.",
+    "tier": 1,
+    "base_cost": 200,
+    "upgradeable": true,
+    "max_level": 4,
+    "base_speed_multiplier": 1.0,
+    "capacity": 2,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 150 }
+    ],
+    "tags": ["curing"]
+  },
+  {
+    "equipment_id": "drying_rack",
+    "display_name": "Drying Rack",
+    "category": "preservation",
+    "description": "Rack for dry curing and dehydration.",
+    "tier": 1,
+    "base_cost": 180,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 2,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 125 }
+    ],
+    "tags": ["drying"]
+  },
+  {
+    "equipment_id": "smoker",
+    "display_name": "Smoker",
+    "category": "heat",
+    "description": "Enclosed chamber for slow-smoking fish.",
+    "tier": 2,
+    "base_cost": 400,
+    "upgradeable": true,
+    "max_level": 4,
+    "base_speed_multiplier": 1.0,
+    "capacity": 2,
+    "unlock_conditions": [
+      { "type": "depth_tier_at_least", "value": 1 }
+    ],
+    "tags": ["smoking"]
+  },
+  {
+    "equipment_id": "stove",
+    "display_name": "Industrial Stove",
+    "category": "heat",
+    "description": "Basic cooking station for poaching and searing.",
+    "tier": 1,
+    "base_cost": 220,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 2,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 175 }
+    ],
+    "tags": ["heat"]
+  },
+  {
+    "equipment_id": "confit_station",
+    "display_name": "Confit Station",
+    "category": "heat",
+    "description": "Low-temperature oil bath for slow confit cooking.",
+    "tier": 3,
+    "base_cost": 750,
+    "upgradeable": true,
+    "max_level": 2,
+    "base_speed_multiplier": 1.0,
+    "capacity": 1,
+    "unlock_conditions": [
+      { "type": "depth_tier_at_least", "value": 3 }
+    ],
+    "tags": ["luxury"]
+  },
+  {
+    "equipment_id": "fermentation_crock",
+    "display_name": "Fermentation Crock",
+    "category": "aging",
+    "description": "Sealed ceramic vessel for long fermentation.",
+    "tier": 2,
+    "base_cost": 500,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 1,
+    "unlock_conditions": [
+      { "type": "depth_tier_at_least", "value": 2 }
+    ],
+    "tags": ["fermentation"]
+  },
+  {
+    "equipment_id": "pickling_jar",
+    "display_name": "Pickling Jar",
+    "category": "preservation",
+    "description": "Glass vessel for vinegar-based preservation.",
+    "tier": 1,
+    "base_cost": 160,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 2,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 120 }
+    ],
+    "tags": ["pickling"]
+  },
+  {
+    "equipment_id": "iron_pan",
+    "display_name": "Iron Pan",
+    "category": "heat",
+    "description": "Heavy pan used for searing and blackening.",
+    "tier": 1,
+    "base_cost": 140,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 1,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 100 }
+    ],
+    "tags": ["searing"]
+  },
+  {
+    "equipment_id": "blender",
+    "display_name": "Industrial Blender",
+    "category": "refine",
+    "description": "High-speed blender for pâtés and spreads.",
+    "tier": 2,
+    "base_cost": 350,
+    "upgradeable": true,
+    "max_level": 3,
+    "base_speed_multiplier": 1.0,
+    "capacity": 1,
+    "unlock_conditions": [
+      { "type": "depth_tier_at_least", "value": 1 }
+    ],
+    "tags": ["refinement"]
+  },
+  {
+    "equipment_id": "canning_table",
+    "display_name": "Canning Table",
+    "category": "finishing",
+    "description": "Work table for packing tins.",
+    "tier": 1,
+    "base_cost": 100,
+    "upgradeable": true,
+    "max_level": 5,
+    "base_speed_multiplier": 1.0,
+    "capacity": 3,
+    "unlock_conditions": [
+      { "type": "always", "value": true }
+    ],
+    "tags": ["canning"]
+  },
+  {
+    "equipment_id": "canning_press",
+    "display_name": "Canning Press",
+    "category": "finishing",
+    "description": "Mechanical press for sealing tins airtight.",
+    "tier": 1,
+    "base_cost": 250,
+    "upgradeable": true,
+    "max_level": 5,
+    "base_speed_multiplier": 1.0,
+    "capacity": 2,
+    "unlock_conditions": [
+      { "type": "money_at_least", "value": 200 }
+    ],
+    "tags": ["canning", "sealed"]
+  }
+]
+

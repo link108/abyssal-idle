@@ -1,284 +1,317 @@
-# Abyssal Idle — Milestone Planning: Collections Page
+# Milestone Planning: Recipe Discovery Systems
 
-This document defines the Collections Page feature.
+Goal: Implement a player-friendly recipe discovery loop that scales to a large search space while staying “idle game” friendly.
 
-Purpose:
-- Reinforce long-term engagement and replay.
-- Support prestige and multi-run goals.
-- Provide visibility into fish and recipe discovery.
-- Surface fun stats and progression without cluttering the main screen.
+Core combo:
 
-Collections must persist across runs.
+* Tag-based scoring system
+* Silhouette unlocks
+* Experimental log
 
----
+This plan assumes you already have data files:
 
-# Milestone Goal
-
-Ship a functional Collections Page accessible from the main screen that:
-
-- Has a left sidebar for collection categories.
-- Displays discovered + undiscovered items.
-- Shows greyed-out placeholders for undiscovered entries.
-- Supports configurable hidden hover messages.
-- Allows clicking a fish to view detailed stats.
-- Persists collection state across runs.
+* `fish.json`
+* `recipes.json`
+* `ingredients.json`
+* `processes.json`
+* `equipment.json`
 
 ---
 
-# High-Level UX Structure
+## Milestone 0: Data Contract + Validation (Foundation)
 
-## Entry Point
-- Button on Main Screen labeled “Collections”
-- Opens modal or full-screen panel
+### 0.1 Define canonical IDs and references
 
-## Layout
+* Fish are keyed by `fish_id`
+* Recipes are keyed by `recipe_id`
+* Ingredients are keyed by `ingredient_id`
+* Processes are keyed by `process_id`
+* Equipment is keyed by `equipment_id`
 
-Left Sidebar:
-- Category list (vertical)
-  - Fish
-  - Recipes
-  - (Future: Ingredients, Achievements, Oceans, etc)
+### 0.2 Implement data loading
 
-Right Panel:
-- Grid of collection items for selected category
-- Clicking an item opens detail panel
+* Load all JSON files at game start
+* Build lookup maps:
 
----
+  * `fish_by_id`
+  * `recipe_by_id`
+  * `ingredient_by_id`
+  * `process_by_id`
+  * `equipment_by_id`
 
-# Category 1 — Fish Collection
+### 0.3 Implement validation pass
 
-## Grid View Requirements
+Validate and hard-fail with actionable errors:
 
-Each grid slot represents one fish type.
+* Unique IDs per file
+* Recipe `required_fish_name` or `required_fish_id` aligns with fish list (prefer `required_fish_id` soon)
+* Recipe `ingredients[*].item_id` exists in `ingredients.json` OR is a fish pseudo-item like `fish_<fish_id>`
+* Recipe `processes[*]` exists in `processes.json`
+* Processes’ `required_equipment[*]` exist in `equipment.json`
 
-States:
-- Discovered
-- Undiscovered (placeholder)
+### 0.4 Define the “attempt” schema (player-created recipes)
 
-### Discovered Fish
-- Full color icon
-- Name visible
-- Rarity indicator (if implemented later)
+A “recipe attempt” is what the player assembles:
 
-### Undiscovered Fish
-- Greyed-out icon silhouette
-- Hidden name
-- Hover tooltip text (configurable per fish)
-  Example:
-  - “This fish can be found really deep.”
-  - “Thrives in cold waters.”
-  - “Appears when the ocean is unstable.”
+* `fish_id`
+* `ingredient_ids[]` + quantities
+* `process_ids[]` (ordered)
+* `timestamp`
+* `result`: score, matched recipe (if any), output item, notes
 
-Tooltip must be data-driven per fish.
+Deliverable:
 
----
-
-## Fish Detail View (Click Interaction)
-
-Clicking a discovered fish opens a detail panel.
-
-Display:
-
-Core Info:
-- Fish name
-- Icon
-- Short flavor description
-- Rarity tier
-
-Stats:
-- Total caught (lifetime)
-- Total sold (lifetime)
-- Total tins produced using this fish
-- Highest quality caught
-- First discovered timestamp (optional)
-- Largest single haul (optional future stat)
-
-Optional:
-- Ocean health range where discovered
-- Runs discovered in
-
-All stats must persist across prestiges.
+* Data loads reliably
+* Clear validation errors
+* A single in-memory representation for fish/recipe/process/ingredient/equipment
 
 ---
 
-# Category 2 — Recipe Collection
+## Milestone 1: Experimental Log (Quality-of-Life Backbone)
 
-Recipes represent processing methods or tin types.
+### 1.1 Log persistence
 
-## Grid View
+* Create an `experiment_log.json` save file (or embed inside your save)
+* Store each attempt with:
 
-Same pattern as fish:
+  * `attempt_id`
+  * `fish_id`
+  * `ingredient_ids` (and qty)
+  * `process_ids` (ordered)
+  * `score` summary fields
+  * `matched_recipe_id` (nullable)
+  * `created_at`
 
-Discovered:
-- Full icon
-- Recipe name
-- Small summary line
+### 1.2 Log UI
 
-Undiscovered:
-- Grey placeholder
-- Hover hint
-  Example:
-  - “Requires advanced processing.”
-  - “Unlocked through sustainable methods.”
-  - “Requires prestige upgrades.”
+* A simple list view:
 
----
+  * Shows fish icon/name, top tags, score %, “Discovered!” if exact match
+  * Sort options:
 
-## Recipe Detail View
+    * Recent
+    * Highest score
+    * Same fish
+* Selecting an entry opens details:
 
-Display:
+  * Full ingredient list
+  * Process sequence
+  * Score breakdown
 
-Core Info:
-- Recipe name
-- Ingredients required
-- Processing time
-- Quality impact
-- Value multiplier
+### 1.3 “Refine attempt” workflow
 
-Stats:
-- Total tins produced with recipe
-- Highest quality produced
-- Revenue generated by this recipe
+* Button: “Refine”
 
----
+  * Prefills crafting UI with ingredients/processes from selected attempt
+  * Player can adjust one element and re-run
 
-# Data Model Requirements
+Deliverable:
 
-Collections must be data-driven.
-
-Each fish definition must include:
-- id
-- display_name
-- description
-- rarity
-- icon_reference
-- hidden_tooltip_message
-- discovery_condition
-
-Each recipe definition must include:
-- id
-- display_name
-- description
-- icon_reference
-- hidden_tooltip_message
-- unlock_condition
-
-Discovery state must persist in MetaState.
-
-Track:
-- discovered_items[]
-- lifetime_stats_per_fish
-- lifetime_stats_per_recipe
+* Attempts are saved
+* Attempts are reviewable
+* Attempts can be used as iteration starting points
 
 ---
 
-# Persistence Rules
+## Milestone 2: Tag Model (The Language of Discovery)
 
-Collection progress persists across:
-- Prestiges
-- Runs
-- Endings
+### 2.1 Add tags to ingredients/processes/equipment
 
-Run-specific stats may reset, but lifetime stats must accumulate.
+* Ensure every ingredient has `tags[]`
+* Ensure every process has `adds_tags[]`
+* Optionally give fish `tags[]` (already present)
 
-Version save schema must support:
-- New fish added later
-- New recipes added later
-- Safe defaults for undiscovered items
+### 2.2 Compute attempt tag set
 
----
+Given an attempt:
 
-# Discovery Logic
+* Start with fish tags
+* Add ingredient tags
+* Add tags from each process’s `adds_tags`
+* Optionally add “derived tags”:
 
-Fish become discovered when:
-- Caught for the first time
+  * If any acid ingredient present → `acidic`
+  * If any oil ingredient present → `oily`
+  * If includes `trim_special_cut` → `special_cut`
 
-Recipes become discovered when:
-- Crafted for the first time
-- Or unlocked via upgrade
+### 2.3 Define recipe tag signature
 
-Undiscovered items must still render placeholder entries in grid.
+For each recipe in `recipes.json`, compute a “signature”:
 
----
+* Fish requirement (hard gate)
+* Required ingredients (hard or soft gate; start as hard)
+* Required processes (hard or soft; start as hard)
+* Target tags (soft scoring)
 
-# Placeholder System Requirements
+Deliverable:
 
-For undiscovered entries:
-
-- Grey silhouette icon
-- Tooltip pulled from data definition
-- Tooltip text configurable per item
-- Tooltip should not spoil full mechanics
-
-System must allow:
-- Completely hidden (???) name
-- Partial reveal (e.g., “Deepwater ???”)
+* Attempt tags are computed consistently
+* Every recipe has a comparable tag signature
 
 ---
 
-# UI Behavior Requirements
+## Milestone 3: Tag-Based Scoring (Hot/Cold Without Spoiling)
 
-- Sidebar selection switches category without reloading entire screen.
-- Grid scrollable if needed.
-- Detail panel should not block sidebar navigation.
-- Clicking outside detail panel closes it (if modal).
-- Keyboard/Controller navigation future-proofed (optional).
+### 3.1 Scoring algorithm (v1)
 
----
+Score attempt vs each recipe candidate for the same fish:
 
-# Future Expansion Hooks
+* Ingredient match score
 
-Collections page should be extensible to support:
+  * exact ingredient IDs match: +X
+  * tag overlap: +Y
+* Process match score
 
-- Ingredients
-- Achievements
-- Oceans visited
-- Prestige milestones
-- Endings unlocked
+  * exact process IDs match: +X
+  * tag overlap: +Y
+* Penalties
 
-Design with modular category system.
+  * extra ingredients: -p
+  * missing key process: -p
 
----
+Pick best candidate and produce:
 
-# Balancing & Engagement Role
+* `best_recipe_id`
+* `score_percent`
+* `missing_hints[]` (derived)
 
-Collections must:
-- Encourage replay.
-- Reinforce sustainability vs industrial consequences.
-- Support rare fish gating behind ocean health conditions.
-- Provide tangible reason to pursue dual mastery ending.
+### 3.2 Hint generation rules
 
-Rare fish should:
-- Only appear at high ocean health.
-- Or only appear at low ocean health (mutated types).
+Show only 1–2 hints max, prefer vague:
 
-This reinforces path experimentation.
+* “Needs more acidity.”
+* “This wants smoke.”
+* “A special cut is expected.”
 
----
+Avoid leaking exact items early.
 
-# Development Order
+### 3.3 Feedback UI
 
-1. Build static sidebar + grid layout.
-2. Implement fish category with placeholder logic.
-3. Add persistent discovery tracking.
-4. Add fish detail panel with stats.
-5. Implement recipes category.
-6. Add lifetime stat tracking.
-7. Polish UI visuals and icon consistency.
+On craft completion:
 
-Do not:
-- Overcomplicate with animations early.
-- Add too many fish types before first ending exists.
-- Add recipe branching before core loop is stable.
+* Show score meter (0–100%)
+* If score >= threshold (e.g., 70%): show a silhouette entry appears
+* If exact match: show “Recipe Discovered!”
+
+Deliverable:
+
+* Players get a readable “closer/farther” signal
+* Players can iterate using experimental log
 
 ---
 
-# Success Criteria
+## Milestone 4: Silhouette Unlock System (Recipe Book Progression)
 
-- Player can see all possible fish slots, even undiscovered.
-- Undiscovered entries show meaningful but vague hints.
-- Clicking a discovered fish shows accurate lifetime stats.
-- Data persists across prestiges.
-- Page feels rewarding, not overwhelming.
-- Supports long-term multi-prestige play.
+### 4.1 Recipe book entries
+
+Each recipe has a “discovery state”:
+
+* `undiscovered`
+* `hinted` (silhouette visible)
+* `discovered` (full visible)
+
+Persist per-recipe state in save.
+
+### 4.2 Triggering silhouettes
+
+When an attempt has:
+
+* `best_recipe_id` score >= silhouette_threshold
+  Then:
+* Mark that recipe as `hinted`
+
+### 4.3 Progressive reveal
+
+For `hinted` recipes, reveal partial fields based on “milestones”:
+
+* If fish matches: show fish name
+* If includes an acid ingredient tag: reveal “in Vinegar”
+* If includes smoking tag: reveal “Smoked”
+* If includes special_cut tag: reveal the cut word (Tongue/Liver/Heart) OR reveal “Special Cut” until discovered
+
+### 4.4 Completion / discovery
+
+When exact match occurs:
+
+* Set `discovered`
+* Reveal all details and unlock crafting directly from recipe book
+
+Deliverable:
+
+* Recipe book feels like exploration
+* Near-misses become visible goals
+
+---
+
+## Milestone 5: Equipment Gating + UX Polish
+
+### 5.1 Gate processes by equipment
+
+* If player lacks required equipment:
+
+  * process is disabled in UI
+  * tooltip shows missing equipment
+
+### 5.2 Suggested next actions (optional but strong)
+
+Based on scoring hints:
+
+* Show 1–3 “suggestions” in the UI:
+
+  * “Try an acid ingredient”
+  * “Try a smoking process”
+  * “Try brining”
+
+### 5.3 Balance knobs exposed
+
+Create constants in one place:
+
+* silhouette threshold
+* discovery threshold
+* scoring weights and penalties
+* max hints per attempt
+
+Deliverable:
+
+* Progression feels earned
+* Complexity unfolds gradually
+
+---
+
+## Milestone 6: Content Scaling + Modding Readiness
+
+### 6.1 Content pack format
+
+* Allow adding fish/recipes/ingredients/processes via additional JSON files
+* On boot: load base + mods
+* Validate all
+
+### 6.2 Debug tools (dev-only)
+
+* “Reveal all recipes” toggle
+* Print best-match recipe and score breakdown
+* Export experiment log
+
+Deliverable:
+
+* Easy to add 200+ fish/recipes later
+* Debuggable and iteration-friendly
+
+---
+
+## Notes for Implementation
+
+### Strong recommendation: reference IDs everywhere
+
+* Replace `required_fish_name` in `recipes.json` with `required_fish_id`.
+* In ingredients, treat fish as items consistently:
+
+  * Option A: `fish_<fish_id>` pseudo-items
+  * Option B: ingredient entries for fish meat as ingredients (more verbose)
+
+### Keep early version simple
+
+* Start with fewer ingredient types and processes
+* Keep scoring coarse
+* Add nuance after the loop feels good
 

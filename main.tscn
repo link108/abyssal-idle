@@ -161,20 +161,12 @@ offset_right = 790.0
 offset_bottom = 510.0
 text = "Inventory"
 
-[node name="RecipesButton" type="Button" parent="."]
+[node name="CollectionsButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 670.0
 offset_top = 520.0
 offset_right = 790.0
 offset_bottom = 560.0
-text = "Recipes"
-
-[node name="CollectionsButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 670.0
-offset_top = 570.0
-offset_right = 790.0
-offset_bottom = 610.0
 text = "Collections"
 
 [node name="ModalLayer" type="CanvasLayer" parent="."]
@@ -343,7 +335,6 @@ dialog_text = "Prestige now?"
 [connection signal="pressed" from="CrewButton" to="." method="_on_crew_button_pressed"]
 [connection signal="pressed" from="CrewSelectButton" to="." method="_on_crew_select_button_pressed"]
 [connection signal="pressed" from="InventoryButton" to="." method="_on_inventory_button_pressed"]
-[connection signal="pressed" from="RecipesButton" to="." method="_on_recipes_button_pressed"]
 [connection signal="pressed" from="CollectionsButton" to="." method="_on_collections_button_pressed"]
 [connection signal="confirmed" from="PrestigeConfirm" to="." method="_on_prestige_confirmed"]
 [connection signal="pressed" from="SkillTreeButton" to="." method="_on_skill_tree_button_pressed"]
