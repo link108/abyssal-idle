@@ -19,8 +19,10 @@ Expand the permanent tech tree with industrial, sustainability, and meta branche
 - [x] Subproject 2 complete (2026-02-19)
 - [x] Subproject 3 complete (2026-02-19)
 - [x] Integration pass across UI and GameState (2026-02-19)
-- [ ] Smoke test: prestige, buy skills, verify effects
+- [x] Smoke test: prestige, buy skills, verify effects (2026-02-19)
 
 ## Completion Instructions
 - When the last subproject is finished, update all unchecked items above.
 - Then add a short “Completed” note with the date at the end of this file.
+
+Completed: 2026-02-19
