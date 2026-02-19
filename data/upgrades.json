@@ -6,10 +6,13 @@
     "category": "core",
     "requires": {},
     "base_cost": 200,
-    "cost_mult": 1.0,
+    "cost_mult": 1,
     "max_level": 1,
     "effects": [
-      { "type": "unlock_cannery", "value": 1 }
+      {
+        "type": "unlock_cannery",
+        "value": 1
+      }
     ]
   },
   {
@@ -22,8 +25,12 @@
     "cost_mult": 1.5,
     "max_level": 5,
     "effects": [
-      { "type": "catch_add", "value": 1 }
-    ]
+      {
+        "type": "catch_add",
+        "value": 1
+      }
+    ],
+    "chain_prev": false
   },
   {
     "id": "bait_bucket",
@@ -39,8 +46,12 @@
     "cost_mult": 1.6,
     "max_level": 5,
     "effects": [
-      { "type": "catch_add", "value": 1 }
-    ]
+      {
+        "type": "catch_add",
+        "value": 1
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "fish_sale_price",
@@ -52,8 +63,12 @@
     "cost_mult": 1.7,
     "max_level": -1,
     "effects": [
-      { "type": "fish_sell_add", "value": 2 }
-    ]
+      {
+        "type": "fish_sell_add",
+        "value": 2
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "fish_bulk_sales",
@@ -65,8 +80,12 @@
     "cost_mult": 1.8,
     "max_level": -1,
     "effects": [
-      { "type": "fish_sell_count_add", "value": 1 }
-    ]
+      {
+        "type": "fish_sell_count_add",
+        "value": 1
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "green_zone_size",
@@ -78,8 +97,12 @@
     "cost_mult": 1.45,
     "max_level": 15,
     "effects": [
-      { "type": "green_zone_add_pct", "value": 0.06 }
-    ]
+      {
+        "type": "green_zone_add_pct",
+        "value": 0.06
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "crew_trip_speed",
@@ -91,8 +114,12 @@
     "cost_mult": 1.5,
     "max_level": 10,
     "effects": [
-      { "type": "crew_trip_duration_mult", "value": -0.06 }
-    ]
+      {
+        "type": "crew_trip_duration_mult",
+        "value": -0.06
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "crew_trip_yield",
@@ -104,8 +131,12 @@
     "cost_mult": 1.6,
     "max_level": -1,
     "effects": [
-      { "type": "crew_trip_catch_add", "value": 1 }
-    ]
+      {
+        "type": "crew_trip_catch_add",
+        "value": 1
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "crew_auto_send",
@@ -116,11 +147,15 @@
       "crew": true
     },
     "base_cost": 120,
-    "cost_mult": 2.0,
+    "cost_mult": 2,
     "max_level": 1,
     "effects": [
-      { "type": "crew_auto_send", "value": 1 }
-    ]
+      {
+        "type": "crew_auto_send",
+        "value": 1
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "tin_sale_price",
@@ -134,8 +169,12 @@
     "cost_mult": 1.6,
     "max_level": -1,
     "effects": [
-      { "type": "tin_sell_add", "value": 2 }
-    ]
+      {
+        "type": "tin_sell_add",
+        "value": 2
+      }
+    ],
+    "chain_prev": false
   },
   {
     "id": "cannery_efficiency",
@@ -149,8 +188,12 @@
     "cost_mult": 1.8,
     "max_level": 3,
     "effects": [
-      { "type": "tin_sell_add", "value": 5 }
-    ]
+      {
+        "type": "tin_sell_add",
+        "value": 5
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "tin_speed",
@@ -164,8 +207,12 @@
     "cost_mult": 1.6,
     "max_level": 10,
     "effects": [
-      { "type": "tin_time_add", "value": -0.2 }
-    ]
+      {
+        "type": "tin_time_add",
+        "value": -0.2
+      }
+    ],
+    "chain_prev": true
   },
   {
     "id": "auto_tin",
@@ -176,10 +223,280 @@
       "cannery": true
     },
     "base_cost": 200,
-    "cost_mult": 2.0,
+    "cost_mult": 2,
     "max_level": 1,
     "effects": [
-      { "type": "auto_tin", "value": 1 }
-    ]
+      {
+        "type": "auto_tin",
+        "value": 1
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "sust_harvest_standards",
+    "name": "Sustainable Harvesting Standards",
+    "desc": "Lower pressure and stabilize the ocean (reduced catches).",
+    "category": "policy",
+    "pair_id": "policy_1",
+    "pair_stage": 1,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 300,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "ocean_pressure_mult",
+        "value": -0.3
+      },
+      {
+        "type": "ocean_regen_mult",
+        "value": 0.2
+      },
+      {
+        "type": "catch_mult",
+        "value": -0.15
+      }
+    ],
+    "chain_prev": false
+  },
+  {
+    "id": "ind_overdrive",
+    "name": "Industrial Overdrive",
+    "desc": "Boost catches and automation at the cost of pressure.",
+    "category": "policy",
+    "pair_id": "policy_1",
+    "pair_stage": 1,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 300,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "catch_mult",
+        "value": 0.35
+      },
+      {
+        "type": "tin_time_add",
+        "value": -0.6
+      },
+      {
+        "type": "ocean_pressure_mult",
+        "value": 0.25
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "sust_small_batch",
+    "name": "Small-Batch Artisan Processing",
+    "desc": "Higher margins at the cost of speed.",
+    "category": "policy",
+    "pair_id": "policy_2",
+    "pair_stage": 2,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 450,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "tin_sell_add",
+        "value": 3
+      },
+      {
+        "type": "tin_time_add",
+        "value": 0.6
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "ind_conveyor",
+    "name": "High-Speed Conveyor Lines",
+    "desc": "Fast throughput with lower per-unit value.",
+    "category": "policy",
+    "pair_id": "policy_2",
+    "pair_stage": 2,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 450,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "tin_time_add",
+        "value": -1.2
+      },
+      {
+        "type": "tin_sell_add",
+        "value": 1
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "sust_protected_zones",
+    "name": "Marine Protected Zones",
+    "desc": "Reduce pressure and raise regeneration.",
+    "category": "policy",
+    "pair_id": "policy_3",
+    "pair_stage": 3,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 650,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "ocean_pressure_mult",
+        "value": -0.1
+      },
+      {
+        "type": "ocean_regen_mult",
+        "value": 0.25
+      },
+      {
+        "type": "catch_mult",
+        "value": -0.15
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "ind_open_expansion",
+    "name": "Open Expansion Mandate",
+    "desc": "Scale output with higher pressure.",
+    "category": "policy",
+    "pair_id": "policy_3",
+    "pair_stage": 3,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 650,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "catch_mult",
+        "value": 0.3
+      },
+      {
+        "type": "ocean_pressure_mult",
+        "value": 0.15
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "sust_local_crews",
+    "name": "Skilled Local Crews",
+    "desc": "Higher craft, slower trips.",
+    "category": "policy",
+    "pair_id": "policy_4",
+    "pair_stage": 4,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 900,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "ocean_pressure_mult",
+        "value": -0.1
+      },
+      {
+        "type": "crew_trip_duration_mult",
+        "value": 0.15
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "ind_auto_fleet",
+    "name": "Automated Fleet Expansion",
+    "desc": "Faster trips and larger hauls.",
+    "category": "policy",
+    "pair_id": "policy_4",
+    "pair_stage": 4,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 900,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "crew_trip_duration_mult",
+        "value": -0.25
+      },
+      {
+        "type": "crew_trip_catch_add",
+        "value": 2
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "sust_certified_label",
+    "name": "Certified Sustainable Label",
+    "desc": "Modest value boost with regen support.",
+    "category": "policy",
+    "pair_id": "policy_5",
+    "pair_stage": 5,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 1200,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "tin_sell_add",
+        "value": 3
+      },
+      {
+        "type": "ocean_regen_mult",
+        "value": 0.1
+      }
+    ],
+    "chain_prev": true
+  },
+  {
+    "id": "ind_commodity_dominance",
+    "name": "Commodity Dominance",
+    "desc": "Aggressive pricing with higher pressure.",
+    "category": "policy",
+    "pair_id": "policy_5",
+    "pair_stage": 5,
+    "requires": {
+      "cannery": true
+    },
+    "base_cost": 1200,
+    "cost_mult": 1,
+    "max_level": 1,
+    "effects": [
+      {
+        "type": "fish_sell_add",
+        "value": 2
+      },
+      {
+        "type": "tin_sell_add",
+        "value": 2
+      },
+      {
+        "type": "ocean_pressure_mult",
+        "value": 0.2
+      }
+    ],
+    "chain_prev": true
   }
 ]

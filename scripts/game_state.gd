@@ -16,7 +16,7 @@ const SKILL_TREE_DATA_PATH := "res://data/skill_tree.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
-const SAVE_VERSION := 6
+const SAVE_VERSION := 7
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -32,6 +32,7 @@ const DUAL_MIN_SECONDS := 6.0 * 60.0 * 60.0
 const INDUSTRIAL_MIN_LIFETIME_MONEY := 50000
 const SUSTAINABLE_MIN_TOTAL_UPGRADES := 12
 const DUAL_MIN_LIFETIME_MONEY := 250000
+const UPGRADES_VISIBLE_PER_CATEGORY := 3
 
 const SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL := 1
 const SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL := 0.01
@@ -65,8 +66,7 @@ var meta_state: Dictionary = {
     "prestige_count": 0,
     "sustainable_bonus_level": 0,
     "industrial_bonus_level": 0,
-    "skills_owned": [],
-    "pair_picks": {}
+    "skills_owned": []
 }
 
 # Upgrades: Cannery
@@ -99,6 +99,9 @@ var _rng := RandomNumberGenerator.new()
 var upgrade_defs: Array = []
 var upgrade_defs_by_id: Dictionary = {}
 var upgrade_levels: Dictionary = {}
+var upgrade_pairs: Dictionary = {}
+var upgrade_order_by_category: Dictionary = {}
+var visible_upgrades_by_category: Dictionary = {}
 var skill_defs: Array = []
 var skill_defs_by_id: Dictionary = {}
 
@@ -133,7 +136,8 @@ func save_game() -> void:
         "ocean_health_time_accum": ocean_health_time_accum,
         "ocean_health_time_total": ocean_health_time_total,
         "run_time_seconds": run_time_seconds,
-        "ending_state": int(ending_state)
+        "ending_state": int(ending_state),
+        "visible_upgrades_by_category": visible_upgrades_by_category
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     file.store_string(JSON.stringify(data))
@@ -167,9 +171,7 @@ func new_game() -> void:
     ocean_health = OCEAN_HEALTH_MAX
     ocean_health_time_accum = 0.0
     ocean_health_time_total = 0.0
-    run_time_seconds = 0.0
-    run_paused = false
-    ending_state = EndingState.NONE
+    visible_upgrades_by_category.clear()
     run_time_seconds = 0.0
     run_paused = false
     ending_state = EndingState.NONE
@@ -179,6 +181,7 @@ func new_game() -> void:
     is_crew_discovered = false
     is_crew_unlocked = false
     upgrade_levels.clear()
+    visible_upgrades_by_category.clear()
     crew_trip_active = false
     crew_trip_remaining = 0.0
     crew_trip_paused = false
@@ -187,8 +190,7 @@ func new_game() -> void:
         "prestige_count": 0,
         "sustainable_bonus_level": 0,
         "industrial_bonus_level": 0,
-        "skills_owned": [],
-        "pair_picks": {}
+        "skills_owned": []
     }
     reputation_changed.emit()
     skills_changed.emit()
@@ -223,6 +225,9 @@ func _apply_save(data: Dictionary) -> void:
     ocean_health_time_total = float(data.get("ocean_health_time_total", 0.0))
     run_time_seconds = float(data.get("run_time_seconds", 0.0))
     ending_state = int(data.get("ending_state", EndingState.NONE)) as EndingState
+    visible_upgrades_by_category = data.get("visible_upgrades_by_category", {})
+    if typeof(visible_upgrades_by_category) != TYPE_DICTIONARY:
+        visible_upgrades_by_category = {}
     run_paused = ending_state != EndingState.NONE
     _normalize_meta_state()
     if version < SAVE_VERSION:
@@ -241,6 +246,8 @@ func _migrate_save(version: int) -> void:
         ending_state = EndingState.NONE
     if version < 6:
         _normalize_meta_state()
+    if version < 7:
+        visible_upgrades_by_category.clear()
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -255,8 +262,6 @@ func _normalize_meta_state() -> void:
         meta_state["industrial_bonus_level"] = 0
     if not meta_state.has("skills_owned"):
         meta_state["skills_owned"] = []
-    if not meta_state.has("pair_picks"):
-        meta_state["pair_picks"] = {}
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -279,7 +284,9 @@ func _process(delta: float) -> void:
 
 func catch_fish(amount: int = 1) -> void:
     var bonus: int = _get_effect_total("catch_add") + _get_skill_effect_total_int("catch_add")
-    var catch_total: int = max(1, amount + bonus)
+    var mult: float = 1.0 + _get_effect_total_float("catch_mult") + _get_skill_effect_total_float("catch_mult")
+    mult = max(0.1, mult)
+    var catch_total: int = max(1, int(round(float(amount + bonus) * mult)))
     fish_count += catch_total
     _apply_ocean_health_pressure(catch_total)
     changed.emit()
@@ -443,12 +450,23 @@ func _load_upgrades() -> void:
         return
     upgrade_defs = parsed
     upgrade_defs_by_id.clear()
+    upgrade_pairs.clear()
+    upgrade_order_by_category.clear()
     for def in upgrade_defs:
         if typeof(def) != TYPE_DICTIONARY:
             continue
         if not def.has("id"):
             continue
         upgrade_defs_by_id[def.id] = def
+        var pair_id := str(def.get("pair_id", ""))
+        if pair_id != "":
+            if not upgrade_pairs.has(pair_id):
+                upgrade_pairs[pair_id] = []
+            upgrade_pairs[pair_id].append(str(def.id))
+        var category := str(def.get("category", "misc"))
+        if not upgrade_order_by_category.has(category):
+            upgrade_order_by_category[category] = []
+        upgrade_order_by_category[category].append(str(def.id))
 
 func _load_skill_tree() -> void:
     if skill_defs.size() > 0:
@@ -505,30 +523,10 @@ func get_skill_prereqs(id: String) -> Array:
         return []
     return def.get("requires", [])
 
-func _get_pair_pick(pair_id: String) -> Dictionary:
-    var picks: Dictionary = meta_state.get("pair_picks", {})
-    return picks.get(pair_id, {})
-
-func _is_pair_locked(def: Dictionary) -> bool:
-    var pair_id: String = str(def.get("pair_id", ""))
-    if pair_id == "":
-        return false
-    var pick: Dictionary = _get_pair_pick(pair_id)
-    if pick.is_empty():
-        return false
-    var last_prestige: int = int(pick.get("prestige", -1))
-    var choice_id: String = str(pick.get("choice_id", ""))
-    if last_prestige != int(meta_state.get("prestige_count", 0)):
-        return false
-    var id: String = str(def.get("id", ""))
-    return choice_id != "" and choice_id != id
-
 func get_skill_lock_reason(id: String) -> String:
     var def: Dictionary = get_skill_def(id)
     if def.is_empty():
         return "Unavailable"
-    if _is_pair_locked(def):
-        return "Locked this prestige"
     if is_skill_owned(id):
         return "Owned"
     if not _meets_skill_prereqs(def):
@@ -543,8 +541,6 @@ func can_purchase_skill(id: String) -> bool:
     if def.is_empty():
         return false
     if is_skill_owned(id):
-        return false
-    if _is_pair_locked(def):
         return false
     if not _meets_skill_prereqs(def):
         return false
@@ -566,14 +562,6 @@ func purchase_skill(id: String) -> bool:
     var owned: Array = meta_state.get("skills_owned", [])
     owned.append(id)
     meta_state["skills_owned"] = owned
-    var pair_id: String = str(def.get("pair_id", ""))
-    if pair_id != "":
-        var picks: Dictionary = meta_state.get("pair_picks", {})
-        picks[pair_id] = {
-            "prestige": int(meta_state.get("prestige_count", 0)),
-            "choice_id": id
-        }
-        meta_state["pair_picks"] = picks
     skills_changed.emit()
     reputation_changed.emit()
     changed.emit()
@@ -581,6 +569,87 @@ func purchase_skill(id: String) -> bool:
 
 func get_upgrade_defs() -> Array:
     return upgrade_defs
+
+func get_visible_upgrade_defs_by_category() -> Dictionary:
+    _ensure_visible_upgrades()
+    var result: Dictionary = {}
+    for category in upgrade_order_by_category.keys():
+        var ids: Array = visible_upgrades_by_category.get(category, [])
+        var defs: Array = []
+        for id in ids:
+            var def = upgrade_defs_by_id.get(str(id), null)
+            if def == null:
+                continue
+            if is_upgrade_maxed(str(id)) and not def.has("pair_id"):
+                continue
+            defs.append(def)
+        result[category] = defs
+    return result
+
+func _ensure_visible_upgrades() -> void:
+    for category in upgrade_order_by_category.keys():
+        _ensure_visible_upgrades_for_category(str(category))
+
+func _ensure_visible_upgrades_for_category(category: String) -> void:
+    var visible: Array = visible_upgrades_by_category.get(category, [])
+    var order: Array = upgrade_order_by_category.get(category, [])
+    var filtered: Array = []
+    for id in visible:
+        var id_str := str(id)
+        var def = upgrade_defs_by_id.get(id_str, null)
+        if def == null:
+            continue
+        if is_upgrade_maxed(id_str) and not def.has("pair_id"):
+            continue
+        filtered.append(id_str)
+    visible = filtered
+    var added := true
+    while _count_visible_slots(visible) < UPGRADES_VISIBLE_PER_CATEGORY and added:
+        added = false
+        for id in order:
+            var id_str := str(id)
+            if visible.has(id_str):
+                continue
+            var def = upgrade_defs_by_id.get(id_str, null)
+            if def == null:
+                continue
+            if is_upgrade_maxed(id_str) and not def.has("pair_id"):
+                continue
+            if not can_show_upgrade(def):
+                continue
+            var pair_id := str(def.get("pair_id", ""))
+            if pair_id != "":
+                var slot_count := _count_visible_slots(visible)
+                if slot_count >= UPGRADES_VISIBLE_PER_CATEGORY:
+                    continue
+                var pair_ids: Array = upgrade_pairs.get(pair_id, [])
+                for pid in pair_ids:
+                    var pid_str := str(pid)
+                    if visible.has(pid_str):
+                        continue
+                    visible.append(pid_str)
+                added = true
+                break
+            visible.append(id_str)
+            added = true
+            break
+    visible_upgrades_by_category[category] = visible
+
+func _count_visible_slots(visible: Array) -> int:
+    var slots := 0
+    var seen_pairs: Dictionary = {}
+    for id in visible:
+        var def = upgrade_defs_by_id.get(str(id), null)
+        if def == null:
+            continue
+        var pair_id := str(def.get("pair_id", ""))
+        if pair_id != "":
+            if not seen_pairs.has(pair_id):
+                seen_pairs[pair_id] = true
+                slots += 1
+        else:
+            slots += 1
+    return slots
 
 func get_upgrade_level(id: String) -> int:
     if id == "unlock_cannery":
@@ -615,6 +684,8 @@ func can_purchase_upgrade(id: String) -> bool:
     var def = upgrade_defs_by_id.get(id, null)
     if def == null:
         return false
+    if _is_upgrade_pair_locked(def):
+        return false
     if not _meets_requirements(def):
         return false
     return money >= get_upgrade_cost(id)
@@ -633,11 +704,18 @@ func purchase_upgrade(id: String) -> bool:
 func can_show_upgrade(def: Dictionary) -> bool:
     if def.get("id", "") == "unlock_cannery":
         return cannery_upgrade_is_visible()
+    if def.has("pair_id"):
+        var stage := int(def.get("pair_stage", 0))
+        if stage > 0 and not _is_pair_stage_unlocked(stage):
+            return false
+        return _meets_requirements(def)
     return _meets_requirements(def)
 
 func _meets_requirements(def: Dictionary) -> bool:
     var reqs: Dictionary = def.get("requires", {})
     if reqs.is_empty():
+        if def.get("chain_prev", false) and not def.has("pair_id"):
+            return _has_prev_upgrade(def)
         return true
     if reqs.get("cannery", false) and not is_cannery_unlocked:
         return false
@@ -648,7 +726,70 @@ func _meets_requirements(def: Dictionary) -> bool:
         var needed := int(upgrade_reqs[req_id])
         if get_upgrade_level(str(req_id)) < needed:
             return false
+    if def.get("chain_prev", false) and not def.has("pair_id") and not _has_prev_upgrade(def):
+        return false
     return true
+
+func _has_prev_upgrade(def: Dictionary) -> bool:
+    if def.has("pair_id"):
+        return true
+    var category := str(def.get("category", "misc"))
+    var order: Array = upgrade_order_by_category.get(category, [])
+    var id_str := str(def.get("id", ""))
+    var idx := order.find(id_str)
+    if idx <= 0:
+        return true
+    var prev_id := str(order[idx - 1])
+    return get_upgrade_level(prev_id) > 0
+
+func _is_upgrade_pair_locked(def: Dictionary) -> bool:
+    var pair_id := str(def.get("pair_id", ""))
+    if pair_id == "":
+        return false
+    var ids: Array = upgrade_pairs.get(pair_id, [])
+    var current_id := str(def.get("id", ""))
+    for other_id in ids:
+        if str(other_id) == current_id:
+            continue
+        if get_upgrade_level(str(other_id)) > 0:
+            return true
+    return false
+
+func _is_pair_stage_unlocked(stage: int) -> bool:
+    if stage <= 1:
+        return is_cannery_unlocked
+    return _is_pair_stage_completed(stage - 1)
+
+func _is_pair_stage_completed(stage: int) -> bool:
+    for def in upgrade_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        var def_stage := int(def.get("pair_stage", 0))
+        if def_stage != stage:
+            continue
+        var id := str(def.get("id", ""))
+        if get_upgrade_level(id) > 0:
+            return true
+    return false
+
+func get_upgrade_lock_reason(id: String) -> String:
+    if is_upgrade_maxed(id):
+        return "Maxed"
+    if id == "unlock_cannery":
+        if can_purchase_cannery():
+            return ""
+        return "Locked"
+    var def = upgrade_defs_by_id.get(id, null)
+    if def == null:
+        return "Unavailable"
+    if def.has("pair_id") and _is_upgrade_pair_locked(def):
+        return "Locked (other chosen)"
+    if not _meets_requirements(def):
+        return "Locked"
+    var cost := get_upgrade_cost(id)
+    if money < cost:
+        return "Need $%d" % cost
+    return ""
 
 func _get_effect_total(effect_type: String) -> int:
     var total := 0

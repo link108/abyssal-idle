@@ -38,6 +38,15 @@ offset_left = 40.0
 offset_top = 60.0
 offset_right = -40.0
 offset_bottom = -40.0
+horizontal_scroll_mode = 0
+
+[node name="ShowPurchasedToggle" type="CheckBox" parent="Control"]
+layout_mode = 0
+offset_left = 260.0
+offset_top = 20.0
+offset_right = 480.0
+offset_bottom = 40.0
+text = "Show Purchased"
 
 [node name="UpgradesList" type="VBoxContainer" parent="Control/ScrollContainer"]
 anchors_preset = 15

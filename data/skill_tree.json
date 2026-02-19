@@ -17,7 +17,6 @@
     "desc": "Premium sales for careful harvests.",
     "branch": "sustainable",
     "cost": 15,
-    "pair_id": "cash_1",
     "order": 1,
     "pos": [60, 90],
     "requires": ["core_market_entry"],
@@ -32,10 +31,9 @@
     "desc": "Reduce bycatch and ease pressure on the ocean.",
     "branch": "sustainable",
     "cost": 25,
-    "pair_id": "cash_2",
     "order": 2,
     "pos": [20, 180],
-    "requires": ["core_market_entry", "sust_artisan_pricing"],
+    "requires": ["sust_artisan_pricing"],
     "effects": [
       {"type": "fish_sell_add", "value": 1},
       {"type": "ocean_pressure_mult", "value": -0.10},
@@ -48,10 +46,9 @@
     "desc": "Rotate fishing grounds to stabilize ecosystems.",
     "branch": "sustainable",
     "cost": 35,
-    "pair_id": "cash_3",
     "order": 3,
     "pos": [80, 300],
-    "requires": ["core_market_entry", "sust_selective_netting"],
+    "requires": ["sust_selective_netting"],
     "effects": [
       {"type": "fish_sell_add", "value": 2},
       {"type": "ocean_regen_mult", "value": 0.15}
@@ -63,10 +60,9 @@
     "desc": "Craft-focused processing yields better margins.",
     "branch": "sustainable",
     "cost": 45,
-    "pair_id": "cash_4",
     "order": 4,
     "pos": [10, 390],
-    "requires": ["core_market_entry", "sust_rotational_zones"],
+    "requires": ["sust_rotational_zones"],
     "effects": [
       {"type": "tin_sell_add", "value": 2},
       {"type": "ocean_pressure_mult", "value": -0.05}
@@ -78,10 +74,9 @@
     "desc": "Invest in recovery and long-term resilience.",
     "branch": "sustainable",
     "cost": 60,
-    "pair_id": "cash_5",
     "order": 5,
     "pos": [90, 480],
-    "requires": ["core_market_entry", "sust_artisan_processing"],
+    "requires": ["sust_artisan_processing"],
     "effects": [
       {"type": "fish_sell_add", "value": 3},
       {"type": "ocean_regen_mult", "value": 0.25}
@@ -93,7 +88,6 @@
     "desc": "Guaranteed buyers for mass output.",
     "branch": "industrial",
     "cost": 15,
-    "pair_id": "cash_1",
     "order": 1,
     "pos": [760, 90],
     "requires": ["core_market_entry"],
@@ -108,10 +102,9 @@
     "desc": "Stronger vessels increase raw haul volume.",
     "branch": "industrial",
     "cost": 25,
-    "pair_id": "cash_2",
     "order": 2,
     "pos": [800, 180],
-    "requires": ["core_market_entry", "ind_bulk_contracts"],
+    "requires": ["ind_bulk_contracts"],
     "effects": [
       {"type": "fish_sell_add", "value": 1},
       {"type": "catch_add", "value": 2},
@@ -124,10 +117,9 @@
     "desc": "Increase throughput with industrial processing.",
     "branch": "industrial",
     "cost": 35,
-    "pair_id": "cash_3",
     "order": 3,
     "pos": [740, 300],
-    "requires": ["core_market_entry", "ind_steel_trawlers"],
+    "requires": ["ind_steel_trawlers"],
     "effects": [
       {"type": "tin_sell_add", "value": 3},
       {"type": "tin_time_add", "value": -0.2}
@@ -139,10 +131,9 @@
     "desc": "Push output targets for faster profits.",
     "branch": "industrial",
     "cost": 45,
-    "pair_id": "cash_4",
     "order": 4,
     "pos": [820, 390],
-    "requires": ["core_market_entry", "ind_cannery_lines"],
+    "requires": ["ind_cannery_lines"],
     "effects": [
       {"type": "tin_sell_add", "value": 4},
       {"type": "ocean_pressure_mult", "value": 0.15}
@@ -154,10 +145,9 @@
     "desc": "Machine-dominated operations increase scale.",
     "branch": "industrial",
     "cost": 60,
-    "pair_id": "cash_5",
     "order": 5,
     "pos": [760, 480],
-    "requires": ["core_market_entry", "ind_aggressive_quotas"],
+    "requires": ["ind_aggressive_quotas"],
     "effects": [
       {"type": "catch_add", "value": 3},
       {"type": "tin_sell_add", "value": 3},
@@ -185,7 +175,7 @@
     "cost": 30,
     "order": 2,
     "pos": [420, 20],
-    "requires": ["core_market_entry", "meta_fast_start"],
+    "requires": ["meta_fast_start"],
     "effects": [
       {"type": "reputation_gain_mult", "value": 0.10}
     ]
@@ -198,7 +188,7 @@
     "cost": 40,
     "order": 3,
     "pos": [560, 20],
-    "requires": ["core_market_entry", "meta_rep_focus"],
+    "requires": ["meta_rep_focus"],
     "effects": [
       {"type": "tin_sell_add", "value": 2},
       {"type": "tin_time_add", "value": -0.1}
@@ -212,7 +202,7 @@
     "cost": 50,
     "order": 4,
     "pos": [340, 80],
-    "requires": ["core_market_entry", "meta_rep_focus"],
+    "requires": ["meta_rep_focus"],
     "effects": [
       {"type": "green_zone_add_pct", "value": 0.03}
     ]
@@ -225,7 +215,7 @@
     "cost": 60,
     "order": 5,
     "pos": [500, 80],
-    "requires": ["core_market_entry", "meta_tin_efficiency"],
+    "requires": ["meta_tin_efficiency"],
     "effects": [
       {"type": "fish_sell_add", "value": 2},
       {"type": "tin_sell_add", "value": 2}
