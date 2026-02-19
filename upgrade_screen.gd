@@ -32,7 +32,7 @@ func _rebuild_upgrade_list() -> void:
         child.queue_free()
 
     var categories := ["core", "fishing", "cannery", "policy"]
-    var defs_by_cat: Dictionary = GameState.get_visible_upgrade_defs_by_category()
+    var defs_by_cat: Dictionary = GameState.get_visible_upgrade_defs_by_category(show_purchased_toggle.button_pressed)
     for category in categories:
         var defs: Array = defs_by_cat.get(category, [])
         var header := Label.new()
@@ -50,24 +50,27 @@ func _rebuild_upgrade_list() -> void:
         for def in defs:
             if typeof(def) != TYPE_DICTIONARY:
                 continue
-            var id_str := str(def.get("id", ""))
+            var id_str := str(def.get("upgrade_id", ""))
             if (not show_purchased_toggle.button_pressed) and GameState.get_upgrade_level(id_str) > 0:
-                if str(def.get("pair_id", "")) == "":
+                var group_val = def.get("exclusive_group_id", "")
+                var group_check := "" if group_val == null else str(group_val)
+                if group_check == "":
                     continue
-            var pair_id := str(def.get("pair_id", ""))
-            if pair_id == "":
+            var group_val = def.get("exclusive_group_id", "")
+            var group_id := "" if group_val == null else str(group_val)
+            if group_id == "":
                 singles.append(def)
                 continue
-            if not pairs.has(pair_id):
-                pairs[pair_id] = []
-                pair_order.append(pair_id)
-            pairs[pair_id].append(def)
+            if not pairs.has(group_id):
+                pairs[group_id] = []
+                pair_order.append(group_id)
+            pairs[group_id].append(def)
 
-        for pair_id in pair_order:
+        for group_id in pair_order:
             var hbox := HBoxContainer.new()
             hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
             hbox.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-            var defs_in_pair: Array = pairs.get(pair_id, [])
+            var defs_in_pair: Array = pairs.get(group_id, [])
             for def in defs_in_pair:
                 var card := _create_upgrade_card(def)
                 card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -96,10 +99,11 @@ func _create_upgrade_card(def: Dictionary) -> Control:
     vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     hbox.add_child(vbox)
 
-    var id_str: String = str(def.get("id", ""))
+    var id_str: String = str(def.get("upgrade_id", ""))
     var status_label: Label = null
-    var is_pair := str(def.get("pair_id", "")) != ""
-    var is_chosen := GameState.get_upgrade_level(id_str) > 0 and is_pair
+    var group_val = def.get("exclusive_group_id", "")
+    var is_exclusive := ("" if group_val == null else str(group_val)) != ""
+    var is_chosen := GameState.get_upgrade_level(id_str) > 0 and is_exclusive
     if is_chosen:
         status_label = Label.new()
         status_label.text = "CHOSEN"
@@ -116,12 +120,12 @@ func _create_upgrade_card(def: Dictionary) -> Control:
         level_text = " (Lv %d)" % level
     elif max_level > 1:
         level_text = " (Lv %d/%d)" % [level, max_level]
-    var name_text: String = str(def.get("name", "Upgrade"))
+    var name_text: String = str(def.get("display_name", "Upgrade"))
     name_label.text = "%s%s" % [name_text, level_text]
     vbox.add_child(name_label)
 
     var desc_label := Label.new()
-    desc_label.text = str(def.get("desc", ""))
+    desc_label.text = str(def.get("description", ""))
     desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
     desc_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     vbox.add_child(desc_label)
@@ -129,6 +133,8 @@ func _create_upgrade_card(def: Dictionary) -> Control:
     var buy_btn := Button.new()
     buy_btn.text = _get_upgrade_button_text(def)
     var lock_reason := GameState.get_upgrade_lock_reason(id_str)
+    if lock_reason != "":
+        buy_btn.tooltip_text = lock_reason
     buy_btn.disabled = lock_reason != ""
     if is_chosen:
         stripe.color = Color(0.0, 0.95, 0.25, 1.0)
@@ -157,7 +163,7 @@ func _create_upgrade_card(def: Dictionary) -> Control:
     return card
 
 func _get_upgrade_button_text(def: Dictionary) -> String:
-    var id := str(def.get("id", ""))
+    var id := str(def.get("upgrade_id", ""))
     var reason := GameState.get_upgrade_lock_reason(id)
     var cost := GameState.get_upgrade_cost(id)
     if reason == "":

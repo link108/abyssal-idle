@@ -7,12 +7,20 @@
     "description": "Crystalline sea salt harvested from evaporated trench brine.",
     "base_cost": 1,
     "sell_value": 1,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["seasoning", "preservation"],
+    "tags": [
+      "seasoning",
+      "preservation"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "black_salt",
@@ -22,12 +30,20 @@
     "description": "Volcanic salt flecked with obsidian dust. Leaves a faint metallic aftertaste.",
     "base_cost": 4,
     "sell_value": 2,
-    "unlock_conditions": [{ "type": "depth_tier_at_least", "value": 2 }],
-    "tags": ["seasoning", "dark"],
+    "tags": [
+      "seasoning",
+      "dark"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
+    ]
   },
   {
     "ingredient_id": "sea_salt",
@@ -37,12 +53,19 @@
     "description": "Coarse flakes scraped from shallow mineral shelves.",
     "base_cost": 2,
     "sell_value": 1,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["seasoning"],
+    "tags": [
+      "seasoning"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "brine",
@@ -52,12 +75,20 @@
     "description": "Standard preservation brine used for curing and pickling.",
     "base_cost": 3,
     "sell_value": 2,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["preservation", "liquid"],
+    "tags": [
+      "preservation",
+      "liquid"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": true,
-    "source": "crafted"
+    "source": "crafted",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "thick_brine",
@@ -67,12 +98,20 @@
     "description": "Dense, mineral-rich brine ideal for preserving leviathan flesh.",
     "base_cost": 8,
     "sell_value": 4,
-    "unlock_conditions": [{ "type": "depth_tier_at_least", "value": 2 }],
-    "tags": ["preservation", "heavy"],
+    "tags": [
+      "preservation",
+      "heavy"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": true,
-    "source": "crafted"
+    "source": "crafted",
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
+    ]
   },
   {
     "ingredient_id": "murk_vinegar",
@@ -82,12 +121,20 @@
     "description": "Fermented from abyssal kelp. Smells faintly of iron and tides.",
     "base_cost": 12,
     "sell_value": 6,
-    "unlock_conditions": [{ "type": "depth_tier_at_least", "value": 2 }],
-    "tags": ["pickling", "acidic"],
+    "tags": [
+      "pickling",
+      "acidic"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": true,
-    "source": "crafted"
+    "source": "crafted",
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
+    ]
   },
   {
     "ingredient_id": "oil_light",
@@ -97,12 +144,20 @@
     "description": "Clear oil used for basic preservation.",
     "base_cost": 5,
     "sell_value": 3,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["preservation", "liquid"],
+    "tags": [
+      "preservation",
+      "liquid"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "oil_dark",
@@ -112,12 +167,20 @@
     "description": "Thick oil pressed from deep-sea seeds. Nearly black.",
     "base_cost": 10,
     "sell_value": 5,
-    "unlock_conditions": [{ "type": "depth_tier_at_least", "value": 2 }],
-    "tags": ["preservation", "rich"],
+    "tags": [
+      "preservation",
+      "rich"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
+    ]
   },
   {
     "ingredient_id": "oil_golden",
@@ -127,12 +190,20 @@
     "description": "Rare clarified oil prized for luxury preserves.",
     "base_cost": 18,
     "sell_value": 9,
-    "unlock_conditions": [{ "type": "depth_tier_at_least", "value": 3 }],
-    "tags": ["luxury", "preservation"],
+    "tags": [
+      "luxury",
+      "preservation"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 3
+      }
+    ]
   },
   {
     "ingredient_id": "ash_pepper",
@@ -142,12 +213,20 @@
     "description": "Smoky crushed pepper that leaves a slow-burning heat.",
     "base_cost": 6,
     "sell_value": 3,
-    "unlock_conditions": [{ "type": "depth_tier_at_least", "value": 1 }],
-    "tags": ["spice", "heat"],
+    "tags": [
+      "spice",
+      "heat"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 1
+      }
+    ]
   },
   {
     "ingredient_id": "white_pepper",
@@ -157,12 +236,19 @@
     "description": "Fine ground pepper with a clean bite.",
     "base_cost": 4,
     "sell_value": 2,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["spice"],
+    "tags": [
+      "spice"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "spice_mix",
@@ -172,12 +258,20 @@
     "description": "A proprietary blend of dried trench herbs and seeds.",
     "base_cost": 7,
     "sell_value": 4,
-    "unlock_conditions": [{ "type": "depth_tier_at_least", "value": 1 }],
-    "tags": ["spice", "blend"],
+    "tags": [
+      "spice",
+      "blend"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": true,
-    "source": "crafted"
+    "source": "crafted",
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 1
+      }
+    ]
   },
   {
     "ingredient_id": "sea_garlic",
@@ -187,12 +281,19 @@
     "description": "Bulb grown in saline mud. Sharp and briny.",
     "base_cost": 3,
     "sell_value": 1,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["aromatic"],
+    "tags": [
+      "aromatic"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "harvested"
+    "source": "harvested",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "sea_onion",
@@ -202,12 +303,19 @@
     "description": "Pungent layered root harvested from trench gardens.",
     "base_cost": 3,
     "sell_value": 1,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["aromatic"],
+    "tags": [
+      "aromatic"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "harvested"
+    "source": "harvested",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "kelp_strips",
@@ -217,12 +325,19 @@
     "description": "Dried ribbons of abyssal kelp.",
     "base_cost": 2,
     "sell_value": 1,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["umami"],
+    "tags": [
+      "umami"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "harvested"
+    "source": "harvested",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "roe",
@@ -232,12 +347,20 @@
     "description": "Harvested eggs from rare catches.",
     "base_cost": 0,
     "sell_value": 6,
-    "unlock_conditions": [{ "type": "always", "value": true }],
-    "tags": ["byproduct", "luxury"],
+    "tags": [
+      "byproduct",
+      "luxury"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "fish_byproduct"
+    "source": "fish_byproduct",
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "ingredient_id": "smoke_wood",
@@ -247,12 +370,18 @@
     "description": "Compressed wood chips used for smoking fish.",
     "base_cost": 3,
     "sell_value": 1,
-    "unlock_conditions": [{ "type": "upgrade_purchased", "value": "smoker" }],
-    "tags": ["fuel"],
+    "tags": [
+      "fuel"
+    ],
     "stack_size": 999,
     "is_consumable": true,
     "is_craftable": false,
-    "source": "vendor"
+    "source": "vendor",
+    "requires": [
+      {
+        "type": "upgrade_purchased",
+        "value": "smoker"
+      }
+    ]
   }
 ]
-

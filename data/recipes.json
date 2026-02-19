@@ -6,10 +6,22 @@
     "tier": 1,
     "required_fish_name": "Weeping Lanternjaw",
     "ingredients": [
-      { "item_id": "fish_weeping_lanternjaw", "qty": 1 },
-      { "item_id": "black_salt", "qty": 1 },
-      { "item_id": "brine", "qty": 1 },
-      { "item_id": "kelp_strips", "qty": 1 }
+      {
+        "item_id": "fish_weeping_lanternjaw",
+        "qty": 1
+      },
+      {
+        "item_id": "black_salt",
+        "qty": 1
+      },
+      {
+        "item_id": "brine",
+        "qty": 1
+      },
+      {
+        "item_id": "kelp_strips",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -18,8 +30,18 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["brined", "salty", "starter"],
-    "yield": 1
+    "tags": [
+      "brined",
+      "salty",
+      "starter"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "smoked_lanternjaw_ash_pepper_oil",
@@ -28,11 +50,26 @@
     "tier": 2,
     "required_fish_name": "Weeping Lanternjaw",
     "ingredients": [
-      { "item_id": "fish_weeping_lanternjaw", "qty": 1 },
-      { "item_id": "smoke_wood", "qty": 1 },
-      { "item_id": "ash_pepper", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_weeping_lanternjaw",
+        "qty": 1
+      },
+      {
+        "item_id": "smoke_wood",
+        "qty": 1
+      },
+      {
+        "item_id": "ash_pepper",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -42,8 +79,18 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["smoked", "oily", "savory"],
-    "yield": 1
+    "tags": [
+      "smoked",
+      "oily",
+      "savory"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "lanternjaw_pate_sea_fennel",
@@ -52,11 +99,26 @@
     "tier": 2,
     "required_fish_name": "Weeping Lanternjaw",
     "ingredients": [
-      { "item_id": "fish_weeping_lanternjaw", "qty": 1 },
-      { "item_id": "sea_fennel", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 },
-      { "item_id": "white_pepper", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_weeping_lanternjaw",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_fennel",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      },
+      {
+        "item_id": "white_pepper",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -66,8 +128,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["spread", "herbal"],
-    "yield": 1
+    "tags": [
+      "spread",
+      "herbal"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "pickled_lanternjaw_tongue_murk_vinegar",
@@ -76,11 +147,26 @@
     "tier": 3,
     "required_fish_name": "Weeping Lanternjaw",
     "ingredients": [
-      { "item_id": "fish_weeping_lanternjaw", "qty": 1 },
-      { "item_id": "murk_vinegar", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "sea_onion", "qty": 1 },
-      { "item_id": "spice_mix", "qty": 1 }
+      {
+        "item_id": "fish_weeping_lanternjaw",
+        "qty": 1
+      },
+      {
+        "item_id": "murk_vinegar",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -90,10 +176,19 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["pickled", "sharp", "special_cut"],
-    "yield": 1
+    "tags": [
+      "pickled",
+      "sharp",
+      "special_cut"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
-
   {
     "recipe_id": "choirfin_golden_oil",
     "display_name": "Choirfin in Golden Oil",
@@ -101,10 +196,22 @@
     "tier": 1,
     "required_fish_name": "Choirfin Seraph",
     "ingredients": [
-      { "item_id": "fish_choirfin_seraph", "qty": 1 },
-      { "item_id": "oil_golden", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "white_pepper", "qty": 1 }
+      {
+        "item_id": "fish_choirfin_seraph",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_golden",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "white_pepper",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -113,8 +220,17 @@
       "cover_with_oil",
       "seal_can"
     ],
-    "tags": ["oily", "clean"],
-    "yield": 1
+    "tags": [
+      "oily",
+      "clean"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "fermented_choirfin_fillets",
@@ -123,10 +239,22 @@
     "tier": 3,
     "required_fish_name": "Choirfin Seraph",
     "ingredients": [
-      { "item_id": "fish_choirfin_seraph", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "brine", "qty": 1 },
-      { "item_id": "kelp_strips", "qty": 1 }
+      {
+        "item_id": "fish_choirfin_seraph",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "brine",
+        "qty": 1
+      },
+      {
+        "item_id": "kelp_strips",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -136,8 +264,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["fermented", "funky"],
-    "yield": 1
+    "tags": [
+      "fermented",
+      "funky"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "choirfin_sea_garlic_preserve",
@@ -146,10 +283,22 @@
     "tier": 2,
     "required_fish_name": "Choirfin Seraph",
     "ingredients": [
-      { "item_id": "fish_choirfin_seraph", "qty": 1 },
-      { "item_id": "sea_garlic", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_choirfin_seraph",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_garlic",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -158,8 +307,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["garlicky", "oily"],
-    "yield": 1
+    "tags": [
+      "garlicky",
+      "oily"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "choirfin_roe_spread",
@@ -168,11 +326,26 @@
     "tier": 3,
     "required_fish_name": "Choirfin Seraph",
     "ingredients": [
-      { "item_id": "fish_choirfin_seraph", "qty": 1 },
-      { "item_id": "roe", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 },
-      { "item_id": "sea_fennel", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_choirfin_seraph",
+        "qty": 1
+      },
+      {
+        "item_id": "roe",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_fennel",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -182,8 +355,18 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["spread", "roe", "luxury"],
-    "yield": 1
+    "tags": [
+      "spread",
+      "roe",
+      "luxury"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "candied_choirfin_spine_cuts",
@@ -192,10 +375,22 @@
     "tier": 4,
     "required_fish_name": "Choirfin Seraph",
     "ingredients": [
-      { "item_id": "fish_choirfin_seraph", "qty": 1 },
-      { "item_id": "spice_mix", "qty": 1 },
-      { "item_id": "brine", "qty": 1 },
-      { "item_id": "sweet_syrup", "qty": 1 }
+      {
+        "item_id": "fish_choirfin_seraph",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 1
+      },
+      {
+        "item_id": "brine",
+        "qty": 1
+      },
+      {
+        "item_id": "sweet_syrup",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -206,10 +401,18 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["sweet_savory", "special_cut"],
-    "yield": 1
+    "tags": [
+      "sweet_savory",
+      "special_cut"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
-
   {
     "recipe_id": "gloommaw_steaks_thick_brine",
     "display_name": "Gloommaw Steaks in Thick Brine",
@@ -217,10 +420,22 @@
     "tier": 2,
     "required_fish_name": "Gloommaw Devourer",
     "ingredients": [
-      { "item_id": "fish_gloommaw_devourer", "qty": 1 },
-      { "item_id": "thick_brine", "qty": 1 },
-      { "item_id": "black_salt", "qty": 1 },
-      { "item_id": "kelp_strips", "qty": 1 }
+      {
+        "item_id": "fish_gloommaw_devourer",
+        "qty": 1
+      },
+      {
+        "item_id": "thick_brine",
+        "qty": 1
+      },
+      {
+        "item_id": "black_salt",
+        "qty": 1
+      },
+      {
+        "item_id": "kelp_strips",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -230,8 +445,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["brined", "meaty"],
-    "yield": 1
+    "tags": [
+      "brined",
+      "meaty"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "blackened_gloommaw_belly",
@@ -240,10 +464,22 @@
     "tier": 3,
     "required_fish_name": "Gloommaw Devourer",
     "ingredients": [
-      { "item_id": "fish_gloommaw_devourer", "qty": 1 },
-      { "item_id": "ash_pepper", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 1 }
+      {
+        "item_id": "fish_gloommaw_devourer",
+        "qty": 1
+      },
+      {
+        "item_id": "ash_pepper",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -253,8 +489,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["spicy", "rich"],
-    "yield": 1
+    "tags": [
+      "spicy",
+      "rich"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "gloommaw_liver_confit",
@@ -263,11 +508,26 @@
     "tier": 4,
     "required_fish_name": "Gloommaw Devourer",
     "ingredients": [
-      { "item_id": "fish_gloommaw_devourer", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 2 },
-      { "item_id": "sea_garlic", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "spice_mix", "qty": 1 }
+      {
+        "item_id": "fish_gloommaw_devourer",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 2
+      },
+      {
+        "item_id": "sea_garlic",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -277,8 +537,18 @@
       "cover_with_oil",
       "seal_can"
     ],
-    "tags": ["confit", "luxury", "special_cut"],
-    "yield": 1
+    "tags": [
+      "confit",
+      "luxury",
+      "special_cut"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "obsidian_smoked_gloommaw",
@@ -287,10 +557,22 @@
     "tier": 4,
     "required_fish_name": "Gloommaw Devourer",
     "ingredients": [
-      { "item_id": "fish_gloommaw_devourer", "qty": 1 },
-      { "item_id": "smoke_wood", "qty": 1 },
-      { "item_id": "black_salt", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 1 }
+      {
+        "item_id": "fish_gloommaw_devourer",
+        "qty": 1
+      },
+      {
+        "item_id": "smoke_wood",
+        "qty": 1
+      },
+      {
+        "item_id": "black_salt",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -300,8 +582,17 @@
       "cover_with_oil",
       "seal_can"
     ],
-    "tags": ["smoked", "dark"],
-    "yield": 1
+    "tags": [
+      "smoked",
+      "dark"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "gloommaw_blood_sausage",
@@ -310,11 +601,26 @@
     "tier": 5,
     "required_fish_name": "Gloommaw Devourer",
     "ingredients": [
-      { "item_id": "fish_gloommaw_devourer", "qty": 1 },
-      { "item_id": "blood", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "spice_mix", "qty": 1 },
-      { "item_id": "sea_onion", "qty": 1 }
+      {
+        "item_id": "fish_gloommaw_devourer",
+        "qty": 1
+      },
+      {
+        "item_id": "blood",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -324,10 +630,18 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["sausaged", "forbidden"],
-    "yield": 1
+    "tags": [
+      "sausaged",
+      "forbidden"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
-
   {
     "recipe_id": "veilscale_simple_brine",
     "display_name": "Veilscale in Simple Brine",
@@ -335,9 +649,18 @@
     "tier": 1,
     "required_fish_name": "Veilscale Mourner",
     "ingredients": [
-      { "item_id": "fish_veilscale_mourner", "qty": 1 },
-      { "item_id": "brine", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_veilscale_mourner",
+        "qty": 1
+      },
+      {
+        "item_id": "brine",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -345,8 +668,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["brined", "starter"],
-    "yield": 1
+    "tags": [
+      "brined",
+      "starter"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "dried_veilscale_strips",
@@ -355,9 +687,18 @@
     "tier": 2,
     "required_fish_name": "Veilscale Mourner",
     "ingredients": [
-      { "item_id": "fish_veilscale_mourner", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "spice_mix", "qty": 1 }
+      {
+        "item_id": "fish_veilscale_mourner",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -366,8 +707,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["dried", "snack"],
-    "yield": 1
+    "tags": [
+      "dried",
+      "snack"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "spiced_veilscale_flakes",
@@ -376,10 +726,22 @@
     "tier": 2,
     "required_fish_name": "Veilscale Mourner",
     "ingredients": [
-      { "item_id": "fish_veilscale_mourner", "qty": 1 },
-      { "item_id": "spice_mix", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 }
+      {
+        "item_id": "fish_veilscale_mourner",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -389,8 +751,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["spiced", "flaked"],
-    "yield": 1
+    "tags": [
+      "spiced",
+      "flaked"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "veilscale_bitter_kelp_oil",
@@ -399,10 +770,22 @@
     "tier": 3,
     "required_fish_name": "Veilscale Mourner",
     "ingredients": [
-      { "item_id": "fish_veilscale_mourner", "qty": 1 },
-      { "item_id": "kelp_oil_bitter", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "white_pepper", "qty": 1 }
+      {
+        "item_id": "fish_veilscale_mourner",
+        "qty": 1
+      },
+      {
+        "item_id": "kelp_oil_bitter",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "white_pepper",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -411,10 +794,19 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["oily", "bitter", "rare_oil"],
-    "yield": 1
+    "tags": [
+      "oily",
+      "bitter",
+      "rare_oil"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
-
   {
     "recipe_id": "abysswyrm_royal_cuts_dark_oil",
     "display_name": "Abysswyrm Royal Cuts in Dark Oil",
@@ -422,10 +814,22 @@
     "tier": 3,
     "required_fish_name": "Crowned Abysswyrm",
     "ingredients": [
-      { "item_id": "fish_crowned_abysswyrm", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 1 },
-      { "item_id": "black_salt", "qty": 1 },
-      { "item_id": "sea_onion", "qty": 1 }
+      {
+        "item_id": "fish_crowned_abysswyrm",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      },
+      {
+        "item_id": "black_salt",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -435,8 +839,18 @@
       "cover_with_oil",
       "seal_can"
     ],
-    "tags": ["luxury", "dark_oil", "special_cut"],
-    "yield": 1
+    "tags": [
+      "luxury",
+      "dark_oil",
+      "special_cut"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "crowned_abysswyrm_spiced_medallions",
@@ -445,10 +859,22 @@
     "tier": 4,
     "required_fish_name": "Crowned Abysswyrm",
     "ingredients": [
-      { "item_id": "fish_crowned_abysswyrm", "qty": 1 },
-      { "item_id": "spice_mix", "qty": 2 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 1 }
+      {
+        "item_id": "fish_crowned_abysswyrm",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 2
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -458,8 +884,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["spiced", "meaty"],
-    "yield": 1
+    "tags": [
+      "spiced",
+      "meaty"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "abysswyrm_bone_broth_reduction",
@@ -468,10 +903,22 @@
     "tier": 3,
     "required_fish_name": "Crowned Abysswyrm",
     "ingredients": [
-      { "item_id": "fish_crowned_abysswyrm", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "sea_onion", "qty": 1 },
-      { "item_id": "kelp_strips", "qty": 1 }
+      {
+        "item_id": "fish_crowned_abysswyrm",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      },
+      {
+        "item_id": "kelp_strips",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -481,8 +928,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["broth", "umami"],
-    "yield": 1
+    "tags": [
+      "broth",
+      "umami"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "iridescent_wyrm_fillet_ink_sauce",
@@ -491,10 +947,22 @@
     "tier": 4,
     "required_fish_name": "Crowned Abysswyrm",
     "ingredients": [
-      { "item_id": "fish_crowned_abysswyrm", "qty": 1 },
-      { "item_id": "ink_sauce", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 1 },
-      { "item_id": "black_salt", "qty": 1 }
+      {
+        "item_id": "fish_crowned_abysswyrm",
+        "qty": 1
+      },
+      {
+        "item_id": "ink_sauce",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      },
+      {
+        "item_id": "black_salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -504,8 +972,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["inky", "luxury"],
-    "yield": 1
+    "tags": [
+      "inky",
+      "luxury"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "abysswyrm_heart_preserve",
@@ -514,10 +991,22 @@
     "tier": 5,
     "required_fish_name": "Crowned Abysswyrm",
     "ingredients": [
-      { "item_id": "fish_crowned_abysswyrm", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 2 },
-      { "item_id": "black_salt", "qty": 1 },
-      { "item_id": "murk_vinegar", "qty": 1 }
+      {
+        "item_id": "fish_crowned_abysswyrm",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 2
+      },
+      {
+        "item_id": "black_salt",
+        "qty": 1
+      },
+      {
+        "item_id": "murk_vinegar",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -527,10 +1016,19 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["forbidden", "special_cut", "mythic"],
-    "yield": 1
+    "tags": [
+      "forbidden",
+      "special_cut",
+      "mythic"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
-
   {
     "recipe_id": "haddrel_clear_oil",
     "display_name": "Haddrel in Clear Oil",
@@ -538,9 +1036,18 @@
     "tier": 1,
     "required_fish_name": "Shiverglass Haddrel",
     "ingredients": [
-      { "item_id": "fish_shiverglass_haddrel", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_shiverglass_haddrel",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -549,8 +1056,17 @@
       "cover_with_oil",
       "seal_can"
     ],
-    "tags": ["oily", "starter"],
-    "yield": 1
+    "tags": [
+      "oily",
+      "starter"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "cracked_haddrel_sea_salt",
@@ -559,10 +1075,22 @@
     "tier": 2,
     "required_fish_name": "Shiverglass Haddrel",
     "ingredients": [
-      { "item_id": "fish_shiverglass_haddrel", "qty": 1 },
-      { "item_id": "sea_salt", "qty": 1 },
-      { "item_id": "white_pepper", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 }
+      {
+        "item_id": "fish_shiverglass_haddrel",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_salt",
+        "qty": 1
+      },
+      {
+        "item_id": "white_pepper",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -571,8 +1099,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["crisp", "salty"],
-    "yield": 1
+    "tags": [
+      "crisp",
+      "salty"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "haddrel_crystal_roe_paste",
@@ -581,11 +1118,26 @@
     "tier": 3,
     "required_fish_name": "Shiverglass Haddrel",
     "ingredients": [
-      { "item_id": "fish_shiverglass_haddrel", "qty": 1 },
-      { "item_id": "roe", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 },
-      { "item_id": "sea_fennel", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_shiverglass_haddrel",
+        "qty": 1
+      },
+      {
+        "item_id": "roe",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_fennel",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -595,8 +1147,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["roe", "spread"],
-    "yield": 1
+    "tags": [
+      "roe",
+      "spread"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "smoked_haddrel_shavings",
@@ -605,10 +1166,22 @@
     "tier": 2,
     "required_fish_name": "Shiverglass Haddrel",
     "ingredients": [
-      { "item_id": "fish_shiverglass_haddrel", "qty": 1 },
-      { "item_id": "smoke_wood", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 }
+      {
+        "item_id": "fish_shiverglass_haddrel",
+        "qty": 1
+      },
+      {
+        "item_id": "smoke_wood",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -618,10 +1191,18 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["smoked", "flakes"],
-    "yield": 1
+    "tags": [
+      "smoked",
+      "flakes"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
-
   {
     "recipe_id": "skulker_mustard_brine",
     "display_name": "Skulker in Thick Mustard Brine",
@@ -629,9 +1210,18 @@
     "tier": 2,
     "required_fish_name": "Thousand-Eyed Skulker",
     "ingredients": [
-      { "item_id": "fish_thousand_eyed_skulker", "qty": 1 },
-      { "item_id": "mustard_brine_thick", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_thousand_eyed_skulker",
+        "qty": 1
+      },
+      {
+        "item_id": "mustard_brine_thick",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -639,8 +1229,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["mustardy", "brined"],
-    "yield": 1
+    "tags": [
+      "mustardy",
+      "brined"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "thousand_eyed_fillet_mash",
@@ -649,11 +1248,26 @@
     "tier": 3,
     "required_fish_name": "Thousand-Eyed Skulker",
     "ingredients": [
-      { "item_id": "fish_thousand_eyed_skulker", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 },
-      { "item_id": "sea_onion", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "white_pepper", "qty": 1 }
+      {
+        "item_id": "fish_thousand_eyed_skulker",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "white_pepper",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -664,8 +1278,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["spread", "savory"],
-    "yield": 1
+    "tags": [
+      "spread",
+      "savory"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "skulker_charred_kelp",
@@ -674,10 +1297,22 @@
     "tier": 2,
     "required_fish_name": "Thousand-Eyed Skulker",
     "ingredients": [
-      { "item_id": "fish_thousand_eyed_skulker", "qty": 1 },
-      { "item_id": "kelp_strips", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "oil_dark", "qty": 1 }
+      {
+        "item_id": "fish_thousand_eyed_skulker",
+        "qty": 1
+      },
+      {
+        "item_id": "kelp_strips",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -686,8 +1321,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["charred", "umami"],
-    "yield": 1
+    "tags": [
+      "charred",
+      "umami"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "spicy_skulker_eye_relish",
@@ -696,11 +1340,26 @@
     "tier": 4,
     "required_fish_name": "Thousand-Eyed Skulker",
     "ingredients": [
-      { "item_id": "fish_thousand_eyed_skulker", "qty": 1 },
-      { "item_id": "ash_pepper", "qty": 1 },
-      { "item_id": "murk_vinegar", "qty": 1 },
-      { "item_id": "sea_onion", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_thousand_eyed_skulker",
+        "qty": 1
+      },
+      {
+        "item_id": "ash_pepper",
+        "qty": 1
+      },
+      {
+        "item_id": "murk_vinegar",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -710,10 +1369,19 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["spicy", "pickled", "special_cut"],
-    "yield": 1
+    "tags": [
+      "spicy",
+      "pickled",
+      "special_cut"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
-
   {
     "recipe_id": "cathedral_cod_creamed_brine",
     "display_name": "Cathedral Cod in Creamed Brine",
@@ -721,11 +1389,26 @@
     "tier": 2,
     "required_fish_name": "Pale Cathedral Cod",
     "ingredients": [
-      { "item_id": "fish_pale_cathedral_cod", "qty": 1 },
-      { "item_id": "brine", "qty": 1 },
-      { "item_id": "cream_base", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "white_pepper", "qty": 1 }
+      {
+        "item_id": "fish_pale_cathedral_cod",
+        "qty": 1
+      },
+      {
+        "item_id": "brine",
+        "qty": 1
+      },
+      {
+        "item_id": "cream_base",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "white_pepper",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -734,8 +1417,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["creamy", "comfort"],
-    "yield": 1
+    "tags": [
+      "creamy",
+      "comfort"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "cod_vault_cuts_white_pepper",
@@ -744,10 +1436,22 @@
     "tier": 1,
     "required_fish_name": "Pale Cathedral Cod",
     "ingredients": [
-      { "item_id": "fish_pale_cathedral_cod", "qty": 1 },
-      { "item_id": "white_pepper", "qty": 1 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "oil_light", "qty": 1 }
+      {
+        "item_id": "fish_pale_cathedral_cod",
+        "qty": 1
+      },
+      {
+        "item_id": "white_pepper",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_light",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -757,8 +1461,17 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["peppery", "simple"],
-    "yield": 1
+    "tags": [
+      "peppery",
+      "simple"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "pale_cod_liver_preserve",
@@ -767,10 +1480,22 @@
     "tier": 3,
     "required_fish_name": "Pale Cathedral Cod",
     "ingredients": [
-      { "item_id": "fish_pale_cathedral_cod", "qty": 1 },
-      { "item_id": "oil_golden", "qty": 2 },
-      { "item_id": "salt", "qty": 1 },
-      { "item_id": "sea_garlic", "qty": 1 }
+      {
+        "item_id": "fish_pale_cathedral_cod",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_golden",
+        "qty": 2
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_garlic",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -780,8 +1505,18 @@
       "cover_with_oil",
       "seal_can"
     ],
-    "tags": ["confit", "luxury", "special_cut"],
-    "yield": 1
+    "tags": [
+      "confit",
+      "luxury",
+      "special_cut"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   },
   {
     "recipe_id": "cathedral_cod_sea_onion",
@@ -790,10 +1525,22 @@
     "tier": 2,
     "required_fish_name": "Pale Cathedral Cod",
     "ingredients": [
-      { "item_id": "fish_pale_cathedral_cod", "qty": 1 },
-      { "item_id": "sea_onion", "qty": 1 },
-      { "item_id": "brine", "qty": 1 },
-      { "item_id": "salt", "qty": 1 }
+      {
+        "item_id": "fish_pale_cathedral_cod",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      },
+      {
+        "item_id": "brine",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
     ],
     "processes": [
       "clean_fish",
@@ -802,8 +1549,16 @@
       "pack_in_tin",
       "seal_can"
     ],
-    "tags": ["brined", "aromatic"],
-    "yield": 1
+    "tags": [
+      "brined",
+      "aromatic"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
   }
 ]
-

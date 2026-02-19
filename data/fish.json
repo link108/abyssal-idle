@@ -9,16 +9,17 @@
     "biome": "Midnight Drop",
     "depth_min_m": 800,
     "depth_max_m": 1600,
-    "unlock_conditions": [
-      { "type": "money_at_least", "value": 25 }
-    ],
     "base_value": 45,
     "weight_kg_min": 1.2,
     "weight_kg_max": 4.5,
     "catch_difficulty": 0.55,
     "spawn_weight": 12,
     "cannery_yield": 2,
-    "tags": ["predator", "luminous", "whispering"],
+    "tags": [
+      "predator",
+      "luminous",
+      "whispering"
+    ],
     "effects": [],
     "sprite_key": "fish/weeping_lanternjaw",
     "icon_key": "icon/weeping_lanternjaw",
@@ -27,6 +28,12 @@
       "smoked_lanternjaw_ash_pepper_oil",
       "lanternjaw_pate_sea_fennel",
       "pickled_lanternjaw_tongue_murk_vinegar"
+    ],
+    "requires": [
+      {
+        "type": "money_at_least",
+        "value": 25
+      }
     ]
   },
   {
@@ -39,16 +46,17 @@
     "biome": "Trench Choir",
     "depth_min_m": 1400,
     "depth_max_m": 2600,
-    "unlock_conditions": [
-      { "type": "depth_tier_at_least", "value": 2 }
-    ],
     "base_value": 120,
-    "weight_kg_min": 2.0,
-    "weight_kg_max": 8.0,
+    "weight_kg_min": 2,
+    "weight_kg_max": 8,
     "catch_difficulty": 0.7,
     "spawn_weight": 6,
     "cannery_yield": 3,
-    "tags": ["drifter", "luminous", "harmonic"],
+    "tags": [
+      "drifter",
+      "luminous",
+      "harmonic"
+    ],
     "effects": [],
     "sprite_key": "fish/choirfin_seraph",
     "icon_key": "icon/choirfin_seraph",
@@ -58,6 +66,12 @@
       "choirfin_sea_garlic_preserve",
       "choirfin_roe_spread",
       "candied_choirfin_spine_cuts"
+    ],
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
     ]
   },
   {
@@ -70,17 +84,17 @@
     "biome": "Obsidian Trench",
     "depth_min_m": 2600,
     "depth_max_m": 4200,
-    "unlock_conditions": [
-      { "type": "upgrade_purchased", "value": "reinforced_net" },
-      { "type": "depth_tier_at_least", "value": 3 }
-    ],
     "base_value": 450,
-    "weight_kg_min": 20.0,
-    "weight_kg_max": 120.0,
+    "weight_kg_min": 20,
+    "weight_kg_max": 120,
     "catch_difficulty": 0.92,
     "spawn_weight": 1,
     "cannery_yield": 8,
-    "tags": ["leviathan", "predator", "obsidian"],
+    "tags": [
+      "leviathan",
+      "predator",
+      "obsidian"
+    ],
     "effects": [],
     "sprite_key": "fish/gloommaw_devourer",
     "icon_key": "icon/gloommaw_devourer",
@@ -90,6 +104,16 @@
       "gloommaw_liver_confit",
       "obsidian_smoked_gloommaw",
       "gloommaw_blood_sausage"
+    ],
+    "requires": [
+      {
+        "type": "upgrade_purchased",
+        "value": "reinforced_net"
+      },
+      {
+        "type": "depth_tier_at_least",
+        "value": 3
+      }
     ]
   },
   {
@@ -102,16 +126,17 @@
     "biome": "Siltfields",
     "depth_min_m": 300,
     "depth_max_m": 900,
-    "unlock_conditions": [
-      { "type": "always", "value": true }
-    ],
     "base_value": 12,
     "weight_kg_min": 0.2,
     "weight_kg_max": 1.1,
     "catch_difficulty": 0.2,
     "spawn_weight": 40,
     "cannery_yield": 1,
-    "tags": ["scavenger", "ribboned", "pale"],
+    "tags": [
+      "scavenger",
+      "ribboned",
+      "pale"
+    ],
     "effects": [],
     "sprite_key": "fish/veilscale_mourner",
     "icon_key": "icon/veilscale_mourner",
@@ -120,6 +145,12 @@
       "dried_veilscale_strips",
       "spiced_veilscale_flakes",
       "veilscale_bitter_kelp_oil"
+    ],
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
     ]
   },
   {
@@ -132,17 +163,18 @@
     "biome": "Abyssal Rift",
     "depth_min_m": 3800,
     "depth_max_m": 6000,
-    "unlock_conditions": [
-      { "type": "upgrade_purchased", "value": "pressure_hull" },
-      { "type": "depth_tier_at_least", "value": 4 }
-    ],
     "base_value": 900,
-    "weight_kg_min": 35.0,
-    "weight_kg_max": 200.0,
+    "weight_kg_min": 35,
+    "weight_kg_max": 200,
     "catch_difficulty": 0.98,
     "spawn_weight": 1,
     "cannery_yield": 10,
-    "tags": ["ancient", "serpent", "iridescent", "mythic"],
+    "tags": [
+      "ancient",
+      "serpent",
+      "iridescent",
+      "mythic"
+    ],
     "effects": [],
     "sprite_key": "fish/crowned_abysswyrm",
     "icon_key": "icon/crowned_abysswyrm",
@@ -152,6 +184,16 @@
       "abysswyrm_bone_broth_reduction",
       "iridescent_wyrm_fillet_ink_sauce",
       "abysswyrm_heart_preserve"
+    ],
+    "requires": [
+      {
+        "type": "upgrade_purchased",
+        "value": "pressure_hull"
+      },
+      {
+        "type": "depth_tier_at_least",
+        "value": 4
+      }
     ]
   },
   {
@@ -164,16 +206,17 @@
     "biome": "Glassgarden",
     "depth_min_m": 900,
     "depth_max_m": 1800,
-    "unlock_conditions": [
-      { "type": "depth_tier_at_least", "value": 1 }
-    ],
     "base_value": 55,
     "weight_kg_min": 0.8,
     "weight_kg_max": 3.2,
     "catch_difficulty": 0.45,
     "spawn_weight": 14,
     "cannery_yield": 2,
-    "tags": ["bottomfeeder", "crystalline", "fragile"],
+    "tags": [
+      "bottomfeeder",
+      "crystalline",
+      "fragile"
+    ],
     "effects": [],
     "sprite_key": "fish/shiverglass_haddrel",
     "icon_key": "icon/shiverglass_haddrel",
@@ -182,6 +225,12 @@
       "cracked_haddrel_sea_salt",
       "haddrel_crystal_roe_paste",
       "smoked_haddrel_shavings"
+    ],
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 1
+      }
     ]
   },
   {
@@ -194,17 +243,17 @@
     "biome": "Siltfields",
     "depth_min_m": 1200,
     "depth_max_m": 2400,
-    "unlock_conditions": [
-      { "type": "upgrade_purchased", "value": "silt_sonar" },
-      { "type": "depth_tier_at_least", "value": 2 }
-    ],
     "base_value": 160,
-    "weight_kg_min": 3.0,
-    "weight_kg_max": 9.0,
+    "weight_kg_min": 3,
+    "weight_kg_max": 9,
     "catch_difficulty": 0.75,
     "spawn_weight": 5,
     "cannery_yield": 3,
-    "tags": ["ambusher", "armored", "many_eyed"],
+    "tags": [
+      "ambusher",
+      "armored",
+      "many_eyed"
+    ],
     "effects": [],
     "sprite_key": "fish/thousand_eyed_skulker",
     "icon_key": "icon/thousand_eyed_skulker",
@@ -213,6 +262,16 @@
       "thousand_eyed_fillet_mash",
       "skulker_charred_kelp",
       "spicy_skulker_eye_relish"
+    ],
+    "requires": [
+      {
+        "type": "upgrade_purchased",
+        "value": "silt_sonar"
+      },
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
     ]
   },
   {
@@ -225,16 +284,17 @@
     "biome": "Midnight Drop",
     "depth_min_m": 600,
     "depth_max_m": 1400,
-    "unlock_conditions": [
-      { "type": "depth_tier_at_least", "value": 1 }
-    ],
     "base_value": 60,
-    "weight_kg_min": 4.0,
-    "weight_kg_max": 18.0,
+    "weight_kg_min": 4,
+    "weight_kg_max": 18,
     "catch_difficulty": 0.5,
     "spawn_weight": 10,
     "cannery_yield": 2,
-    "tags": ["grazer", "pale", "luminous"],
+    "tags": [
+      "grazer",
+      "pale",
+      "luminous"
+    ],
     "effects": [],
     "sprite_key": "fish/pale_cathedral_cod",
     "icon_key": "icon/pale_cathedral_cod",
@@ -243,7 +303,12 @@
       "cod_vault_cuts_white_pepper",
       "pale_cod_liver_preserve",
       "cathedral_cod_sea_onion"
+    ],
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 1
+      }
     ]
   }
 ]
-

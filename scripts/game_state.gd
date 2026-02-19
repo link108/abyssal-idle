@@ -15,10 +15,13 @@ const UPGRADE_DATA_PATH := "res://data/upgrades.json"
 const SKILL_TREE_DATA_PATH := "res://data/skill_tree.json"
 const FISH_DATA_PATH := "res://data/fish.json"
 const RECIPE_DATA_PATH := "res://data/recipes.json"
+const ITEM_DATA_PATH := "res://data/items.json"
+const EQUIPMENT_DATA_PATH := "res://data/equipment.json"
+const PROCESS_DATA_PATH := "res://data/processes.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
-const SAVE_VERSION := 10
+const SAVE_VERSION := 11
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -40,6 +43,7 @@ const SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL := 1
 const SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL := 0.01
 const INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL := 1
 const INDUSTRIAL_TIN_TIME_ADD_PER_LEVEL := -0.1
+const RequiresEval = preload("res://scripts/requires_eval.gd")
 
 # Economy
 var fish_count: int = 0
@@ -109,6 +113,8 @@ var upgrade_levels: Dictionary = {}
 var upgrade_pairs: Dictionary = {}
 var upgrade_order_by_category: Dictionary = {}
 var visible_upgrades_by_category: Dictionary = {}
+var chosen_exclusive_groups: Dictionary = {}
+var policy_stage_chosen: Dictionary = {}
 var skill_defs: Array = []
 var skill_defs_by_id: Dictionary = {}
 var fish_defs: Array = []
@@ -124,6 +130,7 @@ func _ready() -> void:
     _load_skill_tree()
     _load_fish_defs()
     _load_recipe_defs()
+    _validate_requires_data_dev()
     _rng.randomize()
 
 func save_game() -> void:
@@ -153,7 +160,9 @@ func save_game() -> void:
         "ocean_health_time_total": ocean_health_time_total,
         "run_time_seconds": run_time_seconds,
         "ending_state": int(ending_state),
-        "visible_upgrades_by_category": visible_upgrades_by_category
+        "visible_upgrades_by_category": visible_upgrades_by_category,
+        "chosen_exclusive_groups": chosen_exclusive_groups,
+        "policy_stage_chosen": policy_stage_chosen
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     file.store_string(JSON.stringify(data))
@@ -199,6 +208,8 @@ func new_game() -> void:
     is_crew_unlocked = false
     upgrade_levels.clear()
     visible_upgrades_by_category.clear()
+    chosen_exclusive_groups.clear()
+    policy_stage_chosen.clear()
     crew_trip_active = false
     crew_trip_remaining = 0.0
     crew_trip_paused = false
@@ -248,12 +259,23 @@ func _apply_save(data: Dictionary) -> void:
     run_time_seconds = float(data.get("run_time_seconds", 0.0))
     ending_state = int(data.get("ending_state", EndingState.NONE)) as EndingState
     visible_upgrades_by_category = data.get("visible_upgrades_by_category", {})
+    var has_chosen_groups := data.has("chosen_exclusive_groups")
+    var has_stage_chosen := data.has("policy_stage_chosen")
+    chosen_exclusive_groups = data.get("chosen_exclusive_groups", {})
+    policy_stage_chosen = data.get("policy_stage_chosen", {})
     if typeof(visible_upgrades_by_category) != TYPE_DICTIONARY:
         visible_upgrades_by_category = {}
+    if typeof(chosen_exclusive_groups) != TYPE_DICTIONARY:
+        chosen_exclusive_groups = {}
+    if typeof(policy_stage_chosen) != TYPE_DICTIONARY:
+        policy_stage_chosen = {}
     if typeof(fish_stock_by_id) != TYPE_DICTIONARY:
         fish_stock_by_id = {}
     run_paused = ending_state != EndingState.NONE
     _normalize_meta_state()
+    _normalize_policy_state()
+    if not has_chosen_groups or not has_stage_chosen:
+        _rebuild_policy_state()
     _reconcile_fish_stock()
     _reconcile_recipe_state()
     if version < SAVE_VERSION:
@@ -283,6 +305,8 @@ func _migrate_save(version: int) -> void:
         _reconcile_recipe_state()
     if version < 10:
         _reset_recipe_tracking_from_inventory()
+    if version < 11:
+        _rebuild_policy_state()
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -331,6 +355,33 @@ func _normalize_meta_state() -> void:
         if int(stats.get("produced", 0)) > 0 and not discovered_recipes.has(str(recipe_id)):
             discovered_recipes.append(str(recipe_id))
     meta_state["discovered_recipe_ids"] = discovered_recipes
+
+func _normalize_policy_state() -> void:
+    if typeof(chosen_exclusive_groups) != TYPE_DICTIONARY:
+        chosen_exclusive_groups = {}
+    if typeof(policy_stage_chosen) != TYPE_DICTIONARY:
+        policy_stage_chosen = {}
+
+func _rebuild_policy_state() -> void:
+    chosen_exclusive_groups = {}
+    policy_stage_chosen = {}
+    for def in upgrade_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        var upgrade_id := str(def.get("upgrade_id", ""))
+        if upgrade_id == "":
+            continue
+        if get_upgrade_level(upgrade_id) <= 0:
+            continue
+        var group_id := _get_exclusive_group_id(def)
+        if group_id != "" and bool(def.get("exclusive_choice", false)):
+            if not chosen_exclusive_groups.has(group_id):
+                chosen_exclusive_groups[group_id] = upgrade_id
+        var stage := _get_policy_stage(def)
+        if group_id != "" and stage > 0:
+            var existing := int(policy_stage_chosen.get(group_id, 0))
+            if stage > existing:
+                policy_stage_chosen[group_id] = stage
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -539,18 +590,21 @@ func _load_upgrades() -> void:
     for def in upgrade_defs:
         if typeof(def) != TYPE_DICTIONARY:
             continue
-        if not def.has("id"):
+        if not def.has("upgrade_id"):
             continue
-        upgrade_defs_by_id[def.id] = def
-        var pair_id := str(def.get("pair_id", ""))
-        if pair_id != "":
-            if not upgrade_pairs.has(pair_id):
-                upgrade_pairs[pair_id] = []
-            upgrade_pairs[pair_id].append(str(def.id))
+        var upgrade_id := str(def.get("upgrade_id", ""))
+        if upgrade_id == "":
+            continue
+        upgrade_defs_by_id[upgrade_id] = def
+        var group_id := _get_exclusive_group_id(def)
+        if group_id != "":
+            if not upgrade_pairs.has(group_id):
+                upgrade_pairs[group_id] = []
+            upgrade_pairs[group_id].append(upgrade_id)
         var category := str(def.get("category", "misc"))
         if not upgrade_order_by_category.has(category):
             upgrade_order_by_category[category] = []
-        upgrade_order_by_category[category].append(str(def.id))
+        upgrade_order_by_category[category].append(upgrade_id)
 
 func _load_skill_tree() -> void:
     if skill_defs.size() > 0:
@@ -625,6 +679,94 @@ func _load_recipe_defs() -> void:
         var ids: Array = recipe_ids_by_fish_id[fish_id]
         ids.append(recipe_id)
         recipe_ids_by_fish_id[fish_id] = ids
+
+func _validate_requires_data_dev() -> void:
+    if not OS.is_debug_build():
+        return
+    var valid_upgrade_ids: Dictionary = {}
+    for upgrade_id in upgrade_defs_by_id.keys():
+        valid_upgrade_ids[str(upgrade_id)] = true
+
+    var valid_item_ids: Dictionary = {}
+    var item_defs := _read_json_array(ITEM_DATA_PATH)
+    for item_def in item_defs:
+        if typeof(item_def) != TYPE_DICTIONARY:
+            continue
+        var ingredient_id := str(item_def.get("ingredient_id", ""))
+        if ingredient_id == "":
+            continue
+        valid_item_ids[ingredient_id] = true
+
+    var files := [
+        {"path": UPGRADE_DATA_PATH, "id_key": "upgrade_id"},
+        {"path": FISH_DATA_PATH, "id_key": "fish_id"},
+        {"path": ITEM_DATA_PATH, "id_key": "ingredient_id"},
+        {"path": EQUIPMENT_DATA_PATH, "id_key": "equipment_id"},
+        {"path": RECIPE_DATA_PATH, "id_key": "recipe_id"},
+        {"path": PROCESS_DATA_PATH, "id_key": "process_id"}
+    ]
+    for file_info in files:
+        var data_path := str(file_info.get("path", ""))
+        var id_key := str(file_info.get("id_key", "id"))
+        var defs := _read_json_array(data_path)
+        if defs.is_empty():
+            continue
+        _validate_requires_entries(data_path, defs, id_key, valid_upgrade_ids, valid_item_ids)
+
+func _read_json_array(path: String) -> Array:
+    if not FileAccess.file_exists(path):
+        return []
+    var file := FileAccess.open(path, FileAccess.READ)
+    if file == null:
+        return []
+    var parsed = JSON.parse_string(file.get_as_text())
+    if typeof(parsed) != TYPE_ARRAY:
+        return []
+    return parsed
+
+func _validate_requires_entries(data_path: String, defs: Array, id_key: String, valid_upgrade_ids: Dictionary, valid_item_ids: Dictionary) -> void:
+    for index in range(defs.size()):
+        var def = defs[index]
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        var entry: Dictionary = def
+        var entry_id := str(entry.get(id_key, ""))
+        if entry_id == "":
+            entry_id = "index=%d" % index
+
+        if entry.has("requires") and typeof(entry.get("requires", null)) != TYPE_ARRAY:
+            push_warning("Requires validation (%s, %s): requires must be an Array." % [data_path, entry_id])
+            continue
+
+        var reqs: Array = RequiresEval.get_requires(entry)
+        for req_idx in range(reqs.size()):
+            var req = reqs[req_idx]
+            if typeof(req) != TYPE_DICTIONARY:
+                push_warning("Requires validation (%s, %s, req[%d]): condition must be a Dictionary." % [data_path, entry_id, req_idx])
+                continue
+            var req_dict: Dictionary = req
+            var req_type := str(req_dict.get("type", ""))
+            if req_type == "":
+                push_warning("Requires validation (%s, %s, req[%d]): missing condition type." % [data_path, entry_id, req_idx])
+                continue
+
+            if req_type == "upgrade_purchased" or req_type == "upgrade_level_at_least":
+                var req_upgrade_id := str(req_dict.get("upgrade_id", ""))
+                if req_upgrade_id == "":
+                    var value = req_dict.get("value", null)
+                    if typeof(value) == TYPE_STRING:
+                        req_upgrade_id = str(value)
+                if req_upgrade_id != "" and not valid_upgrade_ids.has(req_upgrade_id):
+                    push_warning("Requires validation (%s, %s, req[%d]): unknown upgrade_id '%s'." % [data_path, entry_id, req_idx, req_upgrade_id])
+
+            if req_type == "item_owned_at_least":
+                var req_item_id := str(req_dict.get("item_id", ""))
+                if req_item_id == "":
+                    var item_value = req_dict.get("value", null)
+                    if typeof(item_value) == TYPE_STRING:
+                        req_item_id = str(item_value)
+                if req_item_id != "" and not valid_item_ids.has(req_item_id):
+                    push_warning("Requires validation (%s, %s, req[%d]): unknown item_id '%s'." % [data_path, entry_id, req_idx, req_item_id])
 
 func get_collection_fish_defs() -> Array:
     return fish_defs
@@ -774,35 +916,13 @@ func _get_catchable_fish_defs() -> Array:
     for fish_def in fish_defs:
         if typeof(fish_def) != TYPE_DICTIONARY:
             continue
-        if _is_fish_unlock_conditions_met(fish_def):
+        if _is_fish_requires_met(fish_def):
             out.append(fish_def)
     return out
 
-func _is_fish_unlock_conditions_met(fish_def: Dictionary) -> bool:
-    var unlock_conditions: Array = fish_def.get("unlock_conditions", [])
-    if unlock_conditions.is_empty():
-        return false
-    for condition in unlock_conditions:
-        if typeof(condition) != TYPE_DICTIONARY:
-            return false
-        var cond_type := str(condition.get("type", ""))
-        var value = condition.get("value", null)
-        if not _is_fish_unlock_condition_met(cond_type, value):
-            return false
-    return true
-
-func _is_fish_unlock_condition_met(cond_type: String, value) -> bool:
-    match cond_type:
-        "always":
-            return bool(value)
-        "money_at_least":
-            return lifetime_money_earned >= int(value)
-        "upgrade_purchased":
-            return get_upgrade_level(str(value)) > 0
-        "depth_tier_at_least":
-            # Depth tiers are not implemented yet; prestige count is used as a progression proxy.
-            return int(meta_state.get("prestige_count", 0)) >= int(value)
-    return false
+func _is_fish_requires_met(fish_def: Dictionary) -> bool:
+    var reqs := RequiresEval.get_requires(fish_def)
+    return RequiresEval.is_met(reqs, self)
 
 func _get_fallback_fish_id() -> String:
     if fish_defs.is_empty():
@@ -954,20 +1074,15 @@ func purchase_skill(id: String) -> bool:
 func get_upgrade_defs() -> Array:
     return upgrade_defs
 
-func get_visible_upgrade_defs_by_category() -> Dictionary:
+func get_visible_upgrade_defs_by_category(show_purchased: bool = false) -> Dictionary:
     _ensure_visible_upgrades()
     var result: Dictionary = {}
     for category in upgrade_order_by_category.keys():
-        var ids: Array = visible_upgrades_by_category.get(category, [])
-        var defs: Array = []
-        for id in ids:
-            var def = upgrade_defs_by_id.get(str(id), null)
-            if def == null:
-                continue
-            if is_upgrade_maxed(str(id)) and not def.has("pair_id"):
-                continue
-            defs.append(def)
-        result[category] = defs
+        if str(category) == "policy":
+            var policy_ids: Array = visible_upgrades_by_category.get("policy", [])
+            result[category] = _defs_from_ids(policy_ids)
+            continue
+        result[category] = _get_non_policy_defs_for_ui(str(category), show_purchased)
     return result
 
 func _ensure_visible_upgrades() -> void:
@@ -975,6 +1090,9 @@ func _ensure_visible_upgrades() -> void:
         _ensure_visible_upgrades_for_category(str(category))
 
 func _ensure_visible_upgrades_for_category(category: String) -> void:
+    if category == "policy":
+        _ensure_visible_policy_upgrades()
+        return
     var visible: Array = visible_upgrades_by_category.get(category, [])
     var order: Array = upgrade_order_by_category.get(category, [])
     var filtered: Array = []
@@ -983,7 +1101,7 @@ func _ensure_visible_upgrades_for_category(category: String) -> void:
         var def = upgrade_defs_by_id.get(id_str, null)
         if def == null:
             continue
-        if is_upgrade_maxed(id_str) and not def.has("pair_id"):
+        if is_upgrade_maxed(id_str) and not bool(def.get("exclusive_choice", false)):
             continue
         filtered.append(id_str)
     visible = filtered
@@ -997,27 +1115,64 @@ func _ensure_visible_upgrades_for_category(category: String) -> void:
             var def = upgrade_defs_by_id.get(id_str, null)
             if def == null:
                 continue
-            if is_upgrade_maxed(id_str) and not def.has("pair_id"):
+            if is_upgrade_maxed(id_str) and not bool(def.get("exclusive_choice", false)):
                 continue
             if not can_show_upgrade(def):
                 continue
-            var pair_id := str(def.get("pair_id", ""))
-            if pair_id != "":
+            var group_id := _get_exclusive_group_id(def)
+            if group_id != "":
                 var slot_count := _count_visible_slots(visible)
                 if slot_count >= UPGRADES_VISIBLE_PER_CATEGORY:
                     continue
-                var pair_ids: Array = upgrade_pairs.get(pair_id, [])
-                for pid in pair_ids:
-                    var pid_str := str(pid)
-                    if visible.has(pid_str):
+                var group_ids: Array = upgrade_pairs.get(group_id, [])
+                for gid in group_ids:
+                    var gid_str := str(gid)
+                    if visible.has(gid_str):
                         continue
-                    visible.append(pid_str)
+                    visible.append(gid_str)
                 added = true
                 break
             visible.append(id_str)
             added = true
             break
     visible_upgrades_by_category[category] = visible
+
+func _ensure_visible_policy_upgrades() -> void:
+    var visible: Array = []
+    var highest_stage := 0
+    for def in upgrade_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        if str(def.get("category", "")) != "policy":
+            continue
+        var upgrade_id := str(def.get("upgrade_id", ""))
+        if upgrade_id == "":
+            continue
+        if get_upgrade_level(upgrade_id) > 0:
+            if not visible.has(upgrade_id):
+                visible.append(upgrade_id)
+            var stage := _get_policy_stage(def)
+            if stage > highest_stage:
+                highest_stage = stage
+    for group_id in policy_stage_chosen.keys():
+        highest_stage = max(highest_stage, int(policy_stage_chosen.get(group_id, 0)))
+
+    var next_stage := highest_stage + 1
+    if next_stage > 0:
+        for def in upgrade_defs:
+            if typeof(def) != TYPE_DICTIONARY:
+                continue
+            if str(def.get("category", "")) != "policy":
+                continue
+            if _get_policy_stage(def) != next_stage:
+                continue
+            var upgrade_id := str(def.get("upgrade_id", ""))
+            if upgrade_id == "":
+                continue
+            if not visible.has(upgrade_id):
+                visible.append(upgrade_id)
+
+    visible_upgrades_by_category["policy"] = visible
 
 func _count_visible_slots(visible: Array) -> int:
     var slots := 0
@@ -1026,14 +1181,96 @@ func _count_visible_slots(visible: Array) -> int:
         var def = upgrade_defs_by_id.get(str(id), null)
         if def == null:
             continue
-        var pair_id := str(def.get("pair_id", ""))
-        if pair_id != "":
-            if not seen_pairs.has(pair_id):
-                seen_pairs[pair_id] = true
+        var group_id := _get_exclusive_group_id(def)
+        if group_id != "":
+            if not seen_pairs.has(group_id):
+                seen_pairs[group_id] = true
                 slots += 1
         else:
             slots += 1
     return slots
+
+func _defs_from_ids(ids: Array) -> Array:
+    var defs: Array = []
+    for id in ids:
+        var def = upgrade_defs_by_id.get(str(id), null)
+        if def == null:
+            continue
+        defs.append(def)
+    return defs
+
+func _get_non_policy_defs_for_ui(category: String, show_purchased: bool) -> Array:
+    var order: Array = upgrade_order_by_category.get(category, [])
+    var purchased: Array = []
+    var available: Array = []
+    var locked: Array = []
+    var locked_counts: Array = []
+    for id in order:
+        var id_str := str(id)
+        var def = upgrade_defs_by_id.get(id_str, null)
+        if def == null:
+            continue
+        var level := get_upgrade_level(id_str)
+        if is_upgrade_maxed(id_str):
+            continue
+        if level > 0:
+            purchased.append(def)
+        if show_purchased:
+            if _meets_requirements(def):
+                available.append(def)
+            continue
+        if _meets_requirements(def):
+            available.append(def)
+        else:
+            locked.append(def)
+            locked_counts.append(_count_unmet_requirements(def))
+    if show_purchased:
+        var merged: Array = []
+        var seen: Dictionary = {}
+        for def in purchased:
+            var upgrade_id := str(def.get("upgrade_id", ""))
+            if upgrade_id == "" or seen.has(upgrade_id):
+                continue
+            merged.append(def)
+            seen[upgrade_id] = true
+        for def in available:
+            var upgrade_id := str(def.get("upgrade_id", ""))
+            if upgrade_id == "" or seen.has(upgrade_id):
+                continue
+            merged.append(def)
+            seen[upgrade_id] = true
+        return merged
+    if not available.is_empty():
+        return available
+    if locked.is_empty():
+        return []
+    var indices := []
+    for i in range(locked.size()):
+        indices.append(i)
+    indices.sort_custom(func(a, b):
+        var ca := int(locked_counts[a])
+        var cb := int(locked_counts[b])
+        if ca == cb:
+            return a < b
+        return ca < cb
+    )
+    var out: Array = []
+    for i in indices:
+        out.append(locked[i])
+        if out.size() >= 2:
+            break
+    return out
+
+func _count_unmet_requirements(def: Dictionary) -> int:
+    var reqs: Array = RequiresEval.get_requires(def)
+    if reqs.is_empty():
+        return 0
+    var current_id := str(def.get("upgrade_id", ""))
+    var count := 0
+    for req in reqs:
+        if not RequiresEval.is_met([req], self, {"current_upgrade_id": current_id}):
+            count += 1
+    return count
 
 func get_upgrade_level(id: String) -> int:
     if id == "unlock_cannery":
@@ -1045,7 +1282,8 @@ func get_upgrade_cost(id: String) -> int:
     if def == null:
         return 0
     var base_cost := int(def.get("base_cost", 0))
-    var cost_mult := float(def.get("cost_mult", 1.0))
+    var cost_model: Dictionary = def.get("cost_model", {})
+    var cost_mult := float(cost_model.get("mult", 1.0))
     var level := get_upgrade_level(id)
     return int(round(base_cost * pow(cost_mult, level)))
 
@@ -1068,7 +1306,7 @@ func can_purchase_upgrade(id: String) -> bool:
     var def = upgrade_defs_by_id.get(id, null)
     if def == null:
         return false
-    if _is_upgrade_pair_locked(def):
+    if _is_exclusive_group_locked(def):
         return false
     if not _meets_requirements(def):
         return false
@@ -1082,56 +1320,66 @@ func purchase_upgrade(id: String) -> bool:
     var cost := get_upgrade_cost(id)
     money -= cost
     upgrade_levels[id] = get_upgrade_level(id) + 1
+    var def = upgrade_defs_by_id.get(id, null)
+    if def != null:
+        _record_policy_purchase(def)
     changed.emit()
     return true
 
 func can_show_upgrade(def: Dictionary) -> bool:
-    if def.get("id", "") == "unlock_cannery":
+    if def.get("upgrade_id", "") == "unlock_cannery":
         return cannery_upgrade_is_visible()
-    if def.has("pair_id"):
-        var stage := int(def.get("pair_stage", 0))
-        if stage > 0 and not _is_pair_stage_unlocked(stage):
-            return false
-        return _meets_requirements(def)
+    if _is_exclusive_group_def(def):
+        return _meets_requirements(def, true)
     return _meets_requirements(def)
 
-func _meets_requirements(def: Dictionary) -> bool:
-    var reqs: Dictionary = def.get("requires", {})
-    if reqs.is_empty():
-        if def.get("chain_prev", false) and not def.has("pair_id"):
-            return _has_prev_upgrade(def)
+func _meets_requirements(def: Dictionary, ignore_exclusive_lock: bool = false) -> bool:
+    var reqs: Array = RequiresEval.get_requires(def)
+    var ctx := {
+        "current_upgrade_id": str(def.get("upgrade_id", ""))
+    }
+    if ignore_exclusive_lock:
+        ctx["ignore_types"] = ["exclusive_group_unchosen"]
+    return RequiresEval.is_met(reqs, self, ctx)
+
+func _is_requirement_flag_true(flag: String) -> bool:
+    match flag:
+        "cannery_unlocked":
+            return is_cannery_unlocked
+        "crew_unlocked":
+            return is_crew_unlocked
+    return false
+
+func is_flag_true(flag: String) -> bool:
+    return _is_requirement_flag_true(flag)
+
+func _is_exclusive_group_unchosen(group_id: String, current_id: String) -> bool:
+    if group_id == "":
         return true
-    if reqs.get("cannery", false) and not is_cannery_unlocked:
+    if chosen_exclusive_groups.has(group_id):
         return false
-    if reqs.get("crew", false) and not is_crew_unlocked:
-        return false
-    var upgrade_reqs: Dictionary = reqs.get("upgrades", {})
-    for req_id in upgrade_reqs.keys():
-        var needed := int(upgrade_reqs[req_id])
-        if get_upgrade_level(str(req_id)) < needed:
+    var ids: Array = upgrade_pairs.get(group_id, [])
+    for other_id in ids:
+        var other_id_str := str(other_id)
+        if other_id_str == current_id:
+            continue
+        if get_upgrade_level(other_id_str) > 0:
             return false
-    if def.get("chain_prev", false) and not def.has("pair_id") and not _has_prev_upgrade(def):
-        return false
     return true
 
-func _has_prev_upgrade(def: Dictionary) -> bool:
-    if def.has("pair_id"):
+func _is_policy_stage_at_least(group_id: String, stage: int) -> bool:
+    if group_id == "":
         return true
-    var category := str(def.get("category", "misc"))
-    var order: Array = upgrade_order_by_category.get(category, [])
-    var id_str := str(def.get("id", ""))
-    var idx := order.find(id_str)
-    if idx <= 0:
-        return true
-    var prev_id := str(order[idx - 1])
-    return get_upgrade_level(prev_id) > 0
+    return int(policy_stage_chosen.get(group_id, 0)) >= stage
 
-func _is_upgrade_pair_locked(def: Dictionary) -> bool:
-    var pair_id := str(def.get("pair_id", ""))
-    if pair_id == "":
+func _is_exclusive_group_locked(def: Dictionary) -> bool:
+    var group_id := _get_exclusive_group_id(def)
+    if group_id == "":
         return false
-    var ids: Array = upgrade_pairs.get(pair_id, [])
-    var current_id := str(def.get("id", ""))
+    var current_id := str(def.get("upgrade_id", ""))
+    if chosen_exclusive_groups.has(group_id):
+        return str(chosen_exclusive_groups.get(group_id, "")) != current_id
+    var ids: Array = upgrade_pairs.get(group_id, [])
     for other_id in ids:
         if str(other_id) == current_id:
             continue
@@ -1139,22 +1387,52 @@ func _is_upgrade_pair_locked(def: Dictionary) -> bool:
             return true
     return false
 
-func _is_pair_stage_unlocked(stage: int) -> bool:
-    if stage <= 1:
-        return is_cannery_unlocked
-    return _is_pair_stage_completed(stage - 1)
+func _record_policy_purchase(def: Dictionary) -> void:
+    var group_id := _get_exclusive_group_id(def)
+    if group_id == "":
+        return
+    if bool(def.get("exclusive_choice", false)):
+        chosen_exclusive_groups[group_id] = str(def.get("upgrade_id", ""))
+    var stage := _get_policy_stage(def)
+    if stage > 0:
+        var existing := int(policy_stage_chosen.get(group_id, 0))
+        if stage > existing:
+            policy_stage_chosen[group_id] = stage
 
-func _is_pair_stage_completed(stage: int) -> bool:
-    for def in upgrade_defs:
-        if typeof(def) != TYPE_DICTIONARY:
+func _get_policy_stage(def: Dictionary) -> int:
+    if def.has("policy_stage"):
+        return int(def.get("policy_stage", 0))
+    var ui: Dictionary = def.get("ui", {})
+    if typeof(ui) == TYPE_DICTIONARY and ui.has("policy_stage"):
+        return int(ui.get("policy_stage", 0))
+    return 0
+
+func _is_exclusive_group_def(def: Dictionary) -> bool:
+    return _get_exclusive_group_id(def) != "" and bool(def.get("exclusive_choice", false))
+
+func _get_policy_requirement_reason(def: Dictionary) -> String:
+    if str(def.get("category", "")) != "policy" and _get_policy_stage(def) <= 0:
+        return ""
+    var reqs: Array = RequiresEval.get_requires(def)
+    for req in reqs:
+        if typeof(req) != TYPE_DICTIONARY:
             continue
-        var def_stage := int(def.get("pair_stage", 0))
-        if def_stage != stage:
-            continue
-        var id := str(def.get("id", ""))
-        if get_upgrade_level(id) > 0:
-            return true
-    return false
+        var req_type := str(req.get("type", ""))
+        match req_type:
+            "flag_true":
+                if str(req.get("flag", "")) == "cannery_unlocked" and not RequiresEval.is_met([req], self):
+                    return "Locked (need cannery)"
+            "policy_stage_at_least":
+                var ctx := {"current_upgrade_id": str(def.get("upgrade_id", ""))}
+                if not RequiresEval.is_met([req], self, ctx):
+                    return "Locked (complete previous policy stage)"
+    return ""
+
+func _get_exclusive_group_id(def: Dictionary) -> String:
+    var group_val = def.get("exclusive_group_id", "")
+    if group_val == null:
+        return ""
+    return str(group_val)
 
 func get_upgrade_lock_reason(id: String) -> String:
     if is_upgrade_maxed(id):
@@ -1166,9 +1444,27 @@ func get_upgrade_lock_reason(id: String) -> String:
     var def = upgrade_defs_by_id.get(id, null)
     if def == null:
         return "Unavailable"
-    if def.has("pair_id") and _is_upgrade_pair_locked(def):
-        return "Locked (other chosen)"
+    if _is_exclusive_group_locked(def):
+        var group_id := _get_exclusive_group_id(def)
+        var chosen_id := str(chosen_exclusive_groups.get(group_id, ""))
+        if chosen_id == "":
+            var ids: Array = upgrade_pairs.get(group_id, [])
+            for other_id in ids:
+                var other_id_str := str(other_id)
+                if other_id_str == id:
+                    continue
+                if get_upgrade_level(other_id_str) > 0:
+                    chosen_id = other_id_str
+                    break
+        var chosen_def: Dictionary = upgrade_defs_by_id.get(chosen_id, {})
+        var chosen_name := str(chosen_def.get("display_name", chosen_id))
+        if chosen_name == "":
+            chosen_name = chosen_id
+        return "Policy already chosen: %s" % chosen_name
     if not _meets_requirements(def):
+        var policy_reason := _get_policy_requirement_reason(def)
+        if policy_reason != "":
+            return policy_reason
         return "Locked"
     var cost := get_upgrade_cost(id)
     if money < cost:
@@ -1180,7 +1476,7 @@ func _get_effect_total(effect_type: String) -> int:
     for def in upgrade_defs:
         if typeof(def) != TYPE_DICTIONARY:
             continue
-        var id := str(def.get("id", ""))
+        var id := str(def.get("upgrade_id", ""))
         var level := get_upgrade_level(id)
         if level <= 0:
             continue
@@ -1197,7 +1493,7 @@ func _get_effect_total_float(effect_type: String) -> float:
     for def in upgrade_defs:
         if typeof(def) != TYPE_DICTIONARY:
             continue
-        var id := str(def.get("id", ""))
+        var id := str(def.get("upgrade_id", ""))
         var level := get_upgrade_level(id)
         if level <= 0:
             continue
