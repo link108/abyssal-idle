@@ -13,10 +13,12 @@ signal ending_reached(ending_id, summary)
 
 const UPGRADE_DATA_PATH := "res://data/upgrades.json"
 const SKILL_TREE_DATA_PATH := "res://data/skill_tree.json"
+const FISH_DATA_PATH := "res://data/fish.json"
+const RECIPE_DATA_PATH := "res://data/recipes.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
-const SAVE_VERSION := 7
+const SAVE_VERSION := 9
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -44,6 +46,7 @@ var fish_count: int = 0
 var tin_count: int = 0
 var money: int = 0
 var garlic_count: int = 0
+var fish_stock_by_id: Dictionary = {}
 var tin_inventory: Dictionary = {}
 var recipes_unlocked: Array = []
 var tin_cooldown_remaining: float = 0.0
@@ -66,7 +69,11 @@ var meta_state: Dictionary = {
     "prestige_count": 0,
     "sustainable_bonus_level": 0,
     "industrial_bonus_level": 0,
-    "skills_owned": []
+    "skills_owned": [],
+    "discovered_fish_ids": [],
+    "fish_lifetime_stats": {},
+    "discovered_recipe_ids": [],
+    "recipe_lifetime_stats": {}
 }
 
 # Upgrades: Cannery
@@ -104,11 +111,19 @@ var upgrade_order_by_category: Dictionary = {}
 var visible_upgrades_by_category: Dictionary = {}
 var skill_defs: Array = []
 var skill_defs_by_id: Dictionary = {}
+var fish_defs: Array = []
+var fish_defs_by_id: Dictionary = {}
+var fish_name_to_id: Dictionary = {}
+var recipe_defs: Array = []
+var recipe_defs_by_id: Dictionary = {}
+var recipe_ids_by_fish_id: Dictionary = {}
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     _load_upgrades()
     _load_skill_tree()
+    _load_fish_defs()
+    _load_recipe_defs()
     _rng.randomize()
 
 func save_game() -> void:
@@ -118,6 +133,7 @@ func save_game() -> void:
         "tin_count": tin_count,
         "money": money,
         "garlic_count": garlic_count,
+        "fish_stock_by_id": fish_stock_by_id,
         "lifetime_money_earned": lifetime_money_earned,
         "sell_mode": int(sell_mode),
         "is_cannery_discovered": is_cannery_discovered,
@@ -163,6 +179,7 @@ func new_game() -> void:
     tin_count = 0
     money = 0
     garlic_count = 0
+    fish_stock_by_id.clear()
     tin_inventory.clear()
     recipes_unlocked.clear()
     lifetime_money_earned = 0
@@ -190,7 +207,11 @@ func new_game() -> void:
         "prestige_count": 0,
         "sustainable_bonus_level": 0,
         "industrial_bonus_level": 0,
-        "skills_owned": []
+        "skills_owned": [],
+        "discovered_fish_ids": [],
+        "fish_lifetime_stats": {},
+        "discovered_recipe_ids": [],
+        "recipe_lifetime_stats": {}
     }
     reputation_changed.emit()
     skills_changed.emit()
@@ -206,6 +227,7 @@ func _apply_save(data: Dictionary) -> void:
     tin_count = int(data.get("tin_count", 0))
     money = int(data.get("money", 0))
     garlic_count = int(data.get("garlic_count", 0))
+    fish_stock_by_id = data.get("fish_stock_by_id", {})
     lifetime_money_earned = int(data.get("lifetime_money_earned", 0))
     sell_mode = int(data.get("sell_mode", 0)) as SellMode
     is_cannery_discovered = bool(data.get("is_cannery_discovered", false))
@@ -228,8 +250,12 @@ func _apply_save(data: Dictionary) -> void:
     visible_upgrades_by_category = data.get("visible_upgrades_by_category", {})
     if typeof(visible_upgrades_by_category) != TYPE_DICTIONARY:
         visible_upgrades_by_category = {}
+    if typeof(fish_stock_by_id) != TYPE_DICTIONARY:
+        fish_stock_by_id = {}
     run_paused = ending_state != EndingState.NONE
     _normalize_meta_state()
+    _reconcile_fish_stock()
+    _reconcile_recipe_state()
     if version < SAVE_VERSION:
         _migrate_save(version)
 
@@ -248,6 +274,13 @@ func _migrate_save(version: int) -> void:
         _normalize_meta_state()
     if version < 7:
         visible_upgrades_by_category.clear()
+    if version < 8:
+        fish_stock_by_id.clear()
+        _normalize_meta_state()
+        _reconcile_fish_stock()
+    if version < 9:
+        _normalize_meta_state()
+        _reconcile_recipe_state()
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -262,6 +295,40 @@ func _normalize_meta_state() -> void:
         meta_state["industrial_bonus_level"] = 0
     if not meta_state.has("skills_owned"):
         meta_state["skills_owned"] = []
+    if not meta_state.has("discovered_fish_ids"):
+        meta_state["discovered_fish_ids"] = []
+    if not meta_state.has("fish_lifetime_stats"):
+        meta_state["fish_lifetime_stats"] = {}
+    if not meta_state.has("discovered_recipe_ids"):
+        meta_state["discovered_recipe_ids"] = []
+    if not meta_state.has("recipe_lifetime_stats"):
+        meta_state["recipe_lifetime_stats"] = {}
+    if typeof(meta_state["discovered_fish_ids"]) != TYPE_ARRAY:
+        meta_state["discovered_fish_ids"] = []
+    if typeof(meta_state["fish_lifetime_stats"]) != TYPE_DICTIONARY:
+        meta_state["fish_lifetime_stats"] = {}
+    if typeof(meta_state["discovered_recipe_ids"]) != TYPE_ARRAY:
+        meta_state["discovered_recipe_ids"] = []
+    if typeof(meta_state["recipe_lifetime_stats"]) != TYPE_DICTIONARY:
+        meta_state["recipe_lifetime_stats"] = {}
+    var discovered: Array = meta_state["discovered_fish_ids"]
+    var all_stats: Dictionary = meta_state["fish_lifetime_stats"]
+    for fish_id in all_stats.keys():
+        var stats: Dictionary = all_stats.get(fish_id, {})
+        if typeof(stats) != TYPE_DICTIONARY:
+            continue
+        if int(stats.get("caught", 0)) > 0 and not discovered.has(str(fish_id)):
+            discovered.append(str(fish_id))
+    meta_state["discovered_fish_ids"] = discovered
+    var discovered_recipes: Array = meta_state["discovered_recipe_ids"]
+    var recipe_stats: Dictionary = meta_state["recipe_lifetime_stats"]
+    for recipe_id in recipe_stats.keys():
+        var stats: Dictionary = recipe_stats.get(recipe_id, {})
+        if typeof(stats) != TYPE_DICTIONARY:
+            continue
+        if int(stats.get("produced", 0)) > 0 and not discovered_recipes.has(str(recipe_id)):
+            discovered_recipes.append(str(recipe_id))
+    meta_state["discovered_recipe_ids"] = discovered_recipes
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -288,6 +355,7 @@ func catch_fish(amount: int = 1) -> void:
     mult = max(0.1, mult)
     var catch_total: int = max(1, int(round(float(amount + bonus) * mult)))
     fish_count += catch_total
+    _record_caught_fish(catch_total)
     _apply_ocean_health_pressure(catch_total)
     changed.emit()
 
@@ -296,6 +364,9 @@ func make_tin() -> bool:
         return false
     fish_count -= 1
     tin_count += 1
+    var consumed_fish_id := _consume_fish_from_stock()
+    if consumed_fish_id != "":
+        _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", 1)
     changed.emit()
     return true
 
@@ -308,9 +379,16 @@ func make_tin_with(_method_id: String, _ingredient_id: String) -> bool:
     tin_count += 1
     if _ingredient_id == "garlic":
         garlic_count -= 1
-    var key: String = _make_tin_key(_method_id, _ingredient_id)
+    var consumed_fish_id := _consume_fish_from_stock()
+    if consumed_fish_id != "":
+        _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", 1)
+    var recipe_id := _select_recipe_for_tinning(consumed_fish_id, _method_id, _ingredient_id)
+    if recipe_id != "":
+        _mark_recipe_discovered(recipe_id)
+        _increment_recipe_lifetime_stat(recipe_id, "produced", 1)
+    var key: String = recipe_id if recipe_id != "" else _make_tin_key(_method_id, _ingredient_id)
     tin_inventory[key] = int(tin_inventory.get(key, 0)) + 1
-    _unlock_recipe(_method_id, _ingredient_id)
+    _unlock_recipe(recipe_id, _method_id, _ingredient_id)
     changed.emit()
     return true
 
@@ -324,12 +402,12 @@ func try_make_tin(method_id: String, ingredient_id: String) -> bool:
     start_tin_cooldown()
     return true
 
-func _remove_random_tin() -> void:
+func _remove_random_tin() -> String:
     if tin_inventory.is_empty():
-        return
+        return ""
     var keys: Array = tin_inventory.keys()
     if keys.is_empty():
-        return
+        return ""
     var idx: int = _rng.randi_range(0, keys.size() - 1)
     var key: String = str(keys[idx])
     var count: int = int(tin_inventory.get(key, 0))
@@ -337,6 +415,7 @@ func _remove_random_tin() -> void:
         tin_inventory.erase(key)
     else:
         tin_inventory[key] = count - 1
+    return key
 
 func _add_money(amount: int) -> void:
     if amount <= 0:
@@ -365,14 +444,17 @@ func sell_tick() -> void:
                 var count: int = min(fish_count, get_fish_sell_count())
                 fish_count -= count
                 fish_sold += count
+                _record_fish_sales(count)
                 _add_money(get_fish_sell_price() * count)
         SellMode.TINS:
             if tin_count > 0:
                 tin_count -= 1
-                _remove_random_tin()
+                var sold_recipe_key := _remove_random_tin()
                 # Sanity: tins_sold should only advance when a tin is sold.
                 tins_sold += 1
-                _add_money(get_tin_sell_price())
+                var sale_price := get_tin_sell_price()
+                _record_recipe_sale(sold_recipe_key, sale_price)
+                _add_money(sale_price)
     changed.emit()
 
 func set_sell_mode(mode: SellMode) -> void:
@@ -487,6 +569,293 @@ func _load_skill_tree() -> void:
         if not def.has("id"):
             continue
         skill_defs_by_id[def.id] = def
+
+func _load_fish_defs() -> void:
+    fish_defs.clear()
+    fish_defs_by_id.clear()
+    fish_name_to_id.clear()
+    if not FileAccess.file_exists(FISH_DATA_PATH):
+        return
+    var file := FileAccess.open(FISH_DATA_PATH, FileAccess.READ)
+    if file == null:
+        return
+    var parsed = JSON.parse_string(file.get_as_text())
+    if typeof(parsed) != TYPE_ARRAY:
+        return
+    fish_defs = parsed
+    for fish_def in fish_defs:
+        if typeof(fish_def) != TYPE_DICTIONARY:
+            continue
+        var fish_id := str(fish_def.get("fish_id", ""))
+        if fish_id == "":
+            continue
+        fish_defs_by_id[fish_id] = fish_def
+        var display_name := str(fish_def.get("display_name", ""))
+        if display_name != "":
+            fish_name_to_id[display_name] = fish_id
+
+func _load_recipe_defs() -> void:
+    recipe_defs.clear()
+    recipe_defs_by_id.clear()
+    recipe_ids_by_fish_id.clear()
+    if not FileAccess.file_exists(RECIPE_DATA_PATH):
+        return
+    var file := FileAccess.open(RECIPE_DATA_PATH, FileAccess.READ)
+    if file == null:
+        return
+    var parsed = JSON.parse_string(file.get_as_text())
+    if typeof(parsed) != TYPE_ARRAY:
+        return
+    recipe_defs = parsed
+    for recipe_def in recipe_defs:
+        if typeof(recipe_def) != TYPE_DICTIONARY:
+            continue
+        var recipe_id := str(recipe_def.get("recipe_id", ""))
+        if recipe_id == "":
+            continue
+        recipe_defs_by_id[recipe_id] = recipe_def
+        var required_fish_name := str(recipe_def.get("required_fish_name", ""))
+        var fish_id := str(fish_name_to_id.get(required_fish_name, ""))
+        if fish_id == "":
+            continue
+        if not recipe_ids_by_fish_id.has(fish_id):
+            recipe_ids_by_fish_id[fish_id] = []
+        var ids: Array = recipe_ids_by_fish_id[fish_id]
+        ids.append(recipe_id)
+        recipe_ids_by_fish_id[fish_id] = ids
+
+func get_collection_fish_defs() -> Array:
+    return fish_defs
+
+func get_collection_recipe_defs() -> Array:
+    return recipe_defs
+
+func is_fish_discovered(fish_id: String) -> bool:
+    var discovered: Array = meta_state.get("discovered_fish_ids", [])
+    return discovered.has(fish_id)
+
+func get_fish_lifetime_stats(fish_id: String) -> Dictionary:
+    var all_stats: Dictionary = meta_state.get("fish_lifetime_stats", {})
+    var stats: Dictionary = all_stats.get(fish_id, {})
+    if typeof(stats) != TYPE_DICTIONARY:
+        stats = {}
+    return {
+        "caught": int(stats.get("caught", 0)),
+        "sold": int(stats.get("sold", 0)),
+        "tins_produced": int(stats.get("tins_produced", 0))
+    }
+
+func is_recipe_discovered(recipe_id: String) -> bool:
+    var discovered: Array = meta_state.get("discovered_recipe_ids", [])
+    return discovered.has(recipe_id)
+
+func get_recipe_lifetime_stats(recipe_id: String) -> Dictionary:
+    var all_stats: Dictionary = meta_state.get("recipe_lifetime_stats", {})
+    var stats: Dictionary = all_stats.get(recipe_id, {})
+    if typeof(stats) != TYPE_DICTIONARY:
+        stats = {}
+    return {
+        "produced": int(stats.get("produced", 0)),
+        "revenue_generated": int(stats.get("revenue_generated", 0))
+    }
+
+func _record_caught_fish(count: int) -> void:
+    for _i in range(count):
+        var fish_id := _pick_catchable_fish_id()
+        if fish_id == "":
+            continue
+        fish_stock_by_id[fish_id] = int(fish_stock_by_id.get(fish_id, 0)) + 1
+        _mark_fish_discovered(fish_id)
+        _increment_fish_lifetime_stat(fish_id, "caught", 1)
+
+func _record_fish_sales(count: int) -> void:
+    for _i in range(count):
+        var fish_id := _consume_fish_from_stock()
+        if fish_id == "":
+            break
+        _increment_fish_lifetime_stat(fish_id, "sold", 1)
+
+func _consume_fish_from_stock() -> String:
+    for fish_id in fish_stock_by_id.keys():
+        var id_str := str(fish_id)
+        var count: int = int(fish_stock_by_id[id_str])
+        if count <= 0:
+            continue
+        if count == 1:
+            fish_stock_by_id.erase(id_str)
+        else:
+            fish_stock_by_id[id_str] = count - 1
+        return id_str
+    return ""
+
+func _mark_fish_discovered(fish_id: String) -> void:
+    if fish_id == "":
+        return
+    var discovered: Array = meta_state.get("discovered_fish_ids", [])
+    if discovered.has(fish_id):
+        return
+    discovered.append(fish_id)
+    meta_state["discovered_fish_ids"] = discovered
+
+func _increment_fish_lifetime_stat(fish_id: String, stat_key: String, amount: int) -> void:
+    if fish_id == "" or amount <= 0:
+        return
+    var all_stats: Dictionary = meta_state.get("fish_lifetime_stats", {})
+    var stats: Dictionary = all_stats.get(fish_id, {})
+    if typeof(stats) != TYPE_DICTIONARY:
+        stats = {}
+    stats[stat_key] = int(stats.get(stat_key, 0)) + amount
+    all_stats[fish_id] = stats
+    meta_state["fish_lifetime_stats"] = all_stats
+
+func _mark_recipe_discovered(recipe_id: String) -> void:
+    if recipe_id == "":
+        return
+    var discovered: Array = meta_state.get("discovered_recipe_ids", [])
+    if discovered.has(recipe_id):
+        return
+    discovered.append(recipe_id)
+    meta_state["discovered_recipe_ids"] = discovered
+
+func _increment_recipe_lifetime_stat(recipe_id: String, stat_key: String, amount: int) -> void:
+    if recipe_id == "" or amount <= 0:
+        return
+    var all_stats: Dictionary = meta_state.get("recipe_lifetime_stats", {})
+    var stats: Dictionary = all_stats.get(recipe_id, {})
+    if typeof(stats) != TYPE_DICTIONARY:
+        stats = {}
+    stats[stat_key] = int(stats.get(stat_key, 0)) + amount
+    all_stats[recipe_id] = stats
+    meta_state["recipe_lifetime_stats"] = all_stats
+
+func _select_recipe_for_tinning(fish_id: String, method_id: String, ingredient_id: String) -> String:
+    if fish_id == "":
+        return ""
+    var recipe_ids: Array = recipe_ids_by_fish_id.get(fish_id, [])
+    if recipe_ids.is_empty():
+        return ""
+    var seed_text := "%s|%s|%s" % [fish_id, method_id, ingredient_id]
+    var hash_val: int = int(abs(seed_text.hash()))
+    return str(recipe_ids[hash_val % recipe_ids.size()])
+
+func _record_recipe_sale(recipe_id: String, revenue: int) -> void:
+    if recipe_id == "":
+        return
+    if not recipe_defs_by_id.has(recipe_id):
+        return
+    _increment_recipe_lifetime_stat(recipe_id, "revenue_generated", max(0, revenue))
+
+func _pick_catchable_fish_id() -> String:
+    var available_defs := _get_catchable_fish_defs()
+    if available_defs.is_empty():
+        return _get_fallback_fish_id()
+
+    var total_weight: int = 0
+    for fish_def in available_defs:
+        var fish_dict: Dictionary = fish_def
+        var spawn_weight := int(fish_dict.get("spawn_weight", 1))
+        total_weight += max(1, spawn_weight)
+    if total_weight <= 0:
+        return _get_fallback_fish_id()
+
+    var roll := _rng.randi_range(1, total_weight)
+    var running := 0
+    for fish_def in available_defs:
+        var fish_dict: Dictionary = fish_def
+        running += max(1, int(fish_dict.get("spawn_weight", 1)))
+        if roll <= running:
+            return str(fish_dict.get("fish_id", ""))
+    return _get_fallback_fish_id()
+
+func _get_catchable_fish_defs() -> Array:
+    var out: Array = []
+    for fish_def in fish_defs:
+        if typeof(fish_def) != TYPE_DICTIONARY:
+            continue
+        if _is_fish_unlock_conditions_met(fish_def):
+            out.append(fish_def)
+    return out
+
+func _is_fish_unlock_conditions_met(fish_def: Dictionary) -> bool:
+    var unlock_conditions: Array = fish_def.get("unlock_conditions", [])
+    if unlock_conditions.is_empty():
+        return false
+    for condition in unlock_conditions:
+        if typeof(condition) != TYPE_DICTIONARY:
+            return false
+        var cond_type := str(condition.get("type", ""))
+        var value = condition.get("value", null)
+        if not _is_fish_unlock_condition_met(cond_type, value):
+            return false
+    return true
+
+func _is_fish_unlock_condition_met(cond_type: String, value) -> bool:
+    match cond_type:
+        "always":
+            return bool(value)
+        "money_at_least":
+            return lifetime_money_earned >= int(value)
+        "upgrade_purchased":
+            return get_upgrade_level(str(value)) > 0
+        "depth_tier_at_least":
+            # Depth tiers are not implemented yet; prestige count is used as a progression proxy.
+            return int(meta_state.get("prestige_count", 0)) >= int(value)
+    return false
+
+func _get_fallback_fish_id() -> String:
+    if fish_defs.is_empty():
+        return ""
+    var first_def = fish_defs[0]
+    if typeof(first_def) != TYPE_DICTIONARY:
+        return ""
+    var fish_dict: Dictionary = first_def
+    return str(fish_dict.get("fish_id", ""))
+
+func _reconcile_fish_stock() -> void:
+    var total: int = 0
+    for fish_id in fish_stock_by_id.keys():
+        total += int(fish_stock_by_id[fish_id])
+    var delta := fish_count - total
+    if delta > 0:
+        var fallback_id := _get_fallback_fish_id()
+        if fallback_id != "":
+            fish_stock_by_id[fallback_id] = int(fish_stock_by_id.get(fallback_id, 0)) + delta
+    elif delta < 0:
+        var to_remove := -delta
+        for fish_id in fish_stock_by_id.keys():
+            if to_remove <= 0:
+                break
+            var id_str := str(fish_id)
+            var count: int = int(fish_stock_by_id[id_str])
+            if count <= to_remove:
+                to_remove -= count
+                fish_stock_by_id.erase(id_str)
+            else:
+                fish_stock_by_id[id_str] = count - to_remove
+                to_remove = 0
+
+func _reconcile_recipe_state() -> void:
+    var discovered: Array = meta_state.get("discovered_recipe_ids", [])
+    for entry in recipes_unlocked:
+        var recipe_id := str(entry)
+        if recipe_defs_by_id.has(recipe_id) and not discovered.has(recipe_id):
+            discovered.append(recipe_id)
+    meta_state["discovered_recipe_ids"] = discovered
+
+    var all_stats: Dictionary = meta_state.get("recipe_lifetime_stats", {})
+    for key in tin_inventory.keys():
+        var recipe_id := str(key)
+        if not recipe_defs_by_id.has(recipe_id):
+            continue
+        var inv_count := int(tin_inventory[key])
+        var stats: Dictionary = all_stats.get(recipe_id, {})
+        if typeof(stats) != TYPE_DICTIONARY:
+            stats = {}
+        var produced := int(stats.get("produced", 0))
+        if inv_count > produced:
+            stats["produced"] = inv_count
+        all_stats[recipe_id] = stats
+    meta_state["recipe_lifetime_stats"] = all_stats
 
 func get_skill_defs() -> Array:
     return skill_defs
@@ -876,9 +1245,21 @@ func get_inventory_items() -> Array:
     return items
 
 func get_recipe_list() -> Array:
-    return recipes_unlocked
+    var out: Array = []
+    for recipe_id in recipes_unlocked:
+        var id_str := str(recipe_id)
+        var recipe_def: Dictionary = recipe_defs_by_id.get(id_str, {})
+        if recipe_def.is_empty():
+            out.append(id_str)
+            continue
+        out.append(str(recipe_def.get("display_name", id_str)))
+    return out
 
-func _unlock_recipe(method_id: String, ingredient_id: String) -> void:
+func _unlock_recipe(recipe_id: String, method_id: String, ingredient_id: String) -> void:
+    if recipe_id != "":
+        if not recipes_unlocked.has(recipe_id):
+            recipes_unlocked.append(recipe_id)
+        return
     var label := _format_recipe(method_id, ingredient_id)
     if not recipes_unlocked.has(label):
         recipes_unlocked.append(label)
@@ -887,6 +1268,9 @@ func _make_tin_key(method_id: String, ingredient_id: String) -> String:
     return "%s|%s" % [method_id, ingredient_id]
 
 func _format_recipe_from_key(key: String) -> String:
+    if recipe_defs_by_id.has(key):
+        var recipe_def: Dictionary = recipe_defs_by_id.get(key, {})
+        return str(recipe_def.get("display_name", key))
     var parts := key.split("|")
     if parts.size() < 2:
         return _title(key)
@@ -927,9 +1311,8 @@ func _complete_crew_trip() -> void:
     crew_trip_active = false
     crew_trip_remaining = 0.0
     var catch_amount := get_crew_trip_catch()
-    fish_count += catch_amount
+    catch_fish(catch_amount)
     crew_trip_updated.emit()
-    changed.emit()
 
 func get_crew_trip_duration() -> float:
     var mult := 1.0 + _get_effect_total_float("crew_trip_duration_mult")
@@ -1022,6 +1405,7 @@ func _reset_run_state() -> void:
     tin_count = 0
     money = 0
     garlic_count = 0
+    fish_stock_by_id.clear()
     tin_inventory.clear()
     recipes_unlocked.clear()
     lifetime_money_earned = 0

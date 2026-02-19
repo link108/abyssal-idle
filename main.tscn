@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://dfp7shhr7k6y7"]
+[gd_scene load_steps=12 format=3 uid="uid://dfp7shhr7k6y7"]
 
 [ext_resource type="Script" uid="uid://b6v8aehavifo6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://dmwgj1chql5js" path="res://fishing_screen.tscn" id="2_0xm2m"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://inventory_screen.tscn" id="8_2s3yr"]
 [ext_resource type="PackedScene" path="res://recipe_screen.tscn" id="9_6k8b2"]
 [ext_resource type="PackedScene" path="res://skill_tree_screen.tscn" id="10_r5mtm"]
+[ext_resource type="PackedScene" path="res://collections_screen.tscn" id="11_uh34h"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -168,6 +169,14 @@ offset_right = 790.0
 offset_bottom = 560.0
 text = "Recipes"
 
+[node name="CollectionsButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 670.0
+offset_top = 570.0
+offset_right = 790.0
+offset_bottom = 610.0
+text = "Collections"
+
 [node name="ModalLayer" type="CanvasLayer" parent="."]
 
 [node name="Dimmer" type="ColorRect" parent="ModalLayer"]
@@ -204,6 +213,9 @@ visible = false
 visible = false
 
 [node name="SkillTreeScreen" parent="ModalLayer" instance=ExtResource("10_r5mtm")]
+visible = false
+
+[node name="CollectionsScreen" parent="ModalLayer" instance=ExtResource("11_uh34h")]
 visible = false
 
 [node name="EndingScreen" type="PanelContainer" parent="ModalLayer"]
@@ -332,6 +344,7 @@ dialog_text = "Prestige now?"
 [connection signal="pressed" from="CrewSelectButton" to="." method="_on_crew_select_button_pressed"]
 [connection signal="pressed" from="InventoryButton" to="." method="_on_inventory_button_pressed"]
 [connection signal="pressed" from="RecipesButton" to="." method="_on_recipes_button_pressed"]
+[connection signal="pressed" from="CollectionsButton" to="." method="_on_collections_button_pressed"]
 [connection signal="confirmed" from="PrestigeConfirm" to="." method="_on_prestige_confirmed"]
 [connection signal="pressed" from="SkillTreeButton" to="." method="_on_skill_tree_button_pressed"]
 [connection signal="pressed" from="ModalLayer/EndingScreen/EndingVBox/EndingReturnButton" to="." method="_on_ending_return_pressed"]

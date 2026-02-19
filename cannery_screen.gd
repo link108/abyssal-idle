@@ -35,7 +35,7 @@ func _on_close_button_close_requested() -> void:
 func _on_make_tin_button_pressed() -> void:
     var method_id: String = _get_selected_id(method_select, "raw")
     var ingredient_id: String = _get_selected_id(ingredient_select, "none")
-    var made := GameState.try_make_tin(method_id, ingredient_id)
+    var made: bool = GameState.try_make_tin(method_id, ingredient_id)
     if made:
         last_made_label.text = "Made: %s" % GameState.format_recipe(method_id, ingredient_id)
     make_tin_requested.emit()
@@ -79,11 +79,11 @@ func _refresh_counts() -> void:
 
 
 func _update_cooldown_ui() -> void:
-    var ready := GameState.can_make_tin()
+    var ready: bool = GameState.can_make_tin()
     make_tin_button.disabled = not ready
     make_tin_button.modulate = Color(1, 1, 1, 1) if ready else Color(0.6, 0.6, 0.6, 1)
-    var total := GameState.get_tin_make_time()
-    var remaining := GameState.tin_cooldown_remaining
+    var total: float = GameState.get_tin_make_time()
+    var remaining: float = GameState.tin_cooldown_remaining
     if total <= 0.0:
         make_tin_progress.value = 1.0
         make_tin_button.text = "Make tin"

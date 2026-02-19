@@ -4,13 +4,13 @@
 - Engine: Godot 4.5 (GL Compatibility)
 - Main scene: `main.tscn`
 - Global state: `GameState` autoload (`scripts/game_state.gd`)
-- Current gameplay loop: fish (minigame) -> sell -> money -> upgrades -> cannery -> tins -> sell
+- Current gameplay loop: fish (minigame) -> sell -> money -> upgrades/skills -> cannery -> tins -> sell -> prestige -> endings
 
 ## Project Structure (Top-Level)
 - `main.tscn` / `main.gd`: HUD + modal screen wiring, timers (sell/autosave), UI orchestration
 - `*_screen.tscn` / `*_screen.gd`: Modal panels for core interactions
-- `scripts/game_state.gd`: Single source of truth for economy, upgrades, timers, save/load
-- `data/`: JSON data for upgrades and cannery options
+- `scripts/game_state.gd`: Single source of truth for economy, upgrades, timers, save/load, prestige, endings
+- `data/`: JSON data for upgrades, skill tree, and cannery options
 - `scenes/ui/`: Reusable UI assets (close button, button styles)
 - `docs/`: Design, architecture, and planning docs
 
@@ -32,14 +32,20 @@
 - Unlock discovery at lifetime earnings thresholds
 - Crew trip timers and rewards (duration, catch amount)
 - Auto-send upgrade support
-- Upgrades
+- Upgrades (including mutually exclusive policy pairs)
 - Loaded from `data/upgrades.json`
-- Requirements: cannery/crew unlock flags and upgrade levels
-- Effects applied via `*_get_effect_total*()` helpers
+- Requirements: cannery/crew unlock flags, upgrade levels, and policy stages
+- Effects applied via `*_get_effect_total*()` helpers (plus skill effects)
+- Prestige + MetaState
+- Per-run `tins_sold`, `fish_sold`, run time, and prestige gate at 100 tins
+- MetaState: reputation, prestige count, permanent skill choices
+- Ocean Health
+- Run-state `ocean_health` with regen + pressure, UI meter, and average tracking
+- Endings
+- Three endings with central checks in `GameState`, ending modal, and run summary
 - Save/Load
-- JSON save at `user://save.json`
-- Save includes economy, unlock flags, upgrades, recipes, crew trip state
-- Save currently captures run state only (no MetaState yet)
+- JSON save at `user://save.json` (versioned)
+- Save includes run state, MetaState, ocean health, ending state, and visible upgrade slots
 
 ## Screens / UI
 - `start_screen.tscn` / `start_screen.gd`
@@ -54,7 +60,9 @@
 - Method + ingredient selection from `data/cannery_options.json`
 - Tin cooldown progress UI
 - `upgrade_screen.tscn` / `upgrade_screen.gd`
-- Runtime-generated upgrade cards from JSON
+- Runtime-generated upgrade cards from JSON (category headers, policy pairs side-by-side)
+- `skill_tree_screen.tscn` / `skill_tree_screen.gd`
+- Skill tree modal with draggable graph + hover details and buy button
 - `inventory_screen.tscn` / `inventory_screen.gd`
 - Grid listing fish, garlic, and tins by recipe
 - `recipe_screen.tscn` / `recipe_screen.gd`
@@ -63,11 +71,14 @@
 - Placeholder list (currently one default entry)
 - `scenes/ui/close_button.tscn` / `scenes/ui/close_button.gd`
 - Reusable close button emitting `close_requested`
+- Ending modal is embedded in `main.tscn`
 
 ## Data Files
 - `data/upgrades.json`
 - Defines upgrade metadata, costs, requirements, and effects
-- Includes cannery and crew effects (auto-send, tin speed, etc.)
+- Includes cannery/crew effects and policy pairs
+- `data/skill_tree.json`
+- Defines skill tree nodes, positions, costs, requirements, and effects
 - `data/cannery_options.json`
 - Defines available tin methods and ingredients
 
@@ -78,17 +89,14 @@
 - `GameState._process()`
 - Crew trip countdown and auto-send
 - Tin cooldown and auto-tin loop
+- Ocean health regen + run-time tracking + ending checks
 
 ## Current Architecture Notes
 - UI uses a modal pattern: screens are shown/hidden by `main.gd` with a `Dimmer` overlay
-- `GameState` emits `changed` and other signals to refresh UI
-- Data-driven upgrades and cannery options are already in place
+- `GameState` emits `changed` plus granular signals (`ocean_health_changed`, `skills_changed`, `reputation_changed`)
+- Data-driven upgrades, skill tree, and cannery options are in place
 
 ## Not Yet Implemented (From Updated Planning)
-- Prestige availability gate at 100 tins sold
-- Reputation system and MetaState persistence
-- Permanent tech tree and reputation spend
-- Ocean health system (hidden or visible)
-- Industrial vs sustainable behavior weighting
-- Endings and run summary
+- Fish quality and rarity systems (for sustainable/dual endings)
 - Multiple fish types, quality, and higher-tier processing
+- NG+ mode and full meta progression tuning

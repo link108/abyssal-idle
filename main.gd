@@ -13,6 +13,7 @@ const AUTOSAVE_INTERVAL := 30.0
 @onready var market_screen := $ModalLayer/MarketScreen
 @onready var crew_screen := $ModalLayer/CrewScreen
 @onready var skill_tree_screen := $ModalLayer/SkillTreeScreen
+@onready var collections_screen := $ModalLayer/CollectionsScreen
 @onready var fish_label := $FishLabel
 @onready var tin_label := $TinLabel
 @onready var money_label := $MoneyLabel
@@ -128,6 +129,10 @@ func _on_inventory_button_pressed() -> void:
 func _on_recipes_button_pressed() -> void:
     $ModalLayer/Dimmer.show()
     recipe_screen.show()
+
+func _on_collections_button_pressed() -> void:
+    $ModalLayer/Dimmer.show()
+    collections_screen.show()
 
 func _on_load_requested() -> void:
     GameState.load_game()
@@ -251,6 +256,7 @@ func _show_ending_screen(ending_id: int, summary: Dictionary) -> void:
     crew_screen.hide()
     inventory_screen.hide()
     recipe_screen.hide()
+    collections_screen.hide()
     skill_tree_screen.hide()
     ending_title.text = _get_ending_title(ending_id)
     ending_subtitle.text = _get_ending_subtitle(ending_id)
