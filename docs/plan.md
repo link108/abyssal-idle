@@ -120,4 +120,3 @@ Goal: Faster subsequent runs + build perfection over time.
 - Avoid permanent player lock-in.
 - Bonus > penalty in all tradeoff upgrades.
 - Keep automation replacing actions, not thinking.
-

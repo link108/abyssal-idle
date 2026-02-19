@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://dfp7shhr7k6y7"]
+[gd_scene load_steps=11 format=3 uid="uid://dfp7shhr7k6y7"]
 
 [ext_resource type="Script" uid="uid://b6v8aehavifo6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://dmwgj1chql5js" path="res://fishing_screen.tscn" id="2_0xm2m"]
@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://start_screen.tscn" id="7_3bknm"]
 [ext_resource type="PackedScene" path="res://inventory_screen.tscn" id="8_2s3yr"]
 [ext_resource type="PackedScene" path="res://recipe_screen.tscn" id="9_6k8b2"]
+[ext_resource type="PackedScene" path="res://skill_tree_screen.tscn" id="10_r5mtm"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -84,6 +85,22 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.7372549, 0.17254902, 0.64705884, 0.4745098)
+
+[node name="PrestigeButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 735.0
+offset_top = 60.0
+offset_right = 817.0
+offset_bottom = 91.0
+text = "Prestige"
+
+[node name="SkillTreeButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 735.0
+offset_top = 96.0
+offset_right = 817.0
+offset_bottom = 127.0
+text = "Skills"
 
 [node name="MarketButton" type="Button" parent="."]
 layout_mode = 0
@@ -179,13 +196,61 @@ visible = false
 visible = false
 
 [node name="StartScreen" parent="ModalLayer" instance=ExtResource("7_3bknm")]
-visible = true
 
 [node name="InventoryScreen" parent="ModalLayer" instance=ExtResource("8_2s3yr")]
 visible = false
 
 [node name="RecipeScreen" parent="ModalLayer" instance=ExtResource("9_6k8b2")]
 visible = false
+
+[node name="SkillTreeScreen" parent="ModalLayer" instance=ExtResource("10_r5mtm")]
+visible = false
+
+[node name="EndingScreen" type="PanelContainer" parent="ModalLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -160.0
+offset_right = 220.0
+offset_bottom = 160.0
+
+[node name="EndingVBox" type="VBoxContainer" parent="ModalLayer/EndingScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="EndingTitle" type="Label" parent="ModalLayer/EndingScreen/EndingVBox"]
+layout_mode = 2
+text = "Ending Reached"
+horizontal_alignment = 1
+
+[node name="EndingSubtitle" type="Label" parent="ModalLayer/EndingScreen/EndingVBox"]
+layout_mode = 2
+text = "Summary"
+horizontal_alignment = 1
+
+[node name="EndingStats" type="Label" parent="ModalLayer/EndingScreen/EndingVBox"]
+layout_mode = 2
+text = "Stats"
+autowrap_mode = 3
+
+[node name="EndingHint" type="Label" parent="ModalLayer/EndingScreen/EndingVBox"]
+layout_mode = 2
+text = "New Game+ will be available after completion."
+autowrap_mode = 3
+
+[node name="EndingReturnButton" type="Button" parent="ModalLayer/EndingScreen/EndingVBox"]
+layout_mode = 2
+text = "Return to Start"
 
 [node name="FishLabel" type="Label" parent="."]
 layout_mode = 1
@@ -219,11 +284,54 @@ offset_right = 598.0
 offset_bottom = 38.0
 text = "Total Earnings: $0"
 
+[node name="OceanHealthLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 848.0
+offset_top = 18.0
+offset_right = 958.0
+offset_bottom = 41.0
+text = "Ocean"
+
+[node name="OceanHealthBar" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 848.0
+offset_top = 39.0
+offset_right = 978.0
+offset_bottom = 51.0
+tooltip_text = "Ocean health changes with fishing pressure and regenerates over time."
+color = Color(0.1, 0.1, 0.1, 0.6)
+
+[node name="OceanHealthFill" type="ColorRect" parent="OceanHealthBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.2, 0.6, 1, 0.85)
+
+[node name="ReputationLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 461.0
+offset_top = 40.0
+offset_right = 700.0
+offset_bottom = 63.0
+text = "Reputation: 0 (Prestige: 0)"
+
+[node name="PrestigeConfirm" type="ConfirmationDialog" parent="."]
+title = "Prestige Run"
+ok_button_text = "Prestige"
+dialog_text = "Prestige now?"
+
 [connection signal="pressed" from="BoatButton" to="." method="_on_boat_button_pressed"]
 [connection signal="pressed" from="CanneryButton" to="." method="_on_cannery_button_pressed"]
 [connection signal="pressed" from="UpgradeButton" to="." method="_on_upgrade_button_pressed"]
+[connection signal="pressed" from="PrestigeButton" to="." method="_on_prestige_button_pressed"]
 [connection signal="pressed" from="MarketButton" to="." method="_on_market_button_pressed"]
 [connection signal="pressed" from="CrewButton" to="." method="_on_crew_button_pressed"]
 [connection signal="pressed" from="CrewSelectButton" to="." method="_on_crew_select_button_pressed"]
 [connection signal="pressed" from="InventoryButton" to="." method="_on_inventory_button_pressed"]
 [connection signal="pressed" from="RecipesButton" to="." method="_on_recipes_button_pressed"]
+[connection signal="confirmed" from="PrestigeConfirm" to="." method="_on_prestige_confirmed"]
+[connection signal="pressed" from="SkillTreeButton" to="." method="_on_skill_tree_button_pressed"]
+[connection signal="pressed" from="ModalLayer/EndingScreen/EndingVBox/EndingReturnButton" to="." method="_on_ending_return_pressed"]

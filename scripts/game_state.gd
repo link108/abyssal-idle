@@ -6,11 +6,37 @@ signal cannery_discovered
 signal crew_trip_updated
 signal crew_discovered
 signal crew_unlocked
+signal ocean_health_changed
+signal reputation_changed
+signal skills_changed
+signal ending_reached(ending_id, summary)
 
 const UPGRADE_DATA_PATH := "res://data/upgrades.json"
+const SKILL_TREE_DATA_PATH := "res://data/skill_tree.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
+const SAVE_VERSION := 6
+const PRESTIGE_TINS_REQUIRED := 100
+const REPUTATION_MONEY_DIVISOR := 100
+const OCEAN_HEALTH_MAX := 100.0
+const OCEAN_HEALTH_MIN := 0.0
+const OCEAN_HEALTH_FISH_COST := 1.0
+const OCEAN_HEALTH_REGEN_PER_SEC := 1000.0
+const OCEAN_HEALTH_COLLAPSE_THRESHOLD := 0.0
+# Ending tuning and proxies (quality/legendary not implemented yet).
+const SUSTAINABLE_HEALTH_AVG_THRESHOLD := 0.85
+const SUSTAINABLE_MIN_SECONDS := 3.0 * 60.0 * 60.0
+const INDUSTRIAL_MIN_SECONDS := 2.0 * 60.0 * 60.0
+const DUAL_MIN_SECONDS := 6.0 * 60.0 * 60.0
+const INDUSTRIAL_MIN_LIFETIME_MONEY := 50000
+const SUSTAINABLE_MIN_TOTAL_UPGRADES := 12
+const DUAL_MIN_LIFETIME_MONEY := 250000
+
+const SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL := 1
+const SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL := 0.01
+const INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL := 1
+const INDUSTRIAL_TIN_TIME_ADD_PER_LEVEL := -0.1
 
 # Economy
 var fish_count: int = 0
@@ -22,6 +48,26 @@ var recipes_unlocked: Array = []
 var tin_cooldown_remaining: float = 0.0
 var tin_method_id: String = "raw"
 var tin_ingredient_id: String = "none"
+var tins_sold: int = 0
+var fish_sold: int = 0
+var ocean_health: float = OCEAN_HEALTH_MAX
+var ocean_health_time_accum: float = 0.0
+var ocean_health_time_total: float = 0.0
+var run_time_seconds: float = 0.0
+var run_paused: bool = false
+
+enum EndingState { NONE, INDUSTRIAL_COLLAPSE, SUSTAINABLE_EQUILIBRIUM, DUAL_MASTERY }
+var ending_state: EndingState = EndingState.NONE
+
+# MetaState (persists across runs)
+var meta_state: Dictionary = {
+    "reputation": 0,
+    "prestige_count": 0,
+    "sustainable_bonus_level": 0,
+    "industrial_bonus_level": 0,
+    "skills_owned": [],
+    "pair_picks": {}
+}
 
 # Upgrades: Cannery
 const CANNERY_UNLOCK_COST := 200
@@ -53,15 +99,18 @@ var _rng := RandomNumberGenerator.new()
 var upgrade_defs: Array = []
 var upgrade_defs_by_id: Dictionary = {}
 var upgrade_levels: Dictionary = {}
+var skill_defs: Array = []
+var skill_defs_by_id: Dictionary = {}
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     _load_upgrades()
+    _load_skill_tree()
     _rng.randomize()
 
 func save_game() -> void:
     var data := {
-        "version": 1,
+        "version": SAVE_VERSION,
         "fish_count": fish_count,
         "tin_count": tin_count,
         "money": money,
@@ -76,7 +125,15 @@ func save_game() -> void:
         "tin_inventory": tin_inventory,
         "recipes_unlocked": recipes_unlocked,
         "crew_trip_active": crew_trip_active,
-        "crew_trip_remaining": crew_trip_remaining
+        "crew_trip_remaining": crew_trip_remaining,
+        "tins_sold": tins_sold,
+        "fish_sold": fish_sold,
+        "meta_state": meta_state,
+        "ocean_health": ocean_health,
+        "ocean_health_time_accum": ocean_health_time_accum,
+        "ocean_health_time_total": ocean_health_time_total,
+        "run_time_seconds": run_time_seconds,
+        "ending_state": int(ending_state)
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     file.store_string(JSON.stringify(data))
@@ -92,6 +149,8 @@ func load_game() -> bool:
     if typeof(parsed) != TYPE_DICTIONARY:
         return false
     _apply_save(parsed)
+    reputation_changed.emit()
+    skills_changed.emit()
     changed.emit()
     return true
 
@@ -103,6 +162,17 @@ func new_game() -> void:
     tin_inventory.clear()
     recipes_unlocked.clear()
     lifetime_money_earned = 0
+    tins_sold = 0
+    fish_sold = 0
+    ocean_health = OCEAN_HEALTH_MAX
+    ocean_health_time_accum = 0.0
+    ocean_health_time_total = 0.0
+    run_time_seconds = 0.0
+    run_paused = false
+    ending_state = EndingState.NONE
+    run_time_seconds = 0.0
+    run_paused = false
+    ending_state = EndingState.NONE
     sell_mode = SellMode.FISH
     is_cannery_discovered = false
     is_cannery_unlocked = false
@@ -112,6 +182,16 @@ func new_game() -> void:
     crew_trip_active = false
     crew_trip_remaining = 0.0
     crew_trip_paused = false
+    meta_state = {
+        "reputation": 0,
+        "prestige_count": 0,
+        "sustainable_bonus_level": 0,
+        "industrial_bonus_level": 0,
+        "skills_owned": [],
+        "pair_picks": {}
+    }
+    reputation_changed.emit()
+    skills_changed.emit()
     changed.emit()
     save_game()
 
@@ -119,12 +199,13 @@ func save_exists() -> bool:
     return FileAccess.file_exists(SAVE_PATH)
 
 func _apply_save(data: Dictionary) -> void:
+    var version := int(data.get("version", 1))
     fish_count = int(data.get("fish_count", 0))
     tin_count = int(data.get("tin_count", 0))
     money = int(data.get("money", 0))
     garlic_count = int(data.get("garlic_count", 0))
     lifetime_money_earned = int(data.get("lifetime_money_earned", 0))
-    sell_mode = int(data.get("sell_mode", 0))
+    sell_mode = int(data.get("sell_mode", 0)) as SellMode
     is_cannery_discovered = bool(data.get("is_cannery_discovered", false))
     is_cannery_unlocked = bool(data.get("is_cannery_unlocked", false))
     is_crew_discovered = bool(data.get("is_crew_discovered", false))
@@ -134,9 +215,53 @@ func _apply_save(data: Dictionary) -> void:
     recipes_unlocked = data.get("recipes_unlocked", [])
     crew_trip_active = bool(data.get("crew_trip_active", false))
     crew_trip_remaining = float(data.get("crew_trip_remaining", 0.0))
+    tins_sold = int(data.get("tins_sold", 0))
+    fish_sold = int(data.get("fish_sold", 0))
+    meta_state = data.get("meta_state", meta_state)
+    ocean_health = float(data.get("ocean_health", OCEAN_HEALTH_MAX))
+    ocean_health_time_accum = float(data.get("ocean_health_time_accum", 0.0))
+    ocean_health_time_total = float(data.get("ocean_health_time_total", 0.0))
+    run_time_seconds = float(data.get("run_time_seconds", 0.0))
+    ending_state = int(data.get("ending_state", EndingState.NONE)) as EndingState
+    run_paused = ending_state != EndingState.NONE
+    _normalize_meta_state()
+    if version < SAVE_VERSION:
+        _migrate_save(version)
+
+func _migrate_save(version: int) -> void:
+    if version < 2:
+        _normalize_meta_state()
+    if version < 3:
+        ocean_health = OCEAN_HEALTH_MAX
+    if version < 4:
+        ocean_health_time_accum = 0.0
+        ocean_health_time_total = 0.0
+    if version < 5:
+        run_time_seconds = 0.0
+        ending_state = EndingState.NONE
+    if version < 6:
+        _normalize_meta_state()
+
+func _normalize_meta_state() -> void:
+    if typeof(meta_state) != TYPE_DICTIONARY:
+        meta_state = {}
+    if not meta_state.has("reputation"):
+        meta_state["reputation"] = 0
+    if not meta_state.has("prestige_count"):
+        meta_state["prestige_count"] = 0
+    if not meta_state.has("sustainable_bonus_level"):
+        meta_state["sustainable_bonus_level"] = 0
+    if not meta_state.has("industrial_bonus_level"):
+        meta_state["industrial_bonus_level"] = 0
+    if not meta_state.has("skills_owned"):
+        meta_state["skills_owned"] = []
+    if not meta_state.has("pair_picks"):
+        meta_state["pair_picks"] = {}
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
+    if run_paused:
+        return
     if crew_trip_active and not crew_trip_paused:
         crew_trip_remaining = max(0.0, crew_trip_remaining - delta)
         if crew_trip_remaining <= 0.0:
@@ -147,10 +272,16 @@ func _process(delta: float) -> void:
         tin_cooldown_remaining = max(0.0, tin_cooldown_remaining - delta)
     if get_auto_tin_enabled() and _can_auto_tin():
         try_make_tin(tin_method_id, tin_ingredient_id)
+    _regenerate_ocean_health(delta)
+    _track_ocean_health(delta)
+    _track_run_time(delta)
+    _check_endings()
 
 func catch_fish(amount: int = 1) -> void:
-    var bonus := _get_effect_total("catch_add")
-    fish_count += max(1, amount + bonus)
+    var bonus: int = _get_effect_total("catch_add") + _get_skill_effect_total_int("catch_add")
+    var catch_total: int = max(1, amount + bonus)
+    fish_count += catch_total
+    _apply_ocean_health_pressure(catch_total)
     changed.emit()
 
 func make_tin() -> bool:
@@ -226,11 +357,14 @@ func sell_tick() -> void:
             if fish_count > 0:
                 var count: int = min(fish_count, get_fish_sell_count())
                 fish_count -= count
+                fish_sold += count
                 _add_money(get_fish_sell_price() * count)
         SellMode.TINS:
             if tin_count > 0:
                 tin_count -= 1
                 _remove_random_tin()
+                # Sanity: tins_sold should only advance when a tin is sold.
+                tins_sold += 1
                 _add_money(get_tin_sell_price())
     changed.emit()
 
@@ -315,6 +449,135 @@ func _load_upgrades() -> void:
         if not def.has("id"):
             continue
         upgrade_defs_by_id[def.id] = def
+
+func _load_skill_tree() -> void:
+    if skill_defs.size() > 0:
+        return
+    if not FileAccess.file_exists(SKILL_TREE_DATA_PATH):
+        return
+    var file := FileAccess.open(SKILL_TREE_DATA_PATH, FileAccess.READ)
+    var raw := file.get_as_text()
+    file.close()
+    var parsed = JSON.parse_string(raw)
+    if typeof(parsed) != TYPE_ARRAY:
+        return
+    skill_defs = parsed
+    skill_defs_by_id.clear()
+    for def in skill_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        if not def.has("id"):
+            continue
+        skill_defs_by_id[def.id] = def
+
+func get_skill_defs() -> Array:
+    return skill_defs
+
+func get_skill_defs_by_branch(branch: String) -> Array:
+    var out: Array = []
+    for def in skill_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        if str(def.get("branch", "")) != branch:
+            continue
+        out.append(def)
+    return out
+
+func get_skill_def(id: String) -> Dictionary:
+    return skill_defs_by_id.get(id, {})
+
+func get_reputation() -> int:
+    return int(meta_state.get("reputation", 0))
+
+func is_skill_owned(id: String) -> bool:
+    var owned: Array = meta_state.get("skills_owned", [])
+    return owned.has(id)
+
+func get_skill_cost(id: String) -> int:
+    var def: Dictionary = get_skill_def(id)
+    if def.is_empty():
+        return 0
+    return int(def.get("cost", 0))
+
+func get_skill_prereqs(id: String) -> Array:
+    var def: Dictionary = get_skill_def(id)
+    if def.is_empty():
+        return []
+    return def.get("requires", [])
+
+func _get_pair_pick(pair_id: String) -> Dictionary:
+    var picks: Dictionary = meta_state.get("pair_picks", {})
+    return picks.get(pair_id, {})
+
+func _is_pair_locked(def: Dictionary) -> bool:
+    var pair_id: String = str(def.get("pair_id", ""))
+    if pair_id == "":
+        return false
+    var pick: Dictionary = _get_pair_pick(pair_id)
+    if pick.is_empty():
+        return false
+    var last_prestige: int = int(pick.get("prestige", -1))
+    var choice_id: String = str(pick.get("choice_id", ""))
+    if last_prestige != int(meta_state.get("prestige_count", 0)):
+        return false
+    var id: String = str(def.get("id", ""))
+    return choice_id != "" and choice_id != id
+
+func get_skill_lock_reason(id: String) -> String:
+    var def: Dictionary = get_skill_def(id)
+    if def.is_empty():
+        return "Unavailable"
+    if _is_pair_locked(def):
+        return "Locked this prestige"
+    if is_skill_owned(id):
+        return "Owned"
+    if not _meets_skill_prereqs(def):
+        return "Locked"
+    var cost := get_skill_cost(id)
+    if get_reputation() < cost:
+        return "Need %d rep" % cost
+    return ""
+
+func can_purchase_skill(id: String) -> bool:
+    var def: Dictionary = get_skill_def(id)
+    if def.is_empty():
+        return false
+    if is_skill_owned(id):
+        return false
+    if _is_pair_locked(def):
+        return false
+    if not _meets_skill_prereqs(def):
+        return false
+    return get_reputation() >= get_skill_cost(id)
+
+func _meets_skill_prereqs(def: Dictionary) -> bool:
+    var reqs: Array = def.get("requires", [])
+    for req in reqs:
+        if not is_skill_owned(str(req)):
+            return false
+    return true
+
+func purchase_skill(id: String) -> bool:
+    if not can_purchase_skill(id):
+        return false
+    var def: Dictionary = get_skill_def(id)
+    var cost := get_skill_cost(id)
+    meta_state["reputation"] = get_reputation() - cost
+    var owned: Array = meta_state.get("skills_owned", [])
+    owned.append(id)
+    meta_state["skills_owned"] = owned
+    var pair_id: String = str(def.get("pair_id", ""))
+    if pair_id != "":
+        var picks: Dictionary = meta_state.get("pair_picks", {})
+        picks[pair_id] = {
+            "prestige": int(meta_state.get("prestige_count", 0)),
+            "choice_id": id
+        }
+        meta_state["pair_picks"] = picks
+    skills_changed.emit()
+    reputation_changed.emit()
+    changed.emit()
+    return true
 
 func get_upgrade_defs() -> Array:
     return upgrade_defs
@@ -422,19 +685,19 @@ func _get_effect_total_float(effect_type: String) -> float:
     return total
 
 func get_fish_sell_price() -> int:
-    return 20 + _get_effect_total("fish_sell_add")
+    return 20 + _get_effect_total("fish_sell_add") + _get_meta_bonus_int("fish_sell_add") + _get_skill_effect_total_int("fish_sell_add")
 
 func get_tin_sell_price() -> int:
-    return 10 + _get_effect_total("tin_sell_add")
+    return 10 + _get_effect_total("tin_sell_add") + _get_meta_bonus_int("tin_sell_add") + _get_skill_effect_total_int("tin_sell_add")
 
 func get_fish_sell_count() -> int:
-    return 1 + _get_effect_total("fish_sell_count_add")
+    return 1 + _get_effect_total("fish_sell_count_add") + _get_skill_effect_total_int("fish_sell_count_add")
 
 func get_green_zone_ratio() -> float:
-    return min(1.0, GREEN_ZONE_BASE_RATIO + _get_effect_total_float("green_zone_add_pct"))
+    return min(1.0, GREEN_ZONE_BASE_RATIO + _get_effect_total_float("green_zone_add_pct") + _get_meta_bonus_float("green_zone_add_pct") + _get_skill_effect_total_float("green_zone_add_pct"))
 
 func get_tin_make_time() -> float:
-    var time := TIN_MAKE_BASE_TIME + _get_effect_total_float("tin_time_add")
+    var time := TIN_MAKE_BASE_TIME + _get_effect_total_float("tin_time_add") + _get_meta_bonus_float("tin_time_add") + _get_skill_effect_total_float("tin_time_add")
     return max(0.5, time)
 
 func get_auto_tin_enabled() -> bool:
@@ -553,3 +816,246 @@ func get_crew_trip_progress() -> float:
 
 func set_crew_trip_paused(paused: bool) -> void:
     crew_trip_paused = paused
+
+################
+# Prestige/Meta
+################
+func can_prestige() -> bool:
+    return tins_sold >= PRESTIGE_TINS_REQUIRED
+
+func get_prestige_progress() -> int:
+    return tins_sold
+
+func get_prestige_reputation_gain() -> int:
+    return _calculate_reputation_gain()
+
+func prestige() -> bool:
+    if not can_prestige():
+        return false
+    var rep_gain := _calculate_reputation_gain()
+    _apply_reputation_gain(rep_gain)
+    meta_state["reputation"] = int(meta_state.get("reputation", 0)) + rep_gain
+    meta_state["prestige_count"] = int(meta_state.get("prestige_count", 0)) + 1
+    print("Prestige complete. Rep gained:", rep_gain, "Total rep:", meta_state["reputation"])
+    print("Prestige weights. Avg health:", get_ocean_health_average_ratio(), "Fish sold:", fish_sold, "Tins sold:", tins_sold)
+    _reset_run_state()
+    save_game()
+    reputation_changed.emit()
+    skills_changed.emit()
+    changed.emit()
+    return true
+
+func _calculate_reputation_gain() -> int:
+    # Simple measurable formula for tuning: 1 reputation per $100 earned.
+    var base_gain := float(lifetime_money_earned) / float(REPUTATION_MONEY_DIVISOR)
+    var mult := 1.0 + _get_skill_effect_total_float("reputation_gain_mult")
+    return int(floor(base_gain * mult))
+
+func _apply_reputation_gain(rep_gain: int) -> void:
+    if rep_gain <= 0:
+        return
+    var total_sales: int = fish_sold + tins_sold
+    if total_sales <= 0:
+        meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + rep_gain
+        return
+    var avg_health_ratio: float = get_ocean_health_average_ratio()
+    var fish_share: float = float(fish_sold) / float(total_sales)
+    var tin_share: float = float(tins_sold) / float(total_sales)
+    # Combined weighting for tuning:
+    # sustainable_score = 0.5 * avg_health_ratio + 0.5 * fish_share
+    # industrial_score = 0.5 * (1 - avg_health_ratio) + 0.5 * tin_share
+    var sustainable_score: float = (avg_health_ratio * 0.5) + (fish_share * 0.5)
+    var industrial_score: float = ((1.0 - avg_health_ratio) * 0.5) + (tin_share * 0.5)
+    var total_score: float = sustainable_score + industrial_score
+    if total_score <= 0.0:
+        sustainable_score = 0.5
+        industrial_score = 0.5
+        total_score = 1.0
+    var sustainable_gain: int = int(floor(rep_gain * (sustainable_score / total_score)))
+    var industrial_gain: int = rep_gain - sustainable_gain
+    meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + sustainable_gain
+    meta_state["industrial_bonus_level"] = int(meta_state.get("industrial_bonus_level", 0)) + industrial_gain
+
+func _reset_run_state() -> void:
+    fish_count = 0
+    tin_count = 0
+    money = 0
+    garlic_count = 0
+    tin_inventory.clear()
+    recipes_unlocked.clear()
+    lifetime_money_earned = 0
+    tins_sold = 0
+    fish_sold = 0
+    sell_mode = SellMode.FISH
+    is_cannery_discovered = false
+    is_cannery_unlocked = false
+    is_crew_discovered = false
+    is_crew_unlocked = false
+    upgrade_levels.clear()
+    crew_trip_active = false
+    crew_trip_remaining = 0.0
+    crew_trip_paused = false
+    ocean_health = OCEAN_HEALTH_MAX
+    ocean_health_time_accum = 0.0
+    ocean_health_time_total = 0.0
+
+func _get_meta_bonus_int(effect_type: String) -> int:
+    var sustainable_level := int(meta_state.get("sustainable_bonus_level", 0))
+    var industrial_level := int(meta_state.get("industrial_bonus_level", 0))
+    match effect_type:
+        "fish_sell_add":
+            return sustainable_level * SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL
+        "tin_sell_add":
+            return industrial_level * INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL
+    return 0
+
+func _get_meta_bonus_float(effect_type: String) -> float:
+    var sustainable_level := int(meta_state.get("sustainable_bonus_level", 0))
+    var industrial_level := int(meta_state.get("industrial_bonus_level", 0))
+    match effect_type:
+        "green_zone_add_pct":
+            return sustainable_level * SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL
+        "tin_time_add":
+            return industrial_level * INDUSTRIAL_TIN_TIME_ADD_PER_LEVEL
+    return 0.0
+
+func _get_skill_effect_total_int(effect_type: String) -> int:
+    var total: int = 0
+    var owned: Array = meta_state.get("skills_owned", [])
+    for id in owned:
+        var def: Dictionary = skill_defs_by_id.get(str(id), {})
+        if def.is_empty():
+            continue
+        var effects: Array = def.get("effects", [])
+        for effect in effects:
+            if typeof(effect) != TYPE_DICTIONARY:
+                continue
+            if effect.get("type", "") == effect_type:
+                total += int(effect.get("value", 0))
+    return total
+
+func _get_skill_effect_total_float(effect_type: String) -> float:
+    var total: float = 0.0
+    var owned: Array = meta_state.get("skills_owned", [])
+    for id in owned:
+        var def: Dictionary = skill_defs_by_id.get(str(id), {})
+        if def.is_empty():
+            continue
+        var effects: Array = def.get("effects", [])
+        for effect in effects:
+            if typeof(effect) != TYPE_DICTIONARY:
+                continue
+            if effect.get("type", "") == effect_type:
+                total += float(effect.get("value", 0.0))
+    return total
+
+################
+# Ocean Health
+################
+func _apply_ocean_health_pressure(fish_caught: int) -> void:
+    if fish_caught <= 0:
+        return
+    var pressure_mult: float = max(0.1, 1.0 + _get_skill_effect_total_float("ocean_pressure_mult"))
+    ocean_health = clamp(ocean_health - (float(fish_caught) * OCEAN_HEALTH_FISH_COST * pressure_mult), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
+
+func _regenerate_ocean_health(delta: float) -> void:
+    if ocean_health >= OCEAN_HEALTH_MAX:
+        return
+    var regen_mult: float = max(0.1, 1.0 + _get_skill_effect_total_float("ocean_regen_mult"))
+    ocean_health = clamp(ocean_health + (OCEAN_HEALTH_REGEN_PER_SEC * regen_mult * delta), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
+    ocean_health_changed.emit()
+
+func get_ocean_health_ratio() -> float:
+    if OCEAN_HEALTH_MAX <= 0.0:
+        return 0.0
+    return clamp(ocean_health / OCEAN_HEALTH_MAX, 0.0, 1.0)
+
+func _track_ocean_health(delta: float) -> void:
+    if delta <= 0.0:
+        return
+    ocean_health_time_accum += ocean_health * delta
+    ocean_health_time_total += delta
+
+func get_ocean_health_average_ratio() -> float:
+    if ocean_health_time_total <= 0.0:
+        return get_ocean_health_ratio()
+    var avg := ocean_health_time_accum / ocean_health_time_total
+    if OCEAN_HEALTH_MAX <= 0.0:
+        return 0.0
+    return clamp(avg / OCEAN_HEALTH_MAX, 0.0, 1.0)
+
+func _track_run_time(delta: float) -> void:
+    if delta <= 0.0:
+        return
+    run_time_seconds += delta
+
+func set_run_paused(paused: bool) -> void:
+    run_paused = paused
+
+func get_run_time_seconds() -> float:
+    return run_time_seconds
+
+################
+# Endings
+################
+func _check_endings() -> void:
+    if ending_state != EndingState.NONE:
+        return
+    if int(meta_state.get("prestige_count", 0)) <= 0:
+        return
+    if _check_industrial_collapse():
+        _set_ending_state(EndingState.INDUSTRIAL_COLLAPSE)
+        return
+    if _check_sustainable_equilibrium():
+        _set_ending_state(EndingState.SUSTAINABLE_EQUILIBRIUM)
+        return
+    if _check_dual_mastery():
+        _set_ending_state(EndingState.DUAL_MASTERY)
+
+func _check_industrial_collapse() -> bool:
+    if run_time_seconds < INDUSTRIAL_MIN_SECONDS:
+        return false
+    if lifetime_money_earned < INDUSTRIAL_MIN_LIFETIME_MONEY:
+        return false
+    return ocean_health <= OCEAN_HEALTH_COLLAPSE_THRESHOLD
+
+func _check_sustainable_equilibrium() -> bool:
+    if run_time_seconds < SUSTAINABLE_MIN_SECONDS:
+        return false
+    if _get_total_upgrade_levels() < SUSTAINABLE_MIN_TOTAL_UPGRADES:
+        return false
+    return get_ocean_health_average_ratio() >= SUSTAINABLE_HEALTH_AVG_THRESHOLD
+
+func _check_dual_mastery() -> bool:
+    if run_time_seconds < DUAL_MIN_SECONDS:
+        return false
+    return lifetime_money_earned >= DUAL_MIN_LIFETIME_MONEY
+
+func _get_total_upgrade_levels() -> int:
+    var total: int = 0
+    for id in upgrade_levels.keys():
+        total += int(upgrade_levels[id])
+    return total
+
+func _set_ending_state(state: EndingState) -> void:
+    ending_state = state
+    run_paused = true
+    var summary := _build_run_summary()
+    ending_reached.emit(int(state), summary)
+
+func _build_run_summary() -> Dictionary:
+    return {
+        "time_seconds": run_time_seconds,
+        "fish_sold": fish_sold,
+        "tins_sold": tins_sold,
+        "lifetime_money_earned": lifetime_money_earned,
+        "avg_ocean_health_ratio": get_ocean_health_average_ratio(),
+        "final_ocean_health_ratio": get_ocean_health_ratio(),
+        "prestige_count": int(meta_state.get("prestige_count", 0))
+    }
+
+func get_run_summary() -> Dictionary:
+    return _build_run_summary()
+
+func get_ending_state() -> EndingState:
+    return ending_state

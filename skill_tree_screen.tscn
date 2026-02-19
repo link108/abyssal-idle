@@ -1,0 +1,82 @@
+[gd_scene load_steps=4 format=3 uid="uid://5qw6nmcayp4h"]
+
+[ext_resource type="Script" uid="uid://dj3j6y7osw22f" path="res://skill_tree_screen.gd" id="1_5m8x1"]
+[ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://scenes/ui/close_button.tscn" id="2_ovwte"]
+[ext_resource type="Script" uid="uid://cl5htsochc7wc" path="res://skill_tree_graph.gd" id="3_4ys1c"]
+
+[node name="SkillTreeScreen" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5m8x1")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 2
+
+[node name="Bg" type="ColorRect" parent="Control"]
+z_index = -10
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.07, 0.09, 0.95)
+mouse_filter = 2
+
+[node name="CloseButton" parent="Control" instance=ExtResource("2_ovwte")]
+layout_mode = 1
+offset_left = -40.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 40.0
+
+[node name="RepLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 20.0
+offset_right = 260.0
+offset_bottom = 40.0
+text = "Reputation: 0"
+
+[node name="HoverPanel" type="PanelContainer" parent="Control"]
+layout_mode = 0
+offset_left = 725.0
+offset_top = 14.0
+offset_right = 1105.0
+offset_bottom = 104.0
+z_index = 5
+mouse_filter = 2
+
+[node name="HoverVBox" type="VBoxContainer" parent="Control/HoverPanel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="HoverTitle" type="Label" parent="Control/HoverPanel/HoverVBox"]
+layout_mode = 2
+text = "Hover a skill"
+
+[node name="HoverBody" type="Label" parent="Control/HoverPanel/HoverVBox"]
+layout_mode = 2
+text = "Details will appear here."
+autowrap_mode = 3
+
+[node name="HoverBuyButton" type="Button" parent="Control/HoverPanel/HoverVBox"]
+layout_mode = 2
+text = "Buy"
+
+[node name="Graph" type="Control" parent="Control"]
+z_index = 1
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 60.0
+offset_right = -40.0
+offset_bottom = -40.0
+script = ExtResource("3_4ys1c")
+mouse_filter = 1
+
+[connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
