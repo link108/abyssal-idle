@@ -1255,8 +1255,7 @@ func get_visible_upgrade_defs_by_category(show_purchased: bool = false) -> Dicti
     var result: Dictionary = {}
     for category in upgrade_order_by_category.keys():
         if str(category) == "policy":
-            var policy_ids: Array = visible_upgrades_by_category.get("policy", [])
-            result[category] = _defs_from_ids(policy_ids)
+            result[category] = _get_policy_defs_for_ui(show_purchased)
             continue
         result[category] = _get_non_policy_defs_for_ui(str(category), show_purchased)
     return result
@@ -1387,13 +1386,13 @@ func _get_non_policy_defs_for_ui(category: String, show_purchased: bool) -> Arra
         if def == null:
             continue
         var level := get_upgrade_level(id_str)
-        if is_upgrade_maxed(id_str):
-            continue
-        if level > 0:
-            purchased.append(def)
         if show_purchased:
-            if _meets_requirements(def):
+            if level > 0:
+                purchased.append(def)
+            elif _meets_requirements(def):
                 available.append(def)
+            continue
+        if is_upgrade_maxed(id_str):
             continue
         if _meets_requirements(def):
             available.append(def)
@@ -1435,6 +1434,46 @@ func _get_non_policy_defs_for_ui(category: String, show_purchased: bool) -> Arra
         out.append(locked[i])
         if out.size() >= 2:
             break
+    return out
+
+func _get_policy_defs_for_ui(show_purchased: bool) -> Array:
+    var visible_ids: Array = visible_upgrades_by_category.get("policy", [])
+    if visible_ids.is_empty():
+        return []
+    var include_ids: Dictionary = {}
+    for id in visible_ids:
+        var id_str := str(id)
+        if id_str == "":
+            continue
+        var level := get_upgrade_level(id_str)
+        if show_purchased or level <= 0:
+            include_ids[id_str] = true
+        if not show_purchased:
+            continue
+        if level <= 0:
+            continue
+        var def = upgrade_defs_by_id.get(id_str, null)
+        if def == null:
+            continue
+        var group_id := _get_exclusive_group_id(def)
+        if group_id == "":
+            continue
+        var group_members: Array = upgrade_pairs.get(group_id, [])
+        for member_id in group_members:
+            var member_id_str := str(member_id)
+            if member_id_str == "":
+                continue
+            include_ids[member_id_str] = true
+    var out: Array = []
+    var policy_order: Array = upgrade_order_by_category.get("policy", [])
+    for id in policy_order:
+        var id_str := str(id)
+        if not include_ids.has(id_str):
+            continue
+        var def = upgrade_defs_by_id.get(id_str, null)
+        if def == null:
+            continue
+        out.append(def)
     return out
 
 func _count_unmet_requirements(def: Dictionary) -> int:

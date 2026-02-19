@@ -134,6 +134,8 @@ static func validate_requires(obj: Dictionary, file_label: String, id_for_logs: 
 
 
 static func validate_upgrades(entries: Array, registries: Dictionary, report: Dictionary) -> void:
+    var policy_stage_by_group: Dictionary = {}
+    var policy_groups_by_stage: Dictionary = {}
     for entry in entries:
         if typeof(entry) != TYPE_DICTIONARY:
             continue
@@ -154,6 +156,57 @@ static func validate_upgrades(entries: Array, registries: Dictionary, report: Di
             var group_id = str(upgrade.get("exclusive_group_id", ""))
             if group_id == "":
                 _push_error(report, "upgrades.json (%s): exclusive_choice true but exclusive_group_id missing." % id_for_logs)
+        if str(upgrade.get("category", "")) != "policy":
+            continue
+        var policy_group_id := str(upgrade.get("exclusive_group_id", ""))
+        var policy_stage := int(upgrade.get("policy_stage", 0))
+        if policy_group_id == "":
+            _push_error(report, "upgrades.json (%s): policy upgrade missing exclusive_group_id." % id_for_logs)
+        if policy_stage <= 0:
+            _push_error(report, "upgrades.json (%s): policy upgrade missing/invalid policy_stage." % id_for_logs)
+        if policy_group_id != "":
+            var existing_stage := int(policy_stage_by_group.get(policy_group_id, 0))
+            if existing_stage > 0 and policy_stage > 0 and existing_stage != policy_stage:
+                _push_error(report, "upgrades.json (%s): policy group '%s' has inconsistent policy_stage values." % [id_for_logs, policy_group_id])
+            elif policy_stage > 0:
+                policy_stage_by_group[policy_group_id] = policy_stage
+                if not policy_groups_by_stage.has(policy_stage):
+                    policy_groups_by_stage[policy_stage] = []
+                var groups_at_stage: Array = policy_groups_by_stage[policy_stage]
+                if not groups_at_stage.has(policy_group_id):
+                    groups_at_stage.append(policy_group_id)
+                    policy_groups_by_stage[policy_stage] = groups_at_stage
+
+    for entry in entries:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var upgrade: Dictionary = entry
+        if str(upgrade.get("category", "")) != "policy":
+            continue
+        var upgrade_id = _get_string_id(upgrade, "upgrade_id")
+        var id_for_logs = _label_id("upgrade_id", upgrade_id)
+        var policy_stage := int(upgrade.get("policy_stage", 0))
+        if policy_stage <= 1:
+            continue
+        var prev_stage_groups: Array = policy_groups_by_stage.get(policy_stage - 1, [])
+        if prev_stage_groups.is_empty():
+            _push_error(report, "upgrades.json (%s): no policy group found for previous stage %d." % [id_for_logs, policy_stage - 1])
+            continue
+        var has_valid_prev_requirement := false
+        var reqs: Array = RequiresEval.get_requires(upgrade)
+        for req in reqs:
+            if typeof(req) != TYPE_DICTIONARY:
+                continue
+            var req_dict: Dictionary = req
+            if str(req_dict.get("type", "")) != "policy_stage_at_least":
+                continue
+            var req_group := str(req_dict.get("group_id", ""))
+            var req_stage := int(req_dict.get("stage", 0))
+            if req_stage == (policy_stage - 1) and prev_stage_groups.has(req_group):
+                has_valid_prev_requirement = true
+                break
+        if not has_valid_prev_requirement:
+            _push_error(report, "upgrades.json (%s): stage %d policy must require previous stage (%d) from a valid prior group." % [id_for_logs, policy_stage, policy_stage - 1])
 
 
 static func validate_skill_tree(entries: Array, registries: Dictionary, report: Dictionary) -> void:

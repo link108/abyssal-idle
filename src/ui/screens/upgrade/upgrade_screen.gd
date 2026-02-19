@@ -50,12 +50,6 @@ func _rebuild_upgrade_list() -> void:
         for def in defs:
             if typeof(def) != TYPE_DICTIONARY:
                 continue
-            var id_str := str(def.get("upgrade_id", ""))
-            if (not show_purchased_toggle.button_pressed) and GameState.get_upgrade_level(id_str) > 0:
-                var group_val = def.get("exclusive_group_id", "")
-                var group_check := "" if group_val == null else str(group_val)
-                if group_check == "":
-                    continue
             var group_val = def.get("exclusive_group_id", "")
             var group_id := "" if group_val == null else str(group_val)
             if group_id == "":
@@ -133,7 +127,8 @@ func _create_upgrade_card(def: Dictionary) -> Control:
     var buy_btn := Button.new()
     buy_btn.text = _get_upgrade_button_text(def)
     var lock_reason := GameState.get_upgrade_lock_reason(id_str)
-    if lock_reason != "":
+    var is_policy_unchosen := lock_reason.begins_with("Policy already chosen:")
+    if lock_reason != "" and not is_policy_unchosen:
         buy_btn.tooltip_text = lock_reason
     buy_btn.disabled = lock_reason != ""
     if is_chosen:
@@ -151,10 +146,19 @@ func _create_upgrade_card(def: Dictionary) -> Control:
         style.border_width_bottom = 3
         style.border_color = Color(0.0, 0.95, 0.25, 1.0)
         card.add_theme_stylebox_override("panel", style)
-    elif lock_reason == "Locked (other chosen)":
-        stripe.color = Color(0.5, 0.5, 0.5, 1.0)
+    elif is_policy_unchosen:
+        stripe.color = Color(0.58, 0.26, 0.26, 1.0)
+        name_label.add_theme_color_override("font_color", Color(0.9, 0.72, 0.72, 1.0))
+        desc_label.add_theme_color_override("font_color", Color(0.82, 0.68, 0.68, 1.0))
         buy_btn.modulate = Color(0.7, 0.7, 0.7, 1.0)
-        card.remove_theme_stylebox_override("panel")
+        var unchosen_style := StyleBoxFlat.new()
+        unchosen_style.bg_color = Color(0, 0, 0, 0)
+        unchosen_style.border_width_left = 3
+        unchosen_style.border_width_right = 3
+        unchosen_style.border_width_top = 3
+        unchosen_style.border_width_bottom = 3
+        unchosen_style.border_color = Color(0.58, 0.26, 0.26, 0.95)
+        card.add_theme_stylebox_override("panel", unchosen_style)
     else:
         card.remove_theme_stylebox_override("panel")
     buy_btn.pressed.connect(_on_buy_pressed.bind(id_str))
@@ -168,6 +172,8 @@ func _get_upgrade_button_text(def: Dictionary) -> String:
     var cost := GameState.get_upgrade_cost(id)
     if reason == "":
         return "Buy ($%d)" % cost
+    if reason.begins_with("Policy already chosen:"):
+        return "Not Chosen"
     if reason.begins_with("Need"):
         return reason
     return reason

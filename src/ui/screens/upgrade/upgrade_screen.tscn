@@ -46,7 +46,7 @@ offset_left = 260.0
 offset_top = 20.0
 offset_right = 480.0
 offset_bottom = 40.0
-text = "Show Purchased"
+text = "Show Completed Purchases"
 
 [node name="UpgradesList" type="VBoxContainer" parent="Control/ScrollContainer"]
 anchors_preset = 15
