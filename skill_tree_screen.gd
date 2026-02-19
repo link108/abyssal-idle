@@ -10,13 +10,18 @@ const BORDER_THICKNESS := 3
 @onready var hover_buy_button := $Control/HoverPanel/HoverVBox/HoverBuyButton
 
 var _node_by_id: Dictionary = {}
+var _base_pos_by_id: Dictionary = {}
 var _hovered_id: String = ""
 var _selected_id: String = ""
+var _pan_offset := Vector2.ZERO
+var _dragging := false
+var _drag_last_pos := Vector2.ZERO
 
 func _ready() -> void:
     GameState.skills_changed.connect(_refresh_nodes)
     GameState.reputation_changed.connect(_refresh_reputation)
     hover_buy_button.pressed.connect(_on_buy_selected_pressed)
+    graph.gui_input.connect(_on_graph_gui_input)
     _build_graph()
     _refresh_reputation()
     _refresh_nodes()
@@ -32,6 +37,7 @@ func _build_graph() -> void:
     for child in graph.get_children():
         child.queue_free()
     _node_by_id.clear()
+    _base_pos_by_id.clear()
 
     var defs: Array = GameState.get_skill_defs()
     for def in defs:
@@ -39,12 +45,17 @@ func _build_graph() -> void:
             continue
         var node := _create_skill_node(def)
         var pos_arr: Array = def.get("pos", [0, 0])
-        var pos := Vector2(float(pos_arr[0]), float(pos_arr[1]))
-        node.position = pos
+        var base_pos := Vector2(float(pos_arr[0]), float(pos_arr[1]))
+        _base_pos_by_id[str(def.get("id", ""))] = base_pos
+        node.position = base_pos + _pan_offset
         graph.add_child(node)
         _node_by_id[str(def.get("id", ""))] = node
 
+    _update_edges()
+
+func _update_edges() -> void:
     var edges: Array = []
+    var defs: Array = GameState.get_skill_defs()
     for def in defs:
         if typeof(def) != TYPE_DICTIONARY:
             continue
@@ -72,6 +83,7 @@ func _create_skill_node(def: Dictionary) -> Control:
     var container := Control.new()
     container.custom_minimum_size = NODE_SIZE
     container.size = NODE_SIZE
+    container.set_meta("skill_node", true)
 
     var border := ColorRect.new()
     border.anchor_right = 1.0
@@ -262,7 +274,39 @@ func _color_for_id(id_str: String) -> Color:
 func _on_buy_selected_pressed() -> void:
     if _selected_id == "":
         return
-    print("Buy pressed for skill:", _selected_id, "rep:", GameState.get_reputation())
     GameState.purchase_skill(_selected_id)
     _refresh_nodes()
     _refresh_reputation()
+
+func _on_graph_gui_input(event: InputEvent) -> void:
+    if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+        if event.pressed:
+            var hovered := get_viewport().gui_get_hovered_control()
+            if _is_over_skill_node(hovered):
+                return
+            _dragging = true
+            _drag_last_pos = event.position
+        else:
+            _dragging = false
+    elif event is InputEventMouseMotion and _dragging:
+        var delta: Vector2 = event.position - _drag_last_pos
+        _drag_last_pos = event.position
+        _pan_offset += delta
+        _apply_pan()
+
+func _apply_pan() -> void:
+    for id_str in _node_by_id.keys():
+        var node: Control = _node_by_id[id_str]
+        var base_pos: Vector2 = _base_pos_by_id.get(id_str, Vector2.ZERO)
+        node.position = base_pos + _pan_offset
+    _update_edges()
+
+func _is_over_skill_node(control: Control) -> bool:
+    if control == null:
+        return false
+    var current: Node = control
+    while current != null:
+        if current.has_meta("skill_node"):
+            return true
+        current = current.get_parent()
+    return false

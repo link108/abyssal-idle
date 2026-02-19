@@ -41,6 +41,19 @@ offset_right = 260.0
 offset_bottom = 40.0
 text = "Reputation: 0"
 
+
+[node name="Graph" type="Control" parent="Control"]
+z_index = 1
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 60.0
+offset_right = -40.0
+offset_bottom = -40.0
+script = ExtResource("3_4ys1c")
+mouse_filter = 0
+
 [node name="HoverPanel" type="PanelContainer" parent="Control"]
 layout_mode = 0
 offset_left = 725.0
@@ -48,6 +61,16 @@ offset_top = 14.0
 offset_right = 1105.0
 offset_bottom = 104.0
 z_index = 5
+mouse_filter = 2
+
+[node name="HoverBg" type="ColorRect" parent="Control/HoverPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.09, 0.11, 0.98)
 mouse_filter = 2
 
 [node name="HoverVBox" type="VBoxContainer" parent="Control/HoverPanel"]
@@ -66,17 +89,5 @@ autowrap_mode = 3
 [node name="HoverBuyButton" type="Button" parent="Control/HoverPanel/HoverVBox"]
 layout_mode = 2
 text = "Buy"
-
-[node name="Graph" type="Control" parent="Control"]
-z_index = 1
-anchors_preset = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 40.0
-offset_top = 60.0
-offset_right = -40.0
-offset_bottom = -40.0
-script = ExtResource("3_4ys1c")
-mouse_filter = 1
 
 [connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
