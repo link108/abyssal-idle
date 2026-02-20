@@ -225,7 +225,7 @@ func _on_action_pressed() -> void:
     var entry_type := str(entry.get("type", ""))
     match entry_type:
         "fish":
-            GameState.sell_fish(qty)
+            GameState.sell_fish_by_id(_selected_id, qty)
         "tin":
             GameState.sell_tins(qty)
         "item":

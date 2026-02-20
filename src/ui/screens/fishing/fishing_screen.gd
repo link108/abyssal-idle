@@ -1,7 +1,5 @@
 extends PanelContainer
 
-signal fish_caught(amount: int)
-
 @export var cursor_speed: float = 420.0
 @onready var bar_container := $Root/Minigame/BarContainer
 @onready var green_zone := $Root/Minigame/BarContainer/BarGreen
@@ -47,11 +45,9 @@ func _attempt_catch() -> void:
     var cursor_center: float = _cursor_x + (_cursor_width * 0.5)
     var green_start: float = green_zone.position.x
     var green_end: float = green_zone.position.x + green_zone.size.x
-    if cursor_center >= green_start and cursor_center <= green_end:
-        fish_caught.emit(1)
-        _show_result(true)
-    else:
-        _show_result(false)
+    var timing_success := cursor_center >= green_start and cursor_center <= green_end
+    var outcome := GameState.attempt_manual_catch(timing_success)
+    _show_result(outcome)
     _reset_cursor()
 
 func _reset_cursor() -> void:
@@ -67,14 +63,23 @@ func _randomize_green_zone() -> void:
     green_zone.set_deferred("size", Vector2(green_width, green_zone.size.y))
     green_zone.set_deferred("position", Vector2(_rng.randf_range(0.0, max_x), green_zone.position.y))
 
-func _show_result(success: bool) -> void:
+func _show_result(outcome: Dictionary) -> void:
     result_label.visible = true
     result_label.modulate.a = 1.0
+    var success := bool(outcome.get("success", false))
+    var reason := str(outcome.get("reason", ""))
+    var fish_name := str(outcome.get("fish_name", "that fish"))
     if success:
-        result_label.text = "Nice catch!"
+        result_label.text = "Caught %s!" % fish_name
         result_label.modulate = Color(0.2, 0.9, 0.2, 1)
-    else:
+    elif reason == "escaped":
+        result_label.text = "%s escaped!" % fish_name
+        result_label.modulate = Color(0.95, 0.6, 0.2, 1)
+    elif reason == "timing_miss":
         result_label.text = "You scared the fish away!"
+        result_label.modulate = Color(0.9, 0.2, 0.2, 1)
+    else:
+        result_label.text = "No catch."
         result_label.modulate = Color(0.9, 0.2, 0.2, 1)
     if _result_tween != null:
         _result_tween.kill()

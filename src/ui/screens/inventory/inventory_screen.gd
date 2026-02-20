@@ -6,12 +6,20 @@ extends PanelContainer
 @onready var item_grid := $Control/BodySplit/GridScroll/ItemGrid
 @onready var detail_title := $Control/BodySplit/DetailPanel/DetailVBox/DetailTitle
 @onready var detail_info := $Control/BodySplit/DetailPanel/DetailVBox/DetailInfo
+@onready var fish_button: Button = $Control/CategoryButtons/FishButton
+@onready var tins_button: Button = $Control/CategoryButtons/TinsButton
+@onready var ingredients_button: Button = $Control/CategoryButtons/IngredientsButton
 var _selected_grid_id: String = ""
+var _selected_category: String = "fish"
 
 func _ready() -> void:
     _refresh()
     GameState.changed.connect(_refresh)
     item_grid.item_selected.connect(_on_item_selected)
+    fish_button.pressed.connect(_on_fish_button_pressed)
+    tins_button.pressed.connect(_on_tins_button_pressed)
+    ingredients_button.pressed.connect(_on_ingredients_button_pressed)
+    _update_category_buttons()
 
 func _on_close_button_close_requested() -> void:
     get_parent().get_node("Dimmer").hide()
@@ -23,7 +31,7 @@ func _on_visibility_changed() -> void:
 
 func _refresh() -> void:
     item_grid.columns = columns
-    var entries: Array = GameState.get_inventory_entries(true)
+    var entries: Array = _filtered_inventory_entries(GameState.get_inventory_entries(true))
     var total_slots: int = columns * rows
     if entries.size() > total_slots:
         entries = entries.slice(0, total_slots)
@@ -53,6 +61,22 @@ func _refresh() -> void:
     if _selected_grid_id == "":
         _clear_detail()
 
+func _filtered_inventory_entries(entries: Array) -> Array:
+    var out: Array = []
+    for entry in entries:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var entry_dict: Dictionary = entry
+        var entry_type := str(entry_dict.get("type", ""))
+        if _selected_category == "fish" and entry_type != "fish":
+            continue
+        if _selected_category == "tins" and entry_type != "tin":
+            continue
+        if _selected_category == "ingredients" and entry_type != "item":
+            continue
+        out.append(entry_dict)
+    return out
+
 func _on_item_selected(_grid_id: String, payload: Dictionary) -> void:
     if payload.is_empty():
         _clear_detail()
@@ -79,3 +103,25 @@ func _on_item_selected(_grid_id: String, payload: Dictionary) -> void:
 func _clear_detail() -> void:
     detail_title.text = "Select an item"
     detail_info.text = "Click an item to see details."
+
+func _on_fish_button_pressed() -> void:
+    _set_category("fish")
+
+func _on_tins_button_pressed() -> void:
+    _set_category("tins")
+
+func _on_ingredients_button_pressed() -> void:
+    _set_category("ingredients")
+
+func _set_category(category: String) -> void:
+    if _selected_category == category:
+        return
+    _selected_category = category
+    _selected_grid_id = ""
+    _update_category_buttons()
+    _refresh()
+
+func _update_category_buttons() -> void:
+    fish_button.button_pressed = _selected_category == "fish"
+    tins_button.button_pressed = _selected_category == "tins"
+    ingredients_button.button_pressed = _selected_category == "ingredients"

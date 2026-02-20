@@ -536,14 +536,51 @@ func catch_fish(amount: int = 1) -> void:
     _apply_ocean_health_pressure(catch_total)
     changed.emit()
 
+func attempt_manual_catch(timing_success: bool) -> Dictionary:
+    if not timing_success:
+        return {
+            "success": false,
+            "reason": "timing_miss"
+        }
+    var fish_def := _pick_catchable_fish_def()
+    if fish_def.is_empty():
+        return {
+            "success": false,
+            "reason": "no_fish_available"
+        }
+    var fish_id := str(fish_def.get("fish_id", ""))
+    var fish_name := str(fish_def.get("display_name", fish_id))
+    var catch_difficulty: float = clamp(float(fish_def.get("catch_difficulty", 0.5)), 0.0, 1.0)
+    var catch_chance: float = clamp(1.0 - catch_difficulty, 0.05, 0.95)
+    if _rng.randf() > catch_chance:
+        return {
+            "success": false,
+            "reason": "escaped",
+            "fish_id": fish_id,
+            "fish_name": fish_name,
+            "catch_chance": catch_chance
+        }
+    fish_count += 1
+    _record_caught_fish_by_id(fish_id, 1)
+    _apply_ocean_health_pressure(1)
+    changed.emit()
+    return {
+        "success": true,
+        "reason": "caught",
+        "fish_id": fish_id,
+        "fish_name": fish_name,
+        "catch_chance": catch_chance
+    }
+
 func make_tin() -> bool:
     if fish_count <= 0:
         return false
     fish_count -= 1
-    tin_count += 1
     var consumed_fish_id := _consume_fish_from_stock()
+    var yield_count := get_fish_cannery_yield(consumed_fish_id)
+    tin_count += yield_count
     if consumed_fish_id != "":
-        _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", 1)
+        _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", yield_count)
     changed.emit()
     return true
 
@@ -571,25 +608,27 @@ func _execute_cannery_attempt(method_id: String, ingredient_ids: Array, produce_
     if not _can_consume_items(normalized_ingredients):
         return false
     fish_count -= 1
-    if produce_tin:
-        tin_count += 1
     _consume_items(normalized_ingredients)
     var process_sequence: Array = build_process_sequence()
     last_tin_process_ids = process_sequence
     last_tin_process_tags = get_process_tags(process_sequence)
     var consumed_fish_id := _consume_fish_from_stock()
+    var yield_count: int = 1
+    if produce_tin:
+        yield_count = get_fish_cannery_yield(consumed_fish_id)
+        tin_count += yield_count
     if consumed_fish_id != "" and produce_tin:
-        _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", 1)
+        _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", yield_count)
     var attempt := _build_craft_attempt(consumed_fish_id, method_id, normalized_ingredients, process_sequence)
     var outcome := _evaluate_attempt_outcome(attempt)
     var output_key := str(outcome.get("output_key", _make_tin_key(method_id, normalized_ingredients)))
     if produce_tin:
-        tin_inventory[output_key] = int(tin_inventory.get(output_key, 0)) + 1
+        tin_inventory[output_key] = int(tin_inventory.get(output_key, 0)) + yield_count
     var discovered_recipe_id := str(outcome.get("discovered_recipe_id", ""))
     if discovered_recipe_id != "":
         _mark_recipe_discovered(discovered_recipe_id)
         if produce_tin:
-            _increment_recipe_lifetime_stat(discovered_recipe_id, "produced", 1)
+            _increment_recipe_lifetime_stat(discovered_recipe_id, "produced", yield_count)
         _unlock_recipe(discovered_recipe_id, method_id, normalized_ingredients)
     _append_experiment_log(outcome.get("log_entry", {}))
     last_craft_feedback = outcome.get("feedback", {})
@@ -644,10 +683,8 @@ func sell_tick() -> void:
         SellMode.FISH:
             if fish_count > 0:
                 var count: int = min(fish_count, get_fish_sell_count())
-                fish_count -= count
-                fish_sold += count
-                _record_fish_sales(count)
-                _add_money(get_fish_sell_price() * count)
+                var sale := _sell_fish_from_stock(count)
+                _add_money(int(sale.get("revenue", 0)))
         SellMode.TINS:
             if tin_count > 0:
                 tin_count -= 1
@@ -668,12 +705,37 @@ func set_sell_mode(mode: SellMode) -> void:
 func sell_fish(count: int) -> int:
     if count <= 0 or fish_count <= 0:
         return 0
-    var actual: int = min(count, fish_count)
-    fish_count -= actual
-    fish_sold += actual
-    _record_fish_sales(actual)
-    _add_money(get_fish_sell_price() * actual)
-    return actual
+    var sale := _sell_fish_from_stock(count)
+    _add_money(int(sale.get("revenue", 0)))
+    return int(sale.get("sold_count", 0))
+
+func sell_fish_by_id(fish_id: String, count: int) -> int:
+    if fish_id == "" or count <= 0 or fish_count <= 0:
+        return 0
+    var sale := _sell_fish_from_stock(count, fish_id)
+    _add_money(int(sale.get("revenue", 0)))
+    return int(sale.get("sold_count", 0))
+
+func _sell_fish_from_stock(count: int, preferred_fish_id: String = "") -> Dictionary:
+    if count <= 0 or fish_count <= 0:
+        return {"sold_count": 0, "revenue": 0}
+    var remaining: int = min(count, fish_count)
+    var sold_count: int = 0
+    var revenue: int = 0
+    while remaining > 0:
+        var fish_id := _consume_fish_from_stock_preferred(preferred_fish_id, preferred_fish_id == "")
+        if fish_id == "":
+            break
+        sold_count += 1
+        remaining -= 1
+        fish_sold += 1
+        _increment_fish_lifetime_stat(fish_id, "sold", 1)
+        revenue += get_fish_sell_price_for_id(fish_id)
+    fish_count = max(0, fish_count - sold_count)
+    return {
+        "sold_count": sold_count,
+        "revenue": revenue
+    }
 
 func sell_tins(count: int) -> int:
     if count <= 0 or tin_count <= 0:
@@ -1796,9 +1858,14 @@ func _record_caught_fish(count: int) -> void:
         var fish_id := _pick_catchable_fish_id()
         if fish_id == "":
             continue
-        fish_stock_by_id[fish_id] = int(fish_stock_by_id.get(fish_id, 0)) + 1
-        _mark_fish_discovered(fish_id)
-        _increment_fish_lifetime_stat(fish_id, "caught", 1)
+        _record_caught_fish_by_id(fish_id, 1)
+
+func _record_caught_fish_by_id(fish_id: String, count: int) -> void:
+    if fish_id == "" or count <= 0:
+        return
+    fish_stock_by_id[fish_id] = int(fish_stock_by_id.get(fish_id, 0)) + count
+    _mark_fish_discovered(fish_id)
+    _increment_fish_lifetime_stat(fish_id, "caught", count)
 
 func _record_fish_sales(count: int) -> void:
     for _i in range(count):
@@ -1819,6 +1886,20 @@ func _consume_fish_from_stock() -> String:
             fish_stock_by_id[id_str] = count - 1
         return id_str
     return ""
+
+func _consume_fish_from_stock_preferred(preferred_fish_id: String, fallback_to_any: bool = true) -> String:
+    var preferred_id := str(preferred_fish_id)
+    if preferred_id != "":
+        var preferred_count: int = int(fish_stock_by_id.get(preferred_id, 0))
+        if preferred_count > 0:
+            if preferred_count == 1:
+                fish_stock_by_id.erase(preferred_id)
+            else:
+                fish_stock_by_id[preferred_id] = preferred_count - 1
+            return preferred_id
+        if not fallback_to_any:
+            return ""
+    return _consume_fish_from_stock()
 
 func _mark_fish_discovered(fish_id: String) -> void:
     if fish_id == "":
@@ -1879,9 +1960,15 @@ func _record_recipe_sale(recipe_id: String, revenue: int) -> void:
     _increment_recipe_lifetime_stat(recipe_id, "revenue_generated", max(0, revenue))
 
 func _pick_catchable_fish_id() -> String:
+    var fish_def := _pick_catchable_fish_def()
+    if fish_def.is_empty():
+        return ""
+    return str(fish_def.get("fish_id", ""))
+
+func _pick_catchable_fish_def() -> Dictionary:
     var available_defs := _get_catchable_fish_defs()
     if available_defs.is_empty():
-        return _get_fallback_fish_id()
+        return _get_fallback_fish_def()
 
     var total_weight: int = 0
     for fish_def in available_defs:
@@ -1889,7 +1976,7 @@ func _pick_catchable_fish_id() -> String:
         var spawn_weight := int(fish_dict.get("spawn_weight", 1))
         total_weight += max(1, spawn_weight)
     if total_weight <= 0:
-        return _get_fallback_fish_id()
+        return _get_fallback_fish_def()
 
     var roll := _rng.randi_range(1, total_weight)
     var running := 0
@@ -1897,8 +1984,8 @@ func _pick_catchable_fish_id() -> String:
         var fish_dict: Dictionary = fish_def
         running += max(1, int(fish_dict.get("spawn_weight", 1)))
         if roll <= running:
-            return str(fish_dict.get("fish_id", ""))
-    return _get_fallback_fish_id()
+            return fish_dict
+    return _get_fallback_fish_def()
 
 func _get_catchable_fish_defs() -> Array:
     var out: Array = []
@@ -1914,13 +2001,18 @@ func _is_fish_requires_met(fish_def: Dictionary) -> bool:
     return RequiresEval.is_met(reqs, self)
 
 func _get_fallback_fish_id() -> String:
-    if fish_defs.is_empty():
+    var fish_def := _get_fallback_fish_def()
+    if fish_def.is_empty():
         return ""
+    return str(fish_def.get("fish_id", ""))
+
+func _get_fallback_fish_def() -> Dictionary:
+    if fish_defs.is_empty():
+        return {}
     var first_def = fish_defs[0]
     if typeof(first_def) != TYPE_DICTIONARY:
-        return ""
-    var fish_dict: Dictionary = first_def
-    return str(fish_dict.get("fish_id", ""))
+        return {}
+    return first_def
 
 func _reconcile_fish_stock() -> void:
     var total: int = 0
@@ -2534,7 +2626,23 @@ func _get_effect_total_float(effect_type: String) -> float:
     return total
 
 func get_fish_sell_price() -> int:
-    return 20 + _get_effect_total("fish_sell_add") + _get_meta_bonus_int("fish_sell_add") + _get_skill_effect_total_int("fish_sell_add")
+    return get_fish_sell_price_for_id("")
+
+func get_fish_sell_price_for_id(fish_id: String) -> int:
+    var base_value: int = 20
+    var fish_def: Dictionary = fish_defs_by_id.get(fish_id, {})
+    if typeof(fish_def) == TYPE_DICTIONARY and not fish_def.is_empty():
+        base_value = int(fish_def.get("base_value", base_value))
+    var bonus := _get_effect_total("fish_sell_add") + _get_meta_bonus_int("fish_sell_add") + _get_skill_effect_total_int("fish_sell_add")
+    return max(1, base_value + bonus)
+
+func get_fish_cannery_yield(fish_id: String) -> int:
+    if fish_id == "":
+        return 1
+    var fish_def: Dictionary = fish_defs_by_id.get(fish_id, {})
+    if typeof(fish_def) != TYPE_DICTIONARY or fish_def.is_empty():
+        return 1
+    return max(1, int(fish_def.get("cannery_yield", 1)))
 
 func get_tin_sell_price() -> int:
     return 10 + _get_effect_total("tin_sell_add") + _get_meta_bonus_int("tin_sell_add") + _get_skill_effect_total_int("tin_sell_add")
@@ -2683,19 +2791,7 @@ func get_inventory_items() -> Array:
 
 func get_inventory_entries(include_zero: bool = false) -> Array:
     var entries: Array = []
-    if include_zero or fish_count > 0:
-        entries.append({
-            "type": "fish",
-            "id": "fish",
-            "label": "Fish",
-            "count": fish_count,
-            "description": "Fresh catch ready for sale.",
-            "rarity": "Common",
-            "category": "catch",
-            "tags": ["fresh"],
-            "sell_value": get_fish_sell_price(),
-            "cost": 0
-        })
+    entries.append_array(_build_fish_inventory_entries(include_zero))
     if include_zero or tin_count > 0:
         entries.append({
             "type": "tin",
@@ -2739,6 +2835,64 @@ func get_inventory_entries(include_zero: bool = false) -> Array:
             "cost": 0
         })
     return entries
+
+func _build_fish_inventory_entries(include_zero: bool) -> Array:
+    var out: Array = []
+    var fish_ids: Array = []
+    var seen: Dictionary = {}
+    if include_zero:
+        for fish_def in fish_defs:
+            if typeof(fish_def) != TYPE_DICTIONARY:
+                continue
+            var fish_dict: Dictionary = fish_def
+            var fish_id := str(fish_dict.get("fish_id", ""))
+            if fish_id == "" or seen.has(fish_id):
+                continue
+            fish_ids.append(fish_id)
+            seen[fish_id] = true
+    for fish_id_key in fish_stock_by_id.keys():
+        var fish_id := str(fish_id_key)
+        if fish_id == "" or seen.has(fish_id):
+            continue
+        fish_ids.append(fish_id)
+        seen[fish_id] = true
+    fish_ids.sort_custom(func(a, b):
+        return _get_fish_display_name(str(a)) < _get_fish_display_name(str(b))
+    )
+    for fish_id_any in fish_ids:
+        var fish_id := str(fish_id_any)
+        var count := int(fish_stock_by_id.get(fish_id, 0))
+        if not include_zero and count <= 0:
+            continue
+        var fish_def: Dictionary = fish_defs_by_id.get(fish_id, {})
+        var description := "Fresh catch ready for sale."
+        var rarity := "Unknown"
+        var tags: Array = ["fresh"]
+        if typeof(fish_def) == TYPE_DICTIONARY and not fish_def.is_empty():
+            description = str(fish_def.get("description", description))
+            rarity = str(fish_def.get("rarity", rarity))
+            var fish_tags = fish_def.get("tags", [])
+            if typeof(fish_tags) == TYPE_ARRAY and not fish_tags.is_empty():
+                tags = fish_tags
+        out.append({
+            "type": "fish",
+            "id": fish_id,
+            "label": _get_fish_display_name(fish_id),
+            "count": count,
+            "description": description,
+            "rarity": rarity,
+            "category": "catch",
+            "tags": tags,
+            "sell_value": get_fish_sell_price_for_id(fish_id),
+            "cost": 0
+        })
+    return out
+
+func _get_fish_display_name(fish_id: String) -> String:
+    var fish_def: Dictionary = fish_defs_by_id.get(fish_id, {})
+    if typeof(fish_def) != TYPE_DICTIONARY or fish_def.is_empty():
+        return _title(fish_id)
+    return str(fish_def.get("display_name", fish_id))
 
 func get_recipe_list() -> Array:
     var out: Array = []

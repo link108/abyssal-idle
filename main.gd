@@ -44,7 +44,6 @@ func _ready() -> void:
     GameState.ocean_health_changed.connect(_update_ocean_health_ui)
     GameState.ending_reached.connect(_on_ending_reached)
     
-    fishing_screen.fish_caught.connect(_on_fish_caught)
     cannery_screen.make_tin_requested.connect(_on_make_tin_requested)
     GameState.cannery_unlocked.connect(_on_cannery_unlocked)
     start_screen.load_requested.connect(_on_load_requested)
@@ -77,10 +76,6 @@ func _update_hud() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
     _update_crew_ui()
-
-func _on_fish_caught(amount: int) -> void:
-    GameState.catch_fish(amount)
-
 
 func _on_cannery_unlocked() -> void:
     cannery_button.show()

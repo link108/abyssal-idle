@@ -258,6 +258,18 @@ static func validate_fish(entries: Array, registries: Dictionary, report: Dictio
             ["depth_min_m", [TYPE_INT, TYPE_FLOAT]],
             ["depth_max_m", [TYPE_INT, TYPE_FLOAT]]
         ], "fish.json", id_for_logs, report)
+        var spawn_weight := int(fish.get("spawn_weight", 1))
+        if spawn_weight <= 0:
+            _push_error(report, "fish.json (%s): spawn_weight must be > 0." % id_for_logs)
+        var catch_difficulty := float(fish.get("catch_difficulty", 0.5))
+        if catch_difficulty < 0.0 or catch_difficulty > 1.0:
+            _push_error(report, "fish.json (%s): catch_difficulty must be in [0, 1]." % id_for_logs)
+        var base_value := int(fish.get("base_value", 0))
+        if base_value < 0:
+            _push_error(report, "fish.json (%s): base_value must be >= 0." % id_for_logs)
+        var cannery_yield := int(fish.get("cannery_yield", 1))
+        if cannery_yield < 1:
+            _push_error(report, "fish.json (%s): cannery_yield must be >= 1." % id_for_logs)
         var tinned_ids: Array = fish.get("tinned_recipe_ids", [])
         if typeof(tinned_ids) == TYPE_ARRAY:
             for recipe_id in tinned_ids:
