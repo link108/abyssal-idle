@@ -15,9 +15,14 @@ const PROCESS_CATEGORIES := [
 @onready var method_select := $Control/MethodSelect
 @onready var ingredient_select := $Control/IngredientSelect
 @onready var garlic_label := $Control/GarlicCountLabel
+@onready var produce_toggle: CheckBox = $Control/ProduceToggle
 @onready var make_tin_button := $Control/MakeTinButton
 @onready var make_tin_progress := $Control/MakeTinButton/MakeTinProgress
 @onready var last_made_label := $Control/LastMadeLabel
+@onready var feedback_label := $Control/FeedbackLabel
+@onready var hint_label := $Control/HintLabel
+@onready var refine_last_button := $Control/RefineLastButton
+@onready var log_label := $Control/LogLabel
 @onready var prep_list := $Control/ProcessPanel/PrepGroup/PrepList
 @onready var transform_list := $Control/ProcessPanel/TransformGroup/TransformList
 @onready var heat_list := $Control/ProcessPanel/HeatGroup/HeatList
@@ -46,12 +51,18 @@ func _ready() -> void:
     _load_processes()
     GameState.changed.connect(_refresh_counts)
     GameState.changed.connect(_refresh_process_state)
+    GameState.changed.connect(_refresh_experiment_feedback)
     _refresh_counts()
     make_tin_progress.show_percentage = false
     method_select.item_selected.connect(_on_method_selected)
     ingredient_select.item_selected.connect(_on_ingredient_selected)
+    produce_toggle.toggled.connect(_on_produce_toggle_toggled)
+    refine_last_button.pressed.connect(_on_refine_last_button_pressed)
+    _sync_selection_from_game_state()
+    produce_toggle.button_pressed = GameState.cannery_produce_enabled
     _sync_selection_to_game_state()
     _refresh_process_state()
+    _refresh_experiment_feedback()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -64,12 +75,17 @@ func _on_close_button_close_requested() -> void:
 func _on_make_tin_button_pressed() -> void:
     var method_id: String = _get_selected_id(method_select, "raw")
     var ingredient_id: String = _get_selected_id(ingredient_select, "none")
-    var made: bool = GameState.try_make_tin(method_id, ingredient_id)
+    var produce_tin := produce_toggle.button_pressed
+    var made: bool = GameState.try_run_cannery_attempt(method_id, ingredient_id, produce_tin)
     if made:
         var process_summary := _format_process_summary()
-        last_made_label.text = "Made: %s%s" % [GameState.format_recipe(method_id, ingredient_id), process_summary]
+        var feedback: Dictionary = GameState.get_last_craft_feedback()
+        var summary := str(feedback.get("summary", GameState.format_recipe(method_id, ingredient_id)))
+        var prefix := "Made" if produce_tin else "Tested"
+        last_made_label.text = "%s: %s%s" % [prefix, summary, process_summary]
     make_tin_requested.emit()
     _refresh_counts()
+    _refresh_experiment_feedback()
 
 func _load_options() -> void:
     if not FileAccess.file_exists(OPTIONS_PATH):
@@ -109,21 +125,27 @@ func _refresh_counts() -> void:
 
 
 func _update_cooldown_ui() -> void:
-    var ready: bool = GameState.can_make_tin()
+    var produce_tin: bool = produce_toggle.button_pressed
+    var ready: bool = true if not produce_tin else GameState.can_make_tin()
     make_tin_button.disabled = not ready
     make_tin_button.modulate = Color(1, 1, 1, 1) if ready else Color(0.6, 0.6, 0.6, 1)
+    var action_label := _get_action_label()
+    if not produce_tin:
+        make_tin_progress.value = 1.0
+        make_tin_button.text = action_label
+        return
     var total: float = GameState.get_tin_make_time()
     var remaining: float = GameState.tin_cooldown_remaining
     if total <= 0.0:
         make_tin_progress.value = 1.0
-        make_tin_button.text = "Make tin"
+        make_tin_button.text = action_label
     else:
         var progress: float = 1.0 - (remaining / total)
         var clamped: float = clamp(progress, 0.0, 1.0)
         make_tin_progress.value = clamped
         var pct: int = int(round(clamped * 100.0))
         if ready or pct >= 100:
-            make_tin_button.text = "Make tin"
+            make_tin_button.text = action_label
         else:
             make_tin_button.text = "%d%%" % pct
 
@@ -138,6 +160,35 @@ func _sync_selection_to_game_state() -> void:
     var method_id: String = _get_selected_id(method_select, "raw")
     var ingredient_id: String = _get_selected_id(ingredient_select, "none")
     GameState.set_tin_selection(method_id, ingredient_id)
+
+func _sync_selection_from_game_state() -> void:
+    _set_option_to_id(method_select, GameState.tin_method_id)
+    _set_option_to_id(ingredient_select, GameState.tin_ingredient_id)
+
+func _set_option_to_id(option: OptionButton, target_id: String) -> void:
+    if option.item_count <= 0:
+        return
+    for i in range(option.item_count):
+        var meta: Variant = option.get_item_metadata(i)
+        if str(meta) == target_id:
+            option.select(i)
+            return
+
+func _on_refine_last_button_pressed() -> void:
+    if not GameState.apply_attempt_to_selection():
+        return
+    _sync_selection_from_game_state()
+    _load_processes()
+    _refresh_experiment_feedback()
+
+func _on_produce_toggle_toggled(pressed: bool) -> void:
+    GameState.set_cannery_produce_enabled(pressed)
+    if not pressed:
+        GameState.clear_tin_cooldown()
+    _update_cooldown_ui()
+
+func _get_action_label() -> String:
+    return "Make tin" if produce_toggle.button_pressed else "Run test"
 
 func _load_processes() -> void:
     _selected_process_ids = {
@@ -223,3 +274,27 @@ func _format_process_summary() -> String:
     if sequence.is_empty():
         return ""
     return " [%s]" % ", ".join(sequence)
+
+func _refresh_experiment_feedback() -> void:
+    var feedback: Dictionary = GameState.get_last_craft_feedback()
+    if feedback.is_empty():
+        feedback_label.text = "Score: --"
+        hint_label.text = "Hint: Run an experiment to get feedback."
+    else:
+        feedback_label.text = "Score: %d%%" % int(feedback.get("score", 0))
+        hint_label.text = "Hint: %s" % str(feedback.get("hint", ""))
+
+    var recent: Array = GameState.get_recent_experiment_log(3)
+    if recent.is_empty():
+        log_label.text = "Recent experiments: none"
+    else:
+        var lines: Array = ["Recent experiments:"]
+        for entry in recent:
+            if typeof(entry) != TYPE_DICTIONARY:
+                continue
+            lines.append("#%d  %d%%  %s" % [
+                int(entry.get("attempt_id", 0)),
+                int(entry.get("score", 0)),
+                str(entry.get("result_key", "experimental_tin_rough")).replace("_", " ")
+            ])
+        log_label.text = "\n".join(lines)

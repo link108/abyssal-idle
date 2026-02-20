@@ -18,10 +18,11 @@ const RECIPE_DATA_PATH := "res://data/raw/recipes.json"
 const ITEM_DATA_PATH := "res://data/raw/items.json"
 const EQUIPMENT_DATA_PATH := "res://data/raw/equipment.json"
 const PROCESS_DATA_PATH := "res://data/raw/processes.json"
+const SILHOUETTE_DATA_PATH := "res://data/raw/silhouettes.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
-const SAVE_VERSION := 11
+const SAVE_VERSION := 12
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -38,6 +39,7 @@ const INDUSTRIAL_MIN_LIFETIME_MONEY := 50000
 const SUSTAINABLE_MIN_TOTAL_UPGRADES := 12
 const DUAL_MIN_LIFETIME_MONEY := 250000
 const UPGRADES_VISIBLE_PER_CATEGORY := 3
+const MAX_EXPERIMENT_LOG_ENTRIES := 120
 
 const SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL := 1
 const SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL := 0.01
@@ -57,6 +59,7 @@ var recipes_unlocked: Array = []
 var tin_cooldown_remaining: float = 0.0
 var tin_method_id: String = "raw"
 var tin_ingredient_id: String = "none"
+var cannery_produce_enabled: bool = true
 var tins_sold: int = 0
 var fish_sold: int = 0
 var ocean_health: float = OCEAN_HEALTH_MAX
@@ -79,7 +82,10 @@ var meta_state: Dictionary = {
     "fish_lifetime_stats": {},
     "discovered_recipe_ids": [],
     "recipe_lifetime_stats": {},
-    "owned_equipment_ids": []
+    "owned_equipment_ids": [],
+    "silhouette_progress_by_id": {},
+    "experiment_log": [],
+    "attempt_counter": 0
 }
 
 # Upgrades: Cannery
@@ -125,10 +131,15 @@ var fish_name_to_id: Dictionary = {}
 var recipe_defs: Array = []
 var recipe_defs_by_id: Dictionary = {}
 var recipe_ids_by_fish_id: Dictionary = {}
+var item_defs: Array = []
+var item_defs_by_id: Dictionary = {}
 var process_defs: Array = []
 var process_defs_by_id: Dictionary = {}
 var equipment_defs: Array = []
 var equipment_defs_by_id: Dictionary = {}
+var silhouette_defs: Array = []
+var silhouette_defs_by_id: Dictionary = {}
+var silhouette_ids_by_fish_id: Dictionary = {}
 var selected_processes: Dictionary = {
     "prep": [],
     "transform": [],
@@ -137,6 +148,7 @@ var selected_processes: Dictionary = {
 }
 var last_tin_process_ids: Array = []
 var last_tin_process_tags: Array = []
+var last_craft_feedback: Dictionary = {}
 var _data_validated: bool = false
 
 # Called when the node enters the scene tree for the first time.
@@ -145,8 +157,10 @@ func _ready() -> void:
     _load_skill_tree()
     _load_fish_defs()
     _load_recipe_defs()
+    _load_item_defs()
     _load_process_defs()
     _load_equipment_defs()
+    _load_silhouette_defs()
     _ensure_default_equipment_ownership()
     _run_data_validation()
     _rng.randomize()
@@ -183,6 +197,10 @@ func save_game() -> void:
         "upgrade_levels": upgrade_levels,
         "tin_inventory": tin_inventory,
         "recipes_unlocked": recipes_unlocked,
+        "tin_method_id": tin_method_id,
+        "tin_ingredient_id": tin_ingredient_id,
+        "selected_processes": selected_processes,
+        "cannery_produce_enabled": cannery_produce_enabled,
         "crew_trip_active": crew_trip_active,
         "crew_trip_remaining": crew_trip_remaining,
         "tins_sold": tins_sold,
@@ -224,6 +242,15 @@ func new_game() -> void:
     fish_stock_by_id.clear()
     tin_inventory.clear()
     recipes_unlocked.clear()
+    tin_method_id = "raw"
+    tin_ingredient_id = "none"
+    selected_processes = {
+        "prep": [],
+        "transform": [],
+        "heat": [],
+        "preserve": []
+    }
+    cannery_produce_enabled = true
     lifetime_money_earned = 0
     tins_sold = 0
     fish_sold = 0
@@ -256,8 +283,12 @@ func new_game() -> void:
         "fish_lifetime_stats": {},
         "discovered_recipe_ids": [],
         "recipe_lifetime_stats": {},
-        "owned_equipment_ids": []
+        "owned_equipment_ids": [],
+        "silhouette_progress_by_id": {},
+        "experiment_log": [],
+        "attempt_counter": 0
     }
+    last_craft_feedback = {}
     reputation_changed.emit()
     skills_changed.emit()
     changed.emit()
@@ -282,6 +313,10 @@ func _apply_save(data: Dictionary) -> void:
     upgrade_levels = data.get("upgrade_levels", {})
     tin_inventory = data.get("tin_inventory", {})
     recipes_unlocked = data.get("recipes_unlocked", [])
+    tin_method_id = str(data.get("tin_method_id", "raw"))
+    tin_ingredient_id = str(data.get("tin_ingredient_id", "none"))
+    selected_processes = data.get("selected_processes", selected_processes)
+    cannery_produce_enabled = bool(data.get("cannery_produce_enabled", true))
     crew_trip_active = bool(data.get("crew_trip_active", false))
     crew_trip_remaining = float(data.get("crew_trip_remaining", 0.0))
     tins_sold = int(data.get("tins_sold", 0))
@@ -305,6 +340,14 @@ func _apply_save(data: Dictionary) -> void:
         policy_stage_chosen = {}
     if typeof(fish_stock_by_id) != TYPE_DICTIONARY:
         fish_stock_by_id = {}
+    if typeof(selected_processes) != TYPE_DICTIONARY:
+        selected_processes = {}
+    for category in ["prep", "transform", "heat", "preserve"]:
+        var process_ids: Array = selected_processes.get(category, [])
+        if typeof(process_ids) != TYPE_ARRAY:
+            selected_processes[category] = []
+        else:
+            selected_processes[category] = process_ids
     run_paused = ending_state != EndingState.NONE
     _normalize_meta_state()
     _normalize_policy_state()
@@ -312,6 +355,7 @@ func _apply_save(data: Dictionary) -> void:
         _rebuild_policy_state()
     _reconcile_fish_stock()
     _reconcile_recipe_state()
+    last_craft_feedback = {}
     if version < SAVE_VERSION:
         _migrate_save(version)
 
@@ -341,6 +385,8 @@ func _migrate_save(version: int) -> void:
         _reset_recipe_tracking_from_inventory()
     if version < 11:
         _rebuild_policy_state()
+    if version < 12:
+        _normalize_meta_state()
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -365,6 +411,12 @@ func _normalize_meta_state() -> void:
         meta_state["recipe_lifetime_stats"] = {}
     if not meta_state.has("owned_equipment_ids"):
         meta_state["owned_equipment_ids"] = []
+    if not meta_state.has("silhouette_progress_by_id"):
+        meta_state["silhouette_progress_by_id"] = {}
+    if not meta_state.has("experiment_log"):
+        meta_state["experiment_log"] = []
+    if not meta_state.has("attempt_counter"):
+        meta_state["attempt_counter"] = 0
     if typeof(meta_state["discovered_fish_ids"]) != TYPE_ARRAY:
         meta_state["discovered_fish_ids"] = []
     if typeof(meta_state["fish_lifetime_stats"]) != TYPE_DICTIONARY:
@@ -375,6 +427,12 @@ func _normalize_meta_state() -> void:
         meta_state["recipe_lifetime_stats"] = {}
     if typeof(meta_state["owned_equipment_ids"]) != TYPE_ARRAY:
         meta_state["owned_equipment_ids"] = []
+    if typeof(meta_state["silhouette_progress_by_id"]) != TYPE_DICTIONARY:
+        meta_state["silhouette_progress_by_id"] = {}
+    if typeof(meta_state["experiment_log"]) != TYPE_ARRAY:
+        meta_state["experiment_log"] = []
+    if typeof(meta_state["attempt_counter"]) != TYPE_INT:
+        meta_state["attempt_counter"] = int(meta_state.get("attempt_counter", 0))
     var discovered: Array = meta_state["discovered_fish_ids"]
     var all_stats: Dictionary = meta_state["fish_lifetime_stats"]
     for fish_id in all_stats.keys():
@@ -393,17 +451,20 @@ func _normalize_meta_state() -> void:
         if int(stats.get("produced", 0)) > 0 and not discovered_recipes.has(str(recipe_id)):
             discovered_recipes.append(str(recipe_id))
     meta_state["discovered_recipe_ids"] = discovered_recipes
+    _normalize_silhouette_progress()
+    _normalize_experiment_log()
 
 func _ensure_default_equipment_ownership() -> void:
     var owned: Array = meta_state.get("owned_equipment_ids", [])
     if typeof(owned) != TYPE_ARRAY:
         owned = []
-    if not owned.is_empty():
-        return
-    var equipment_ids: Array = []
-    for equipment_id in equipment_defs_by_id.keys():
-        equipment_ids.append(str(equipment_id))
-    meta_state["owned_equipment_ids"] = equipment_ids
+    var cleaned: Array = []
+    for equipment_id in owned:
+        if typeof(equipment_id) != TYPE_STRING:
+            continue
+        if equipment_defs_by_id.has(equipment_id):
+            cleaned.append(equipment_id)
+    meta_state["owned_equipment_ids"] = cleaned
 
 func _normalize_policy_state() -> void:
     if typeof(chosen_exclusive_groups) != TYPE_DICTIONARY:
@@ -473,38 +534,52 @@ func make_tin() -> bool:
     return true
 
 func make_tin_with(_method_id: String, _ingredient_id: String) -> bool:
+    return _execute_cannery_attempt(_method_id, _ingredient_id, true)
+
+func try_make_tin(method_id: String, ingredient_id: String) -> bool:
+    return try_run_cannery_attempt(method_id, ingredient_id, true)
+
+func try_run_cannery_attempt(method_id: String, ingredient_id: String, produce_tin: bool = true) -> bool:
+    if produce_tin and not can_make_tin():
+        return false
+    if not is_cannery_unlocked:
+        return false
+    if not _execute_cannery_attempt(method_id, ingredient_id, produce_tin):
+        return false
+    if produce_tin:
+        start_tin_cooldown()
+    return true
+
+func _execute_cannery_attempt(method_id: String, ingredient_id: String, produce_tin: bool) -> bool:
     if fish_count <= 0:
         return false
-    if _ingredient_id != "none" and garlic_count <= 0:
+    if ingredient_id != "none" and garlic_count <= 0:
         return false
     fish_count -= 1
-    tin_count += 1
-    if _ingredient_id == "garlic":
+    if produce_tin:
+        tin_count += 1
+    if ingredient_id == "garlic":
         garlic_count -= 1
     var process_sequence: Array = build_process_sequence()
     last_tin_process_ids = process_sequence
     last_tin_process_tags = get_process_tags(process_sequence)
     var consumed_fish_id := _consume_fish_from_stock()
-    if consumed_fish_id != "":
+    if consumed_fish_id != "" and produce_tin:
         _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", 1)
-    var recipe_id := _select_recipe_for_tinning(consumed_fish_id, _method_id, _ingredient_id)
-    if recipe_id != "":
-        _mark_recipe_discovered(recipe_id)
-        _increment_recipe_lifetime_stat(recipe_id, "produced", 1)
-    var key: String = _make_tin_key(_method_id, _ingredient_id)
-    tin_inventory[key] = int(tin_inventory.get(key, 0)) + 1
-    _unlock_recipe(recipe_id, _method_id, _ingredient_id)
+    var attempt := _build_craft_attempt(consumed_fish_id, method_id, ingredient_id, process_sequence)
+    var outcome := _evaluate_attempt_outcome(attempt)
+    var output_key := str(outcome.get("output_key", _make_tin_key(method_id, ingredient_id)))
+    if produce_tin:
+        tin_inventory[output_key] = int(tin_inventory.get(output_key, 0)) + 1
+    var discovered_recipe_id := str(outcome.get("discovered_recipe_id", ""))
+    if discovered_recipe_id != "":
+        _mark_recipe_discovered(discovered_recipe_id)
+        if produce_tin:
+            _increment_recipe_lifetime_stat(discovered_recipe_id, "produced", 1)
+        _unlock_recipe(discovered_recipe_id, method_id, ingredient_id)
+    _append_experiment_log(outcome.get("log_entry", {}))
+    last_craft_feedback = outcome.get("feedback", {})
     changed.emit()
-    return true
-
-func try_make_tin(method_id: String, ingredient_id: String) -> bool:
-    if not can_make_tin():
-        return false
-    if not is_cannery_unlocked:
-        return false
-    if not make_tin_with(method_id, ingredient_id):
-        return false
-    start_tin_cooldown()
     return true
 
 func _remove_random_tin() -> String:
@@ -734,6 +809,131 @@ func _load_recipe_defs() -> void:
         ids.append(recipe_id)
         recipe_ids_by_fish_id[fish_id] = ids
 
+func _load_item_defs() -> void:
+    item_defs.clear()
+    item_defs_by_id.clear()
+    if not FileAccess.file_exists(ITEM_DATA_PATH):
+        return
+    var file := FileAccess.open(ITEM_DATA_PATH, FileAccess.READ)
+    if file == null:
+        return
+    var parsed = JSON.parse_string(file.get_as_text())
+    if typeof(parsed) != TYPE_ARRAY:
+        return
+    item_defs = parsed
+    for item_def in item_defs:
+        if typeof(item_def) != TYPE_DICTIONARY:
+            continue
+        var ingredient_id := str(item_def.get("ingredient_id", item_def.get("item_id", "")))
+        if ingredient_id == "":
+            continue
+        item_defs_by_id[ingredient_id] = item_def
+
+func _load_silhouette_defs() -> void:
+    silhouette_defs.clear()
+    silhouette_defs_by_id.clear()
+    silhouette_ids_by_fish_id.clear()
+    var parsed: Array = []
+    if FileAccess.file_exists(SILHOUETTE_DATA_PATH):
+        var file := FileAccess.open(SILHOUETTE_DATA_PATH, FileAccess.READ)
+        if file != null:
+            var payload = JSON.parse_string(file.get_as_text())
+            if typeof(payload) == TYPE_ARRAY:
+                parsed = payload
+
+    for entry in parsed:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var def: Dictionary = _build_silhouette_from_data(entry)
+        if def.is_empty():
+            continue
+        silhouette_defs.append(def)
+        silhouette_defs_by_id[str(def.get("silhouette_id", ""))] = def
+        _index_silhouette_for_fish(def)
+
+    # Ensure all recipes have a silhouette, even if silhouettes.json is sparse.
+    for recipe_def in recipe_defs:
+        if typeof(recipe_def) != TYPE_DICTIONARY:
+            continue
+        var recipe_id := str(recipe_def.get("recipe_id", ""))
+        if recipe_id == "":
+            continue
+        var silhouette_id := recipe_id
+        if silhouette_defs_by_id.has(silhouette_id):
+            continue
+        var generated := _build_silhouette_from_recipe(recipe_def)
+        if generated.is_empty():
+            continue
+        silhouette_defs.append(generated)
+        silhouette_defs_by_id[silhouette_id] = generated
+        _index_silhouette_for_fish(generated)
+
+func _build_silhouette_from_data(entry: Dictionary) -> Dictionary:
+    var silhouette_id := str(entry.get("silhouette_id", ""))
+    if silhouette_id == "":
+        return {}
+    var recipe_id := str(entry.get("recipe_id", silhouette_id))
+    var required_fish_id := str(entry.get("required_fish_id", ""))
+    if required_fish_id == "" and recipe_defs_by_id.has(recipe_id):
+        required_fish_id = _get_recipe_fish_id(recipe_defs_by_id.get(recipe_id, {}))
+    var def := {
+        "silhouette_id": silhouette_id,
+        "recipe_id": recipe_id,
+        "required_fish_id": required_fish_id,
+        "hint_text": str(entry.get("hint_text", "An unfamiliar preservation profile.")),
+        "required_tags": _string_array(entry.get("required_tags", [])),
+        "preferred_tags": _string_array(entry.get("preferred_tags", [])),
+        "forbidden_tags": _string_array(entry.get("forbidden_tags", [])),
+        "unlock_threshold": int(entry.get("unlock_threshold", 75))
+    }
+    return def
+
+func _build_silhouette_from_recipe(recipe_def: Dictionary) -> Dictionary:
+    var recipe_id := str(recipe_def.get("recipe_id", ""))
+    if recipe_id == "":
+        return {}
+    var fish_id := _get_recipe_fish_id(recipe_def)
+    var recipe_tags := _string_array(recipe_def.get("tags", []))
+    var recipe_processes := _string_array(recipe_def.get("processes", []))
+    var process_tags := get_process_tags(recipe_processes)
+    var required_tags: Array = []
+    if fish_id != "":
+        required_tags.append("fish:%s" % fish_id)
+    for tag in recipe_tags:
+        if required_tags.size() >= 3:
+            break
+        if not required_tags.has(tag):
+            required_tags.append(tag)
+    var preferred_tags: Array = []
+    for tag in recipe_tags:
+        if not preferred_tags.has(tag):
+            preferred_tags.append(tag)
+    for tag in process_tags:
+        if not preferred_tags.has(tag):
+            preferred_tags.append(tag)
+    return {
+        "silhouette_id": recipe_id,
+        "recipe_id": recipe_id,
+        "required_fish_id": fish_id,
+        "hint_text": _build_recipe_hint(recipe_def),
+        "required_tags": required_tags,
+        "preferred_tags": preferred_tags,
+        "forbidden_tags": [],
+        "unlock_threshold": 75
+    }
+
+func _index_silhouette_for_fish(silhouette_def: Dictionary) -> void:
+    var fish_id := str(silhouette_def.get("required_fish_id", ""))
+    if fish_id == "":
+        return
+    if not silhouette_ids_by_fish_id.has(fish_id):
+        silhouette_ids_by_fish_id[fish_id] = []
+    var ids: Array = silhouette_ids_by_fish_id[fish_id]
+    var silhouette_id := str(silhouette_def.get("silhouette_id", ""))
+    if silhouette_id != "" and not ids.has(silhouette_id):
+        ids.append(silhouette_id)
+    silhouette_ids_by_fish_id[fish_id] = ids
+
 func _load_process_defs() -> void:
     process_defs.clear()
     process_defs_by_id.clear()
@@ -940,6 +1140,87 @@ func get_process_tags(process_ids: Array) -> Array:
                 tags.append(tag)
     return tags
 
+func get_equipment_defs() -> Array:
+    return equipment_defs
+
+func get_equipment_def(id: String) -> Dictionary:
+    return equipment_defs_by_id.get(id, {})
+
+func get_equipment_category_order() -> Array:
+    var order: Array = []
+    for def in equipment_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        var category := str(def.get("category", ""))
+        if category == "":
+            category = "other"
+        if not order.has(category):
+            order.append(category)
+    return order
+
+func get_equipment_defs_by_category(show_purchased: bool = false) -> Dictionary:
+    var result: Dictionary = {}
+    for def in equipment_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        var equipment_id := str(def.get("equipment_id", ""))
+        if equipment_id == "":
+            continue
+        if not show_purchased and owns_equipment(equipment_id):
+            continue
+        var category := str(def.get("category", ""))
+        if category == "":
+            category = "other"
+        if not result.has(category):
+            result[category] = []
+        result[category].append(def)
+    return result
+
+func get_equipment_cost(id: String) -> int:
+    var def: Dictionary = get_equipment_def(id)
+    if def.is_empty():
+        return 0
+    return int(def.get("base_cost", 0))
+
+func can_purchase_equipment(id: String) -> bool:
+    var def: Dictionary = get_equipment_def(id)
+    if def.is_empty():
+        return false
+    if owns_equipment(id):
+        return false
+    var reqs: Array = RequiresEval.get_requires(def)
+    if not RequiresEval.is_met(reqs, self):
+        return false
+    return money >= get_equipment_cost(id)
+
+func get_equipment_lock_reason(id: String) -> String:
+    var def: Dictionary = get_equipment_def(id)
+    if def.is_empty():
+        return "Unavailable"
+    if owns_equipment(id):
+        return "Purchased"
+    var reqs: Array = RequiresEval.get_requires(def)
+    if not RequiresEval.is_met(reqs, self):
+        return "Locked"
+    var cost := get_equipment_cost(id)
+    if money < cost:
+        return "Need $%d" % cost
+    return ""
+
+func purchase_equipment(id: String) -> bool:
+    if not can_purchase_equipment(id):
+        return false
+    var cost := get_equipment_cost(id)
+    money -= cost
+    var owned: Array = meta_state.get("owned_equipment_ids", [])
+    if typeof(owned) != TYPE_ARRAY:
+        owned = []
+    if not owned.has(id):
+        owned.append(id)
+    meta_state["owned_equipment_ids"] = owned
+    changed.emit()
+    return true
+
 func owns_equipment(equipment_id: String) -> bool:
     if equipment_id == "":
         return false
@@ -978,6 +1259,482 @@ func get_recipe_lifetime_stats(recipe_id: String) -> Dictionary:
         "produced": int(stats.get("produced", 0)),
         "revenue_generated": int(stats.get("revenue_generated", 0))
     }
+
+func get_last_craft_feedback() -> Dictionary:
+    return last_craft_feedback.duplicate(true)
+
+func get_recent_experiment_log(limit: int = 10) -> Array:
+    var log_entries: Array = meta_state.get("experiment_log", [])
+    if typeof(log_entries) != TYPE_ARRAY or log_entries.is_empty():
+        return []
+    var count := clampi(limit, 1, log_entries.size())
+    var out: Array = []
+    for i in range(log_entries.size() - 1, max(-1, log_entries.size() - count - 1), -1):
+        out.append(log_entries[i])
+    return out
+
+func get_last_experiment_attempt() -> Dictionary:
+    var recent := get_recent_experiment_log(1)
+    if recent.is_empty():
+        return {}
+    var entry = recent[0]
+    if typeof(entry) != TYPE_DICTIONARY:
+        return {}
+    return entry
+
+func apply_attempt_to_selection(attempt_id: int = -1) -> bool:
+    var target: Dictionary = {}
+    var log_entries: Array = meta_state.get("experiment_log", [])
+    if typeof(log_entries) != TYPE_ARRAY or log_entries.is_empty():
+        return false
+    if attempt_id <= 0:
+        var latest = log_entries[log_entries.size() - 1]
+        if typeof(latest) == TYPE_DICTIONARY:
+            target = latest
+    else:
+        for entry in log_entries:
+            if typeof(entry) != TYPE_DICTIONARY:
+                continue
+            if int(entry.get("attempt_id", 0)) == attempt_id:
+                target = entry
+                break
+    if target.is_empty():
+        return false
+
+    tin_method_id = str(target.get("method_id", "raw"))
+    var ingredient_ids: Array = target.get("ingredient_ids", [])
+    tin_ingredient_id = "none"
+    if typeof(ingredient_ids) == TYPE_ARRAY and not ingredient_ids.is_empty():
+        tin_ingredient_id = str(ingredient_ids[0])
+
+    var next_selected := {
+        "prep": [],
+        "transform": [],
+        "heat": [],
+        "preserve": []
+    }
+    var process_ids: Array = _string_array(target.get("process_ids", []))
+    for process_id in process_ids:
+        if process_id == "tin_pack" or process_id == "tin_seal":
+            continue
+        var process_def := get_process_def(process_id)
+        if process_def.is_empty():
+            continue
+        var category := str(process_def.get("category", ""))
+        if not next_selected.has(category):
+            continue
+        var list: Array = next_selected[category]
+        if not list.has(process_id):
+            list.append(process_id)
+        next_selected[category] = list
+    selected_processes = next_selected
+    changed.emit()
+    return true
+
+func get_recipe_silhouette_state(recipe_id: String) -> String:
+    if recipe_id == "":
+        return "undiscovered"
+    var progress: Dictionary = meta_state.get("silhouette_progress_by_id", {})
+    var entry: Dictionary = progress.get(recipe_id, {})
+    return str(entry.get("state", "undiscovered"))
+
+func get_recipe_silhouette_progress(recipe_id: String) -> int:
+    if recipe_id == "":
+        return 0
+    var progress: Dictionary = meta_state.get("silhouette_progress_by_id", {})
+    var entry: Dictionary = progress.get(recipe_id, {})
+    return int(entry.get("best_score", 0))
+
+func get_recipe_silhouette_hint(recipe_id: String) -> String:
+    var def: Dictionary = silhouette_defs_by_id.get(recipe_id, {})
+    if def.is_empty():
+        return "Keep experimenting with this fish."
+    return str(def.get("hint_text", "Keep experimenting with this fish."))
+
+func _build_craft_attempt(fish_id: String, method_id: String, ingredient_id: String, process_sequence: Array) -> Dictionary:
+    var attempt_id := int(meta_state.get("attempt_counter", 0)) + 1
+    meta_state["attempt_counter"] = attempt_id
+    var attempt_tags := _build_attempt_tags(fish_id, method_id, ingredient_id, process_sequence)
+    return {
+        "attempt_id": attempt_id,
+        "fish_id": fish_id,
+        "method_id": method_id,
+        "ingredient_ids": [] if ingredient_id == "none" else [ingredient_id],
+        "process_ids": process_sequence.duplicate(),
+        "attempt_tags": attempt_tags,
+        "timestamp_unix": Time.get_unix_time_from_system()
+    }
+
+func _build_attempt_tags(fish_id: String, method_id: String, ingredient_id: String, process_ids: Array) -> Array:
+    var tags: Array = []
+    if fish_id != "":
+        tags.append("fish:%s" % fish_id)
+        var fish_def: Dictionary = fish_defs_by_id.get(fish_id, {})
+        for tag in _string_array(fish_def.get("tags", [])):
+            if not tags.has(tag):
+                tags.append(tag)
+
+    if ingredient_id != "" and ingredient_id != "none":
+        for tag in _ingredient_tags_for_attempt(ingredient_id):
+            if not tags.has(tag):
+                tags.append(tag)
+
+    for tag in _method_tags_for_attempt(method_id):
+        if not tags.has(tag):
+            tags.append(tag)
+
+    var has_heat := false
+    var has_preserve := false
+    for process_id in process_ids:
+        var process_def: Dictionary = get_process_def(str(process_id))
+        if process_def.is_empty():
+            continue
+        var category := str(process_def.get("category", ""))
+        if category == "heat":
+            has_heat = true
+        elif category == "preserve":
+            has_preserve = true
+        for tag in _string_array(process_def.get("adds_tags", [])):
+            if not tags.has(tag):
+                tags.append(tag)
+
+    if not has_heat and not tags.has("raw"):
+        tags.append("raw")
+    if not has_preserve and not tags.has("unstable"):
+        tags.append("unstable")
+    if not has_heat and not has_preserve and not tags.has("putrid"):
+        tags.append("putrid")
+
+    return tags
+
+func _method_tags_for_attempt(method_id: String) -> Array:
+    var tags: Array = []
+    if method_id == "":
+        return tags
+    tags.append("method:%s" % method_id)
+    if method_id == "smoked":
+        tags.append("smoked")
+    elif method_id == "raw":
+        tags.append("raw")
+    return tags
+
+func _ingredient_tags_for_attempt(ingredient_id: String) -> Array:
+    var tags: Array = []
+    var item_def: Dictionary = item_defs_by_id.get(ingredient_id, {})
+    if not item_def.is_empty():
+        for tag in _string_array(item_def.get("tags", [])):
+            if not tags.has(tag):
+                tags.append(tag)
+        return tags
+    if ingredient_id == "garlic":
+        tags.append("garlicky")
+        tags.append("aromatic")
+    return tags
+
+func _evaluate_attempt_outcome(attempt: Dictionary) -> Dictionary:
+    var fish_id := str(attempt.get("fish_id", ""))
+    var silhouette_ids: Array = silhouette_ids_by_fish_id.get(fish_id, [])
+    var best_result := {
+        "silhouette_id": "",
+        "recipe_id": "",
+        "score": 0,
+        "missing_required_tags": [],
+        "missing_preferred_tags": [],
+        "matched_tags": [],
+        "unlock_threshold": 75
+    }
+    for silhouette_id in silhouette_ids:
+        var silhouette_def: Dictionary = silhouette_defs_by_id.get(str(silhouette_id), {})
+        if silhouette_def.is_empty():
+            continue
+        var result := _score_attempt_against_silhouette(attempt, silhouette_def)
+        if int(result.get("score", 0)) > int(best_result.get("score", 0)):
+            best_result = result
+
+    var discovered_recipe_id := ""
+    var output_key := "experimental_tin_rough"
+    var feedback := {
+        "summary": "A rough experimental tin.",
+        "score": int(best_result.get("score", 0)),
+        "silhouette_id": str(best_result.get("silhouette_id", "")),
+        "hint": "Try different process combinations."
+    }
+
+    var best_score := int(best_result.get("score", 0))
+    var silhouette_id := str(best_result.get("silhouette_id", ""))
+    if silhouette_id != "":
+        var progression := _update_silhouette_progress(silhouette_id, best_score, int(attempt.get("attempt_id", 0)))
+        var state := str(progression.get("state", "undiscovered"))
+        discovered_recipe_id = str(progression.get("discovered_recipe_id", ""))
+        if discovered_recipe_id != "":
+            output_key = discovered_recipe_id
+        elif best_score >= 60:
+            output_key = "experimental_tin_stable"
+        elif best_score >= 35:
+            output_key = "experimental_tin_odd"
+        feedback = {
+            "summary": _build_feedback_summary(best_result, progression),
+            "score": best_score,
+            "silhouette_id": silhouette_id,
+            "state": state,
+            "hint": _build_feedback_hint(best_result)
+        }
+    else:
+        if best_score >= 45:
+            output_key = "experimental_tin_odd"
+        feedback["hint"] = "No silhouette registered for this fish yet."
+
+    var log_entry := {
+        "attempt_id": int(attempt.get("attempt_id", 0)),
+        "fish_id": fish_id,
+        "method_id": str(attempt.get("method_id", "")),
+        "ingredient_ids": (attempt.get("ingredient_ids", []) as Array).duplicate(),
+        "process_ids": (attempt.get("process_ids", []) as Array).duplicate(),
+        "derived_tags": (attempt.get("attempt_tags", []) as Array).duplicate(),
+        "score": best_score,
+        "matched_silhouette_id": silhouette_id,
+        "matched_recipe_id": str(best_result.get("recipe_id", "")),
+        "result_key": output_key,
+        "timestamp_unix": int(attempt.get("timestamp_unix", Time.get_unix_time_from_system()))
+    }
+
+    return {
+        "output_key": output_key,
+        "discovered_recipe_id": discovered_recipe_id,
+        "feedback": feedback,
+        "log_entry": log_entry
+    }
+
+func _score_attempt_against_silhouette(attempt: Dictionary, silhouette_def: Dictionary) -> Dictionary:
+    var attempt_tags: Array = _string_array(attempt.get("attempt_tags", []))
+    var required_tags: Array = _string_array(silhouette_def.get("required_tags", []))
+    var preferred_tags: Array = _string_array(silhouette_def.get("preferred_tags", []))
+    var forbidden_tags: Array = _string_array(silhouette_def.get("forbidden_tags", []))
+    var score := 0
+    var max_score := 0
+    var missing_required: Array = []
+    var missing_preferred: Array = []
+    var matched_tags: Array = []
+
+    for tag in required_tags:
+        max_score += 5
+        if attempt_tags.has(tag):
+            score += 5
+            matched_tags.append(tag)
+        else:
+            score -= 3
+            missing_required.append(tag)
+
+    for tag in preferred_tags:
+        max_score += 2
+        if attempt_tags.has(tag):
+            score += 2
+            if not matched_tags.has(tag):
+                matched_tags.append(tag)
+        else:
+            missing_preferred.append(tag)
+
+    for tag in forbidden_tags:
+        if attempt_tags.has(tag):
+            score -= 5
+
+    var recipe_id := str(silhouette_def.get("recipe_id", ""))
+    var recipe_def: Dictionary = recipe_defs_by_id.get(recipe_id, {})
+    if not recipe_def.is_empty():
+        var attempt_processes: Array = _string_array(attempt.get("process_ids", []))
+        var recipe_processes: Array = _string_array(recipe_def.get("processes", []))
+        for process_id in recipe_processes:
+            if process_id == "tin_pack" or process_id == "tin_seal":
+                continue
+            max_score += 2
+            if attempt_processes.has(process_id):
+                score += 2
+            else:
+                score -= 1
+        for process_id in attempt_processes:
+            if process_id == "tin_pack" or process_id == "tin_seal":
+                continue
+            if not recipe_processes.has(process_id):
+                score -= 1
+
+    if max_score <= 0:
+        max_score = 1
+    var normalized := int(round(clamp((float(score) / float(max_score)) * 100.0, 0.0, 100.0)))
+    return {
+        "silhouette_id": str(silhouette_def.get("silhouette_id", "")),
+        "recipe_id": recipe_id,
+        "score": normalized,
+        "raw_score": score,
+        "max_score": max_score,
+        "missing_required_tags": missing_required,
+        "missing_preferred_tags": missing_preferred,
+        "matched_tags": matched_tags,
+        "unlock_threshold": int(silhouette_def.get("unlock_threshold", 75))
+    }
+
+func _update_silhouette_progress(silhouette_id: String, score: int, attempt_id: int) -> Dictionary:
+    var progress_all: Dictionary = meta_state.get("silhouette_progress_by_id", {})
+    var entry: Dictionary = progress_all.get(silhouette_id, {})
+    if typeof(entry) != TYPE_DICTIONARY:
+        entry = {}
+    var prev_state := str(entry.get("state", "undiscovered"))
+    var prev_best := int(entry.get("best_score", 0))
+    var new_best: int = max(prev_best, score)
+    var def: Dictionary = silhouette_defs_by_id.get(silhouette_id, {})
+    var unlock_threshold := int(def.get("unlock_threshold", 75))
+    var next_state := prev_state
+    if new_best > 0 and next_state == "undiscovered":
+        next_state = "hinted"
+    if score >= unlock_threshold:
+        next_state = "discovered"
+
+    var discovered_recipe_id := ""
+    if next_state == "discovered":
+        discovered_recipe_id = str(def.get("recipe_id", ""))
+        if discovered_recipe_id != "":
+            _mark_recipe_discovered(discovered_recipe_id)
+
+    entry["state"] = next_state
+    entry["best_score"] = new_best
+    if score >= prev_best:
+        entry["best_attempt_id"] = attempt_id
+    progress_all[silhouette_id] = entry
+    meta_state["silhouette_progress_by_id"] = progress_all
+    return {
+        "state": next_state,
+        "discovered_recipe_id": discovered_recipe_id
+    }
+
+func _append_experiment_log(entry: Dictionary) -> void:
+    if entry.is_empty():
+        return
+    var log_entries: Array = meta_state.get("experiment_log", [])
+    if typeof(log_entries) != TYPE_ARRAY:
+        log_entries = []
+    log_entries.append(entry.duplicate(true))
+    while log_entries.size() > MAX_EXPERIMENT_LOG_ENTRIES:
+        log_entries.remove_at(0)
+    meta_state["experiment_log"] = log_entries
+
+func _build_feedback_summary(result: Dictionary, progression: Dictionary) -> String:
+    var score := int(result.get("score", 0))
+    var state := str(progression.get("state", "undiscovered"))
+    if state == "discovered":
+        return "Discovered! Silhouette resolved at %d%%." % score
+    if state == "hinted":
+        return "Silhouette progress: %d%%." % score
+    return "Experimental result: %d%% match." % score
+
+func _build_feedback_hint(result: Dictionary) -> String:
+    var missing_required: Array = result.get("missing_required_tags", [])
+    if typeof(missing_required) == TYPE_ARRAY and not missing_required.is_empty():
+        return "Needs more %s." % _humanize_tag(str(missing_required[0]))
+    var missing_preferred: Array = result.get("missing_preferred_tags", [])
+    if typeof(missing_preferred) == TYPE_ARRAY and not missing_preferred.is_empty():
+        return "Try adding %s." % _humanize_tag(str(missing_preferred[0]))
+    return "Try a tighter process combination."
+
+func _humanize_tag(tag: String) -> String:
+    if tag.begins_with("fish:"):
+        var fish_id := tag.trim_prefix("fish:")
+        var fish_def: Dictionary = fish_defs_by_id.get(fish_id, {})
+        if not fish_def.is_empty():
+            return str(fish_def.get("display_name", "that fish"))
+        return "that fish"
+    return tag.replace("_", " ")
+
+func _normalize_silhouette_progress() -> void:
+    var progress_all: Dictionary = meta_state.get("silhouette_progress_by_id", {})
+    var discovered_recipes: Array = meta_state.get("discovered_recipe_ids", [])
+    var normalized: Dictionary = {}
+    for silhouette_id in progress_all.keys():
+        var id_str := str(silhouette_id)
+        if id_str == "":
+            continue
+        if not silhouette_defs_by_id.has(id_str):
+            continue
+        var entry = progress_all[silhouette_id]
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var state := str(entry.get("state", "undiscovered"))
+        if state != "undiscovered" and state != "hinted" and state != "discovered":
+            state = "undiscovered"
+        normalized[id_str] = {
+            "state": state,
+            "best_score": max(0, int(entry.get("best_score", 0))),
+            "best_attempt_id": max(0, int(entry.get("best_attempt_id", 0)))
+        }
+    for recipe_id in discovered_recipes:
+        var recipe_id_str := str(recipe_id)
+        if recipe_id_str == "" or not silhouette_defs_by_id.has(recipe_id_str):
+            continue
+        var existing: Dictionary = normalized.get(recipe_id_str, {})
+        existing["state"] = "discovered"
+        existing["best_score"] = max(75, int(existing.get("best_score", 0)))
+        existing["best_attempt_id"] = max(0, int(existing.get("best_attempt_id", 0)))
+        normalized[recipe_id_str] = existing
+    meta_state["silhouette_progress_by_id"] = normalized
+
+func _normalize_experiment_log() -> void:
+    var log_entries: Array = meta_state.get("experiment_log", [])
+    if typeof(log_entries) != TYPE_ARRAY:
+        meta_state["experiment_log"] = []
+        return
+    var normalized: Array = []
+    var max_attempt_id := int(meta_state.get("attempt_counter", 0))
+    for entry in log_entries:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var e: Dictionary = entry
+        var attempt_id: int = max(0, int(e.get("attempt_id", 0)))
+        max_attempt_id = max(max_attempt_id, attempt_id)
+        normalized.append({
+            "attempt_id": attempt_id,
+            "fish_id": str(e.get("fish_id", "")),
+            "method_id": str(e.get("method_id", "")),
+            "ingredient_ids": _string_array(e.get("ingredient_ids", [])),
+            "process_ids": _string_array(e.get("process_ids", [])),
+            "derived_tags": _string_array(e.get("derived_tags", [])),
+            "score": int(e.get("score", 0)),
+            "matched_silhouette_id": str(e.get("matched_silhouette_id", "")),
+            "matched_recipe_id": str(e.get("matched_recipe_id", "")),
+            "result_key": str(e.get("result_key", "")),
+            "timestamp_unix": int(e.get("timestamp_unix", 0))
+        })
+    while normalized.size() > MAX_EXPERIMENT_LOG_ENTRIES:
+        normalized.remove_at(0)
+    meta_state["experiment_log"] = normalized
+    meta_state["attempt_counter"] = max_attempt_id
+
+func _string_array(value) -> Array:
+    var out: Array = []
+    if typeof(value) != TYPE_ARRAY:
+        return out
+    var entries: Array = value
+    for entry in entries:
+        if typeof(entry) != TYPE_STRING:
+            continue
+        var text := str(entry)
+        if text == "" or out.has(text):
+            continue
+        out.append(text)
+    return out
+
+func _get_recipe_fish_id(recipe_def: Dictionary) -> String:
+    var fish_id := str(recipe_def.get("required_fish_id", ""))
+    if fish_id != "":
+        return fish_id
+    var required_fish_name := str(recipe_def.get("required_fish_name", ""))
+    if required_fish_name == "":
+        return ""
+    return str(fish_name_to_id.get(required_fish_name, ""))
+
+func _build_recipe_hint(recipe_def: Dictionary) -> String:
+    var fish_name := str(recipe_def.get("required_fish_name", "an unknown fish"))
+    var tags := _string_array(recipe_def.get("tags", []))
+    if tags.is_empty():
+        return "A hidden preservation style for %s." % fish_name
+    return "A hidden %s profile for %s." % [_humanize_tag(str(tags[0])), fish_name]
 
 func _record_caught_fish(count: int) -> void:
     for _i in range(count):
@@ -1745,9 +2502,15 @@ func can_make_tin() -> bool:
 func start_tin_cooldown() -> void:
     tin_cooldown_remaining = get_tin_make_time()
 
+func clear_tin_cooldown() -> void:
+    tin_cooldown_remaining = 0.0
+
 func set_tin_selection(method_id: String, ingredient_id: String) -> void:
     tin_method_id = method_id
     tin_ingredient_id = ingredient_id
+
+func set_cannery_produce_enabled(enabled: bool) -> void:
+    cannery_produce_enabled = enabled
 
 func _can_auto_tin() -> bool:
     if not can_make_tin():
@@ -1949,6 +2712,7 @@ func _reset_run_state() -> void:
     ocean_health = OCEAN_HEALTH_MAX
     ocean_health_time_accum = 0.0
     ocean_health_time_total = 0.0
+    last_craft_feedback = {}
 
 func _get_meta_bonus_int(effect_type: String) -> int:
     var sustainable_level := int(meta_state.get("sustainable_bonus_level", 0))

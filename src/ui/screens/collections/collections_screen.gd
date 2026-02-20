@@ -142,14 +142,26 @@ func _make_item_slot(item_def: Dictionary, discovered: bool, category: String) -
     var display_name := str(item_def.get("display_name", "Unknown"))
     var placeholder_name := "???"
     var hint_text := str(item_def.get("lore_hint", "Undiscovered."))
+    var hinted := false
 
     if category == CATEGORY_RECIPES:
-        var req_fish := str(item_def.get("required_fish_name", "an unknown fish"))
-        hint_text = "Requires %s" % req_fish
+        var recipe_state := _get_recipe_state(item_def)
+        hinted = recipe_state == "hinted"
+        if hinted:
+            placeholder_name = "Shadowed Entry"
+            hint_text = GameState.get_recipe_silhouette_hint(str(item_def.get("recipe_id", "")))
+        else:
+            var req_fish := str(item_def.get("required_fish_name", "an unknown fish"))
+            hint_text = "Requires %s" % req_fish
 
     if discovered:
         button.text = display_name
         button.modulate = Color(1, 1, 1, 1)
+        button.pressed.connect(_on_item_selected.bind(item_def, category))
+    elif hinted and category == CATEGORY_RECIPES:
+        button.text = placeholder_name
+        button.modulate = Color(0.78, 0.78, 0.86, 1)
+        button.tooltip_text = hint_text
         button.pressed.connect(_on_item_selected.bind(item_def, category))
     else:
         button.text = placeholder_name
@@ -161,8 +173,10 @@ func _make_item_slot(item_def: Dictionary, discovered: bool, category: String) -
 func _on_item_selected(item_def: Dictionary, category: String) -> void:
     if category == CATEGORY_FISH and not _is_fish_discovered(item_def):
         return
-    if category == CATEGORY_RECIPES and not _is_recipe_discovered(item_def):
-        return
+    if category == CATEGORY_RECIPES:
+        var state := _get_recipe_state(item_def)
+        if state == "undiscovered":
+            return
 
     _selected_item_id = _get_item_id(item_def, category)
     detail_panel.visible = true
@@ -193,6 +207,7 @@ func _show_fish_detail(fish_def: Dictionary) -> void:
 
 func _show_recipe_detail(recipe_def: Dictionary) -> void:
     var recipe_id := str(recipe_def.get("recipe_id", ""))
+    var recipe_state := _get_recipe_state(recipe_def)
     var name_text := str(recipe_def.get("display_name", "Unknown Recipe"))
     var rarity := str(recipe_def.get("rarity", "Unknown"))
     var tier := int(recipe_def.get("tier", 0))
@@ -201,14 +216,23 @@ func _show_recipe_detail(recipe_def: Dictionary) -> void:
     var processes: Array = recipe_def.get("processes", [])
     var yield_count := int(recipe_def.get("yield", 0))
     var stats := GameState.get_recipe_lifetime_stats(recipe_id)
+    var progress := GameState.get_recipe_silhouette_progress(recipe_id)
+    var hint_text := GameState.get_recipe_silhouette_hint(recipe_id)
 
-    detail_name.text = name_text
-    detail_meta.text = "Rarity: %s\nTier: %d\nRequired Fish: %s" % [rarity, tier, required_fish]
-    detail_desc.text = "Ingredients: %d items\nProcesses: %d steps\nYield: %d" % [ingredients.size(), processes.size(), yield_count]
-    detail_extra.text = "Lifetime Produced: %d\nRevenue Generated: $%d" % [
-        int(stats.get("produced", 0)),
-        int(stats.get("revenue_generated", 0))
-    ]
+    if recipe_state == "discovered":
+        detail_name.text = name_text
+        detail_meta.text = "Rarity: %s\nTier: %d\nRequired Fish: %s" % [rarity, tier, required_fish]
+        detail_desc.text = "Ingredients: %d items\nProcesses: %d steps\nYield: %d" % [ingredients.size(), processes.size(), yield_count]
+        detail_extra.text = "State: Discovered\nLifetime Produced: %d\nRevenue Generated: $%d" % [
+            int(stats.get("produced", 0)),
+            int(stats.get("revenue_generated", 0))
+        ]
+        return
+
+    detail_name.text = "Shadowed Recipe"
+    detail_meta.text = "State: Hinted\nProgress: %d%%" % progress
+    detail_desc.text = hint_text
+    detail_extra.text = "Keep experimenting to fully discover this recipe."
 
 func _clear_detail() -> void:
     detail_panel.visible = true
@@ -222,7 +246,10 @@ func _is_fish_discovered(fish_def: Dictionary) -> bool:
     return GameState.is_fish_discovered(str(fish_def.get("fish_id", "")))
 
 func _is_recipe_discovered(recipe_def: Dictionary) -> bool:
-    return GameState.is_recipe_discovered(str(recipe_def.get("recipe_id", "")))
+    return _get_recipe_state(recipe_def) == "discovered"
+
+func _get_recipe_state(recipe_def: Dictionary) -> String:
+    return GameState.get_recipe_silhouette_state(str(recipe_def.get("recipe_id", "")))
 
 func _get_item_id(item_def: Dictionary, category: String) -> String:
     if category == CATEGORY_FISH:

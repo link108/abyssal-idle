@@ -11,6 +11,15 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_cxpxi")
 
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.08, 1)
+
 [node name="Control" type="Control" parent="."]
 layout_mode = 2
 
@@ -129,13 +138,56 @@ offset_right = 560.0
 offset_bottom = 290.0
 text = "Garlic: 0"
 
+[node name="ProduceToggle" type="CheckBox" parent="Control"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 255.0
+offset_right = 780.0
+offset_bottom = 285.0
+button_pressed = true
+text = "Produce Tin"
+
 [node name="LastMadeLabel" type="Label" parent="Control"]
 layout_mode = 0
 offset_left = 340.0
 offset_top = 295.0
-offset_right = 560.0
+offset_right = 605.0
 offset_bottom = 315.0
 text = ""
+
+[node name="FeedbackLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 320.0
+offset_right = 605.0
+offset_bottom = 340.0
+text = "Score: --"
+
+[node name="HintLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 345.0
+offset_right = 605.0
+offset_bottom = 365.0
+text = "Hint: Run an experiment to get feedback."
+autowrap_mode = 3
+
+[node name="RefineLastButton" type="Button" parent="Control"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 370.0
+offset_right = 780.0
+offset_bottom = 406.0
+text = "Refine Last"
+
+[node name="LogLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 390.0
+offset_right = 605.0
+offset_bottom = 470.0
+text = "Recent experiments: none"
+autowrap_mode = 3
 
 [connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
 [connection signal="pressed" from="Control/MakeTinButton" to="." method="_on_make_tin_button_pressed"]

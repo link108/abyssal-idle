@@ -24,6 +24,7 @@ static func validate_all(data_registry: Object) -> void:
     validate_unique_ids(data_registry.items, "ingredient_id", "items.json", report, true)
     validate_unique_ids(data_registry.equipment, "equipment_id", "equipment.json", report)
     validate_unique_ids(data_registry.processes, "process_id", "processes.json", report)
+    validate_unique_ids(data_registry.silhouettes, "silhouette_id", "silhouettes.json", report)
     var registries = {
         "upgrades": data_registry.upgrades_by_id,
         "skills": data_registry.skill_nodes_by_id,
@@ -32,7 +33,8 @@ static func validate_all(data_registry: Object) -> void:
         "recipes": data_registry.recipes_by_id,
         "items": data_registry.items_by_id,
         "equipment": data_registry.equipment_by_id,
-        "processes": data_registry.processes_by_id
+        "processes": data_registry.processes_by_id,
+        "silhouettes": data_registry.silhouettes_by_id
     }
 
     validate_upgrades(data_registry.upgrades, registries, report)
@@ -42,6 +44,7 @@ static func validate_all(data_registry: Object) -> void:
     validate_items(data_registry.items, registries, report)
     validate_equipment(data_registry.equipment, registries, report)
     validate_processes(data_registry.processes, registries, report)
+    validate_silhouettes(data_registry.silhouettes, registries, report)
     validate_cannery_options(data_registry.cannery_options, registries, report)
 
     _emit_report(report, OS.is_debug_build())
@@ -383,6 +386,44 @@ static func validate_cannery_options(options: Dictionary, _registries: Dictionar
     var ingredients: Array = options.get("ingredients", [])
     _validate_cannery_group(methods, "methods", report)
     _validate_cannery_group(ingredients, "ingredients", report)
+
+
+static func validate_silhouettes(entries: Array, registries: Dictionary, report: Dictionary) -> void:
+    for entry in entries:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var silhouette: Dictionary = entry
+        var silhouette_id = _get_string_id(silhouette, "silhouette_id")
+        var id_for_logs = _label_id("silhouette_id", silhouette_id)
+        _require_fields(silhouette, [
+            ["silhouette_id", TYPE_STRING]
+        ], "silhouettes.json", id_for_logs, report)
+
+        var recipe_id := _get_string_id(silhouette, "recipe_id")
+        if recipe_id != "" and not registries["recipes"].has(recipe_id):
+            _push_error(report, "silhouettes.json (%s): unknown recipe_id '%s'." % [id_for_logs, recipe_id])
+
+        var fish_id := _get_string_id(silhouette, "required_fish_id")
+        if fish_id != "" and not registries["fish"].has(fish_id):
+            _push_error(report, "silhouettes.json (%s): unknown required_fish_id '%s'." % [id_for_logs, fish_id])
+
+        _validate_tag_array(silhouette.get("required_tags", []), "required_tags", "silhouettes.json", id_for_logs, report)
+        _validate_tag_array(silhouette.get("preferred_tags", []), "preferred_tags", "silhouettes.json", id_for_logs, report)
+        _validate_tag_array(silhouette.get("forbidden_tags", []), "forbidden_tags", "silhouettes.json", id_for_logs, report)
+
+        var unlock_threshold = silhouette.get("unlock_threshold", null)
+        if unlock_threshold != null and not _is_number(unlock_threshold):
+            _push_error(report, "silhouettes.json (%s): unlock_threshold must be numeric." % id_for_logs)
+
+
+static func _validate_tag_array(value, field: String, file_label: String, id_for_logs: String, report: Dictionary) -> void:
+    if typeof(value) != TYPE_ARRAY:
+        _push_error(report, "%s (%s): %s must be an array." % [file_label, id_for_logs, field])
+        return
+    var entries: Array = value
+    for tag in entries:
+        if typeof(tag) != TYPE_STRING:
+            _push_error(report, "%s (%s): %s entries must be strings." % [file_label, id_for_logs, field])
 
 
 static func _validate_cannery_group(entries: Array, label: String, report: Dictionary) -> void:

@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3 uid="uid://dfp7shhr7k6y7"]
+[gd_scene load_steps=13 format=3 uid="uid://dfp7shhr7k6y7"]
 
 [ext_resource type="Script" uid="uid://b6v8aehavifo6" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://dmwgj1chql5js" path="res://src/ui/screens/fishing/fishing_screen.tscn" id="2_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://cslnphk10k46d" path="res://src/ui/screens/cannery/cannery_screen.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://bklywcol1l173" path="res://src/ui/screens/upgrade/upgrade_screen.tscn" id="4_1bvp3"]
+[ext_resource type="PackedScene" path="res://src/ui/screens/equipment/equipment_screen.tscn" id="12_eqp0a"]
 [ext_resource type="PackedScene" uid="uid://cuycoalmdivpd" path="res://src/ui/screens/market/market_screen.tscn" id="5_lquwl"]
 [ext_resource type="PackedScene" uid="uid://c3t6dvk2v86xg" path="res://src/ui/screens/crew/crew_screen.tscn" id="6_0v6ff"]
 [ext_resource type="PackedScene" path="res://src/ui/screens/start/start_screen.tscn" id="7_3bknm"]
@@ -103,6 +104,14 @@ offset_right = 817.0
 offset_bottom = 127.0
 text = "Skills"
 
+[node name="EquipmentButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 735.0
+offset_top = 132.0
+offset_right = 817.0
+offset_bottom = 163.0
+text = "Equipment"
+
 [node name="MarketButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 505.0
@@ -188,6 +197,9 @@ visible = false
 visible = false
 
 [node name="UpgradeScreen" parent="ModalLayer" instance=ExtResource("4_1bvp3")]
+visible = false
+
+[node name="EquipmentScreen" parent="ModalLayer" instance=ExtResource("12_eqp0a")]
 visible = false
 
 [node name="MarketScreen" parent="ModalLayer" instance=ExtResource("5_lquwl")]
@@ -336,6 +348,7 @@ dialog_text = "Prestige now?"
 [connection signal="pressed" from="CrewSelectButton" to="." method="_on_crew_select_button_pressed"]
 [connection signal="pressed" from="InventoryButton" to="." method="_on_inventory_button_pressed"]
 [connection signal="pressed" from="CollectionsButton" to="." method="_on_collections_button_pressed"]
+[connection signal="pressed" from="EquipmentButton" to="." method="_on_equipment_button_pressed"]
 [connection signal="confirmed" from="PrestigeConfirm" to="." method="_on_prestige_confirmed"]
 [connection signal="pressed" from="SkillTreeButton" to="." method="_on_skill_tree_button_pressed"]
 [connection signal="pressed" from="ModalLayer/EndingScreen/EndingVBox/EndingReturnButton" to="." method="_on_ending_return_pressed"]

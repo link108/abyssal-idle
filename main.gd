@@ -7,6 +7,7 @@ const AUTOSAVE_INTERVAL := 30.0
 @onready var fishing_screen := $ModalLayer/FishingScreen
 @onready var cannery_screen := $ModalLayer/CanneryScreen
 @onready var upgrade_screen := $ModalLayer/UpgradeScreen
+@onready var equipment_screen := $ModalLayer/EquipmentScreen
 @onready var start_screen := $ModalLayer/StartScreen
 @onready var inventory_screen := $ModalLayer/InventoryScreen
 @onready var market_screen := $ModalLayer/MarketScreen
@@ -101,6 +102,10 @@ func _on_cannery_button_pressed() -> void:
 func _on_upgrade_button_pressed() -> void:
     $ModalLayer/Dimmer.show()
     $ModalLayer/UpgradeScreen.show()
+
+func _on_equipment_button_pressed() -> void:
+    $ModalLayer/Dimmer.show()
+    equipment_screen.show()
 
 func _on_skill_tree_button_pressed() -> void:
     $ModalLayer/Dimmer.show()
@@ -247,6 +252,7 @@ func _show_ending_screen(ending_id: int, summary: Dictionary) -> void:
     fishing_screen.hide()
     cannery_screen.hide()
     upgrade_screen.hide()
+    equipment_screen.hide()
     market_screen.hide()
     crew_screen.hide()
     inventory_screen.hide()

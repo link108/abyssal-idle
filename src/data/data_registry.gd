@@ -8,6 +8,7 @@ const ITEMS_PATH := "res://data/raw/items.json"
 const EQUIPMENT_PATH := "res://data/raw/equipment.json"
 const PROCESSES_PATH := "res://data/raw/processes.json"
 const CANNERY_OPTIONS_PATH := "res://data/raw/cannery_options.json"
+const SILHOUETTES_PATH := "res://data/raw/silhouettes.json"
 
 var upgrades: Array = []
 var skill_nodes: Array = []
@@ -16,6 +17,7 @@ var recipes: Array = []
 var items: Array = []
 var equipment: Array = []
 var processes: Array = []
+var silhouettes: Array = []
 var cannery_options: Dictionary = {}
 
 var upgrades_by_id: Dictionary = {}
@@ -26,6 +28,7 @@ var recipes_by_id: Dictionary = {}
 var items_by_id: Dictionary = {}
 var equipment_by_id: Dictionary = {}
 var processes_by_id: Dictionary = {}
+var silhouettes_by_id: Dictionary = {}
 
 func load_all(include_optional: bool = false) -> void:
     upgrades = _read_json_array(UPGRADES_PATH)
@@ -38,10 +41,12 @@ func load_all(include_optional: bool = false) -> void:
         items = _read_json_array(ITEMS_PATH)
         equipment = _read_json_array(EQUIPMENT_PATH)
         processes = _read_json_array(PROCESSES_PATH)
+        silhouettes = _read_json_array(SILHOUETTES_PATH)
     else:
         items = []
         equipment = []
         processes = []
+        silhouettes = []
 
     _build_maps()
 
@@ -54,6 +59,7 @@ func clear_cache() -> void:
     items.clear()
     equipment.clear()
     processes.clear()
+    silhouettes.clear()
     cannery_options.clear()
     upgrades_by_id.clear()
     skill_nodes_by_id.clear()
@@ -63,6 +69,7 @@ func clear_cache() -> void:
     items_by_id.clear()
     equipment_by_id.clear()
     processes_by_id.clear()
+    silhouettes_by_id.clear()
 
 
 func _build_maps() -> void:
@@ -125,6 +132,14 @@ func _build_maps() -> void:
         var process_id := str(entry.get("process_id", ""))
         if process_id != "":
             processes_by_id[process_id] = entry
+
+    silhouettes_by_id.clear()
+    for entry in silhouettes:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var silhouette_id := str(entry.get("silhouette_id", ""))
+        if silhouette_id != "":
+            silhouettes_by_id[silhouette_id] = entry
 
 
 func _get_item_id(entry: Dictionary) -> String:
