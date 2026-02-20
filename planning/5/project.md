@@ -19,8 +19,8 @@ Implement a data-driven Collections Page with category navigation, discovered/un
 - [x] Subproject 1 complete (2026-02-19)
 - [x] Subproject 2 complete (2026-02-19)
 - [x] Subproject 3 complete (2026-02-19)
-- [ ] Subproject 4 complete
-- [ ] Integration pass across main screen, Collections screen, and GameState
+- [x] Subproject 4 complete (2026-02-19)
+- [x] Integration pass across main screen, Collections screen, and GameState (2026-02-19)
 - [ ] Smoke test: discover fish/recipes, verify placeholders, and confirm persistence after prestige/reload
 
 ## Completion Instructions
