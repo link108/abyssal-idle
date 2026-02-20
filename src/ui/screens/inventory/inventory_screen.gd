@@ -3,26 +3,15 @@ extends PanelContainer
 @export var columns: int = 5
 @export var rows: int = 4
 
-@onready var grid := $Control/ScrollContainer/Grid
-
-var slot_style := StyleBoxFlat.new()
+@onready var item_grid := $Control/BodySplit/GridScroll/ItemGrid
+@onready var detail_title := $Control/BodySplit/DetailPanel/DetailVBox/DetailTitle
+@onready var detail_info := $Control/BodySplit/DetailPanel/DetailVBox/DetailInfo
+var _selected_grid_id: String = ""
 
 func _ready() -> void:
-    _setup_style()
     _refresh()
     GameState.changed.connect(_refresh)
-
-func _setup_style() -> void:
-    slot_style.bg_color = Color(0.12, 0.12, 0.12, 0.9)
-    slot_style.border_color = Color(0.3, 0.3, 0.3, 1)
-    slot_style.border_width_left = 1
-    slot_style.border_width_right = 1
-    slot_style.border_width_top = 1
-    slot_style.border_width_bottom = 1
-    slot_style.corner_radius_top_left = 6
-    slot_style.corner_radius_top_right = 6
-    slot_style.corner_radius_bottom_left = 6
-    slot_style.corner_radius_bottom_right = 6
+    item_grid.item_selected.connect(_on_item_selected)
 
 func _on_close_button_close_requested() -> void:
     get_parent().get_node("Dimmer").hide()
@@ -33,34 +22,60 @@ func _on_visibility_changed() -> void:
         _refresh()
 
 func _refresh() -> void:
-    for child in grid.get_children():
-        child.queue_free()
-    grid.columns = columns
-
-    var items: Array = GameState.get_inventory_items()
+    item_grid.columns = columns
+    var entries: Array = GameState.get_inventory_entries(true)
     var total_slots: int = columns * rows
-    var count: int = min(items.size(), total_slots)
+    if entries.size() > total_slots:
+        entries = entries.slice(0, total_slots)
+    var grid_entries: Array = []
+    var prev_selected := _selected_grid_id
+    _selected_grid_id = ""
+    for entry in entries:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var entry_dict: Dictionary = entry
+        var entry_id: String = str(entry_dict.get("id", ""))
+        var entry_type: String = str(entry_dict.get("type", ""))
+        if entry_id == "" or entry_type == "":
+            continue
+        var grid_id := "%s:%s" % [entry_type, entry_id]
+        grid_entries.append({
+            "id": "%s:%s" % [entry_type, entry_id],
+            "label": str(entry_dict.get("label", entry_id)),
+            "count": int(entry_dict.get("count", 0)),
+            "payload": entry_dict
+        })
+        if _selected_grid_id == "" and grid_id == prev_selected:
+            _selected_grid_id = grid_id
+    if _selected_grid_id == "" and not grid_entries.is_empty():
+        _selected_grid_id = str(grid_entries[0].get("id", ""))
+    item_grid.set_items(grid_entries, _selected_grid_id)
+    if _selected_grid_id == "":
+        _clear_detail()
 
-    for i in range(count):
-        var item: Dictionary = items[i]
-        var name_text: String = str(item.get("name", "Item"))
-        var count_val: int = int(item.get("count", 0))
-        var label: String = "%s x%d" % [name_text, count_val]
-        grid.add_child(_make_slot(label))
+func _on_item_selected(_grid_id: String, payload: Dictionary) -> void:
+    if payload.is_empty():
+        _clear_detail()
+        return
+    _selected_grid_id = _grid_id
+    var label := str(payload.get("label", "Item"))
+    var desc := str(payload.get("description", ""))
+    var rarity := str(payload.get("rarity", ""))
+    var category := str(payload.get("category", ""))
+    var count := int(payload.get("count", 0))
+    var tags: Array = payload.get("tags", [])
+    var tag_text: String = "" if typeof(tags) != TYPE_ARRAY or tags.is_empty() else "Tags: %s" % ", ".join(tags)
+    var sell_value := int(payload.get("sell_value", 0))
+    detail_title.text = label
+    detail_info.text = "Rarity: %s\nCategory: %s\nOwned: %d\nSell: $%d\n%s\n\n%s" % [
+        rarity,
+        category,
+        count,
+        sell_value,
+        tag_text,
+        desc
+    ]
 
-    for _i in range(total_slots - count):
-        grid.add_child(_make_slot(""))
-
-func _make_slot(text: String) -> Control:
-    var slot := PanelContainer.new()
-    slot.custom_minimum_size = Vector2(72, 72)
-    slot.add_theme_stylebox_override("panel", slot_style)
-
-    var label := Label.new()
-    label.text = text
-    label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-    label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    label.custom_minimum_size = Vector2(64, 64)
-    slot.add_child(label)
-    return slot
+func _clear_detail() -> void:
+    detail_title.text = "Select an item"
+    detail_info.text = "Click an item to see details."

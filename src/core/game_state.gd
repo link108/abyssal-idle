@@ -53,12 +53,13 @@ var fish_count: int = 0
 var tin_count: int = 0
 var money: int = 0
 var garlic_count: int = 0
+var item_counts: Dictionary = {}
 var fish_stock_by_id: Dictionary = {}
 var tin_inventory: Dictionary = {}
 var recipes_unlocked: Array = []
 var tin_cooldown_remaining: float = 0.0
 var tin_method_id: String = "raw"
-var tin_ingredient_id: String = "none"
+var tin_ingredient_ids: Array = []
 var cannery_produce_enabled: bool = true
 var tins_sold: int = 0
 var fish_sold: int = 0
@@ -187,6 +188,7 @@ func save_game() -> void:
         "tin_count": tin_count,
         "money": money,
         "garlic_count": garlic_count,
+        "item_counts": item_counts,
         "fish_stock_by_id": fish_stock_by_id,
         "lifetime_money_earned": lifetime_money_earned,
         "sell_mode": int(sell_mode),
@@ -198,7 +200,7 @@ func save_game() -> void:
         "tin_inventory": tin_inventory,
         "recipes_unlocked": recipes_unlocked,
         "tin_method_id": tin_method_id,
-        "tin_ingredient_id": tin_ingredient_id,
+        "tin_ingredient_ids": tin_ingredient_ids,
         "selected_processes": selected_processes,
         "cannery_produce_enabled": cannery_produce_enabled,
         "crew_trip_active": crew_trip_active,
@@ -239,11 +241,12 @@ func new_game() -> void:
     tin_count = 0
     money = 0
     garlic_count = 0
+    item_counts = {}
     fish_stock_by_id.clear()
     tin_inventory.clear()
     recipes_unlocked.clear()
     tin_method_id = "raw"
-    tin_ingredient_id = "none"
+    tin_ingredient_ids = []
     selected_processes = {
         "prep": [],
         "transform": [],
@@ -303,6 +306,11 @@ func _apply_save(data: Dictionary) -> void:
     tin_count = int(data.get("tin_count", 0))
     money = int(data.get("money", 0))
     garlic_count = int(data.get("garlic_count", 0))
+    item_counts = data.get("item_counts", {})
+    if typeof(item_counts) != TYPE_DICTIONARY:
+        item_counts = {}
+    if item_counts.is_empty() and garlic_count > 0:
+        item_counts["sea_garlic"] = garlic_count
     fish_stock_by_id = data.get("fish_stock_by_id", {})
     lifetime_money_earned = int(data.get("lifetime_money_earned", 0))
     sell_mode = int(data.get("sell_mode", 0)) as SellMode
@@ -314,7 +322,13 @@ func _apply_save(data: Dictionary) -> void:
     tin_inventory = data.get("tin_inventory", {})
     recipes_unlocked = data.get("recipes_unlocked", [])
     tin_method_id = str(data.get("tin_method_id", "raw"))
-    tin_ingredient_id = str(data.get("tin_ingredient_id", "none"))
+    tin_ingredient_ids = data.get("tin_ingredient_ids", [])
+    if typeof(tin_ingredient_ids) != TYPE_ARRAY:
+        tin_ingredient_ids = []
+    if tin_ingredient_ids.is_empty():
+        var legacy_ingredient := str(data.get("tin_ingredient_id", "none"))
+        if legacy_ingredient != "" and legacy_ingredient != "none":
+            tin_ingredient_ids = [legacy_ingredient]
     selected_processes = data.get("selected_processes", selected_processes)
     cannery_produce_enabled = bool(data.get("cannery_produce_enabled", true))
     crew_trip_active = bool(data.get("crew_trip_active", false))
@@ -506,7 +520,7 @@ func _process(delta: float) -> void:
     if tin_cooldown_remaining > 0.0:
         tin_cooldown_remaining = max(0.0, tin_cooldown_remaining - delta)
     if get_auto_tin_enabled() and _can_auto_tin():
-        try_make_tin(tin_method_id, tin_ingredient_id)
+        try_make_tin(tin_method_id, tin_ingredient_ids)
     _regenerate_ocean_health(delta)
     _track_ocean_health(delta)
     _track_run_time(delta)
@@ -533,42 +547,42 @@ func make_tin() -> bool:
     changed.emit()
     return true
 
-func make_tin_with(_method_id: String, _ingredient_id: String) -> bool:
-    return _execute_cannery_attempt(_method_id, _ingredient_id, true)
+func make_tin_with(_method_id: String, _ingredient_ids: Array) -> bool:
+    return _execute_cannery_attempt(_method_id, _ingredient_ids, true)
 
-func try_make_tin(method_id: String, ingredient_id: String) -> bool:
-    return try_run_cannery_attempt(method_id, ingredient_id, true)
+func try_make_tin(method_id: String, ingredient_ids: Array) -> bool:
+    return try_run_cannery_attempt(method_id, ingredient_ids, true)
 
-func try_run_cannery_attempt(method_id: String, ingredient_id: String, produce_tin: bool = true) -> bool:
+func try_run_cannery_attempt(method_id: String, ingredient_ids: Array, produce_tin: bool = true) -> bool:
     if produce_tin and not can_make_tin():
         return false
     if not is_cannery_unlocked:
         return false
-    if not _execute_cannery_attempt(method_id, ingredient_id, produce_tin):
+    if not _execute_cannery_attempt(method_id, ingredient_ids, produce_tin):
         return false
     if produce_tin:
         start_tin_cooldown()
     return true
 
-func _execute_cannery_attempt(method_id: String, ingredient_id: String, produce_tin: bool) -> bool:
+func _execute_cannery_attempt(method_id: String, ingredient_ids: Array, produce_tin: bool) -> bool:
     if fish_count <= 0:
         return false
-    if ingredient_id != "none" and garlic_count <= 0:
+    var normalized_ingredients := _normalize_ingredient_ids(ingredient_ids)
+    if not _can_consume_items(normalized_ingredients):
         return false
     fish_count -= 1
     if produce_tin:
         tin_count += 1
-    if ingredient_id == "garlic":
-        garlic_count -= 1
+    _consume_items(normalized_ingredients)
     var process_sequence: Array = build_process_sequence()
     last_tin_process_ids = process_sequence
     last_tin_process_tags = get_process_tags(process_sequence)
     var consumed_fish_id := _consume_fish_from_stock()
     if consumed_fish_id != "" and produce_tin:
         _increment_fish_lifetime_stat(consumed_fish_id, "tins_produced", 1)
-    var attempt := _build_craft_attempt(consumed_fish_id, method_id, ingredient_id, process_sequence)
+    var attempt := _build_craft_attempt(consumed_fish_id, method_id, normalized_ingredients, process_sequence)
     var outcome := _evaluate_attempt_outcome(attempt)
-    var output_key := str(outcome.get("output_key", _make_tin_key(method_id, ingredient_id)))
+    var output_key := str(outcome.get("output_key", _make_tin_key(method_id, normalized_ingredients)))
     if produce_tin:
         tin_inventory[output_key] = int(tin_inventory.get(output_key, 0)) + 1
     var discovered_recipe_id := str(outcome.get("discovered_recipe_id", ""))
@@ -576,7 +590,7 @@ func _execute_cannery_attempt(method_id: String, ingredient_id: String, produce_
         _mark_recipe_discovered(discovered_recipe_id)
         if produce_tin:
             _increment_recipe_lifetime_stat(discovered_recipe_id, "produced", 1)
-        _unlock_recipe(discovered_recipe_id, method_id, ingredient_id)
+        _unlock_recipe(discovered_recipe_id, method_id, normalized_ingredients)
     _append_experiment_log(outcome.get("log_entry", {}))
     last_craft_feedback = outcome.get("feedback", {})
     changed.emit()
@@ -606,14 +620,22 @@ func _add_money(amount: int) -> void:
     _check_crew_discovery()
     changed.emit()
 
-func buy_garlic(count: int) -> bool:
+func buy_item(item_id: String, count: int) -> bool:
     if count <= 0:
         return false
-    var cost: int = GARLIC_PRICE * count
+    var def: Dictionary = get_item_def(item_id)
+    if def.is_empty():
+        return false
+    if str(def.get("source", "")) != "vendor":
+        return false
+    var reqs: Array = RequiresEval.get_requires(def)
+    if not RequiresEval.is_met(reqs, self):
+        return false
+    var cost: int = get_item_cost(item_id) * count
     if money < cost:
         return false
     money -= cost
-    garlic_count += count
+    _add_item(item_id, count)
     changed.emit()
     return true
 
@@ -642,6 +664,40 @@ func set_sell_mode(mode: SellMode) -> void:
         return
     sell_mode = mode
     changed.emit()
+
+func sell_fish(count: int) -> int:
+    if count <= 0 or fish_count <= 0:
+        return 0
+    var actual: int = min(count, fish_count)
+    fish_count -= actual
+    fish_sold += actual
+    _record_fish_sales(actual)
+    _add_money(get_fish_sell_price() * actual)
+    return actual
+
+func sell_tins(count: int) -> int:
+    if count <= 0 or tin_count <= 0:
+        return 0
+    var actual: int = min(count, tin_count)
+    var sale_price: int = get_tin_sell_price()
+    for _i in range(actual):
+        tin_count -= 1
+        var sold_recipe_key := _remove_random_tin()
+        tins_sold += 1
+        _record_recipe_sale(sold_recipe_key, sale_price)
+    _add_money(sale_price * actual)
+    return actual
+
+func sell_item(item_id: String, count: int) -> int:
+    if item_id == "" or count <= 0:
+        return 0
+    var owned: int = get_item_count(item_id)
+    if owned <= 0:
+        return 0
+    var actual: int = min(count, owned)
+    _add_item(item_id, -actual)
+    _add_money(get_item_sell_value(item_id) * actual)
+    return actual
 
 #########
 # Cannery
@@ -1303,9 +1359,9 @@ func apply_attempt_to_selection(attempt_id: int = -1) -> bool:
 
     tin_method_id = str(target.get("method_id", "raw"))
     var ingredient_ids: Array = target.get("ingredient_ids", [])
-    tin_ingredient_id = "none"
-    if typeof(ingredient_ids) == TYPE_ARRAY and not ingredient_ids.is_empty():
-        tin_ingredient_id = str(ingredient_ids[0])
+    if typeof(ingredient_ids) != TYPE_ARRAY:
+        ingredient_ids = []
+    tin_ingredient_ids = _normalize_ingredient_ids(ingredient_ids)
 
     var next_selected := {
         "prep": [],
@@ -1351,21 +1407,22 @@ func get_recipe_silhouette_hint(recipe_id: String) -> String:
         return "Keep experimenting with this fish."
     return str(def.get("hint_text", "Keep experimenting with this fish."))
 
-func _build_craft_attempt(fish_id: String, method_id: String, ingredient_id: String, process_sequence: Array) -> Dictionary:
+func _build_craft_attempt(fish_id: String, method_id: String, ingredient_ids: Array, process_sequence: Array) -> Dictionary:
     var attempt_id := int(meta_state.get("attempt_counter", 0)) + 1
     meta_state["attempt_counter"] = attempt_id
-    var attempt_tags := _build_attempt_tags(fish_id, method_id, ingredient_id, process_sequence)
+    var normalized_ingredients := _normalize_ingredient_ids(ingredient_ids)
+    var attempt_tags := _build_attempt_tags(fish_id, method_id, normalized_ingredients, process_sequence)
     return {
         "attempt_id": attempt_id,
         "fish_id": fish_id,
         "method_id": method_id,
-        "ingredient_ids": [] if ingredient_id == "none" else [ingredient_id],
+        "ingredient_ids": normalized_ingredients,
         "process_ids": process_sequence.duplicate(),
         "attempt_tags": attempt_tags,
         "timestamp_unix": Time.get_unix_time_from_system()
     }
 
-func _build_attempt_tags(fish_id: String, method_id: String, ingredient_id: String, process_ids: Array) -> Array:
+func _build_attempt_tags(fish_id: String, method_id: String, ingredient_ids: Array, process_ids: Array) -> Array:
     var tags: Array = []
     if fish_id != "":
         tags.append("fish:%s" % fish_id)
@@ -1374,8 +1431,10 @@ func _build_attempt_tags(fish_id: String, method_id: String, ingredient_id: Stri
             if not tags.has(tag):
                 tags.append(tag)
 
-    if ingredient_id != "" and ingredient_id != "none":
-        for tag in _ingredient_tags_for_attempt(ingredient_id):
+    for ingredient_id in ingredient_ids:
+        if typeof(ingredient_id) != TYPE_STRING:
+            continue
+        for tag in _ingredient_tags_for_attempt(str(ingredient_id)):
             if not tags.has(tag):
                 tags.append(tag)
 
@@ -1425,10 +1484,6 @@ func _ingredient_tags_for_attempt(ingredient_id: String) -> Array:
         for tag in _string_array(item_def.get("tags", [])):
             if not tags.has(tag):
                 tags.append(tag)
-        return tags
-    if ingredient_id == "garlic":
-        tags.append("garlicky")
-        tags.append("aromatic")
     return tags
 
 func _evaluate_attempt_outcome(attempt: Dictionary) -> Dictionary:
@@ -1805,13 +1860,14 @@ func _increment_recipe_lifetime_stat(recipe_id: String, stat_key: String, amount
     all_stats[recipe_id] = stats
     meta_state["recipe_lifetime_stats"] = all_stats
 
-func _select_recipe_for_tinning(fish_id: String, method_id: String, ingredient_id: String) -> String:
+func _select_recipe_for_tinning(fish_id: String, method_id: String, ingredient_ids: Array) -> String:
     if fish_id == "":
         return ""
     var recipe_ids: Array = recipe_ids_by_fish_id.get(fish_id, [])
     if recipe_ids.is_empty():
         return ""
-    var seed_text := "%s|%s|%s" % [fish_id, method_id, ingredient_id]
+    var ids := _normalize_ingredient_ids(ingredient_ids)
+    var seed_text := "%s|%s|%s" % [fish_id, method_id, ",".join(ids)]
     var hash_val: int = int(abs(seed_text.hash()))
     return str(recipe_ids[hash_val % recipe_ids.size()])
 
@@ -2505,9 +2561,9 @@ func start_tin_cooldown() -> void:
 func clear_tin_cooldown() -> void:
     tin_cooldown_remaining = 0.0
 
-func set_tin_selection(method_id: String, ingredient_id: String) -> void:
+func set_tin_selection(method_id: String, ingredient_ids: Array) -> void:
     tin_method_id = method_id
-    tin_ingredient_id = ingredient_id
+    tin_ingredient_ids = _normalize_ingredient_ids(ingredient_ids)
 
 func set_cannery_produce_enabled(enabled: bool) -> void:
     cannery_produce_enabled = enabled
@@ -2517,9 +2573,97 @@ func _can_auto_tin() -> bool:
         return false
     if fish_count <= 0:
         return false
-    if tin_ingredient_id != "none" and garlic_count <= 0:
+    if not _can_consume_items(tin_ingredient_ids):
         return false
     return true
+
+func _normalize_ingredient_ids(ids: Array) -> Array:
+    var out: Array = []
+    if typeof(ids) != TYPE_ARRAY:
+        return out
+    for entry in ids:
+        if typeof(entry) != TYPE_STRING:
+            continue
+        var id := str(entry)
+        if id == "" or id == "none":
+            continue
+        out.append(id)
+    out.sort()
+    return out
+
+func _can_consume_items(ids: Array) -> bool:
+    var counts: Dictionary = {}
+    for item_id in ids:
+        if typeof(item_id) != TYPE_STRING:
+            continue
+        var id := str(item_id)
+        counts[id] = int(counts.get(id, 0)) + 1
+    for id in counts.keys():
+        var needed := int(counts.get(id, 0))
+        if get_item_count(str(id)) < needed:
+            return false
+    return true
+
+func _consume_items(ids: Array) -> void:
+    var counts: Dictionary = {}
+    for item_id in ids:
+        if typeof(item_id) != TYPE_STRING:
+            continue
+        var id := str(item_id)
+        counts[id] = int(counts.get(id, 0)) + 1
+    for id in counts.keys():
+        _add_item(str(id), -int(counts.get(id, 0)))
+
+func _add_item(item_id: String, delta: int) -> void:
+    if item_id == "" or delta == 0:
+        return
+    var current := int(item_counts.get(item_id, 0))
+    var next: int = max(0, current + delta)
+    item_counts[item_id] = next
+
+func get_item_defs() -> Array:
+    return item_defs
+
+func get_item_def(item_id: String) -> Dictionary:
+    return item_defs_by_id.get(item_id, {})
+
+func get_item_cost(item_id: String) -> int:
+    var def: Dictionary = get_item_def(item_id)
+    if def.is_empty():
+        return 0
+    return int(def.get("base_cost", 0))
+
+func get_item_sell_value(item_id: String) -> int:
+    var def: Dictionary = get_item_def(item_id)
+    if def.is_empty():
+        return 0
+    return int(def.get("sell_value", 0))
+
+func get_item_count(item_id: String) -> int:
+    return int(item_counts.get(item_id, 0))
+
+func _get_item_display_name(item_id: String) -> String:
+    var def: Dictionary = get_item_def(item_id)
+    if def.is_empty():
+        return _title(item_id)
+    return str(def.get("display_name", item_id))
+
+func get_vendor_item_defs() -> Array:
+    var out: Array = []
+    for def in item_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        if str(def.get("source", "")) != "vendor":
+            continue
+        out.append(def)
+    out.sort_custom(func(a, b):
+        var ca := str(a.get("category", ""))
+        var cb := str(b.get("category", ""))
+        if ca == cb:
+            return str(a.get("display_name", "")) < str(b.get("display_name", ""))
+        return ca < cb
+    )
+    return out
 
 ################
 # Inventory/Recipes
@@ -2527,11 +2671,74 @@ func _can_auto_tin() -> bool:
 func get_inventory_items() -> Array:
     var items: Array = []
     items.append({"name": "Fish", "count": fish_count})
-    items.append({"name": "Garlic", "count": garlic_count})
+    for item_id in item_counts.keys():
+        var count := int(item_counts.get(item_id, 0))
+        if count <= 0:
+            continue
+        items.append({"name": _get_item_display_name(str(item_id)), "count": count})
     for key in tin_inventory.keys():
         var label := "Tin: %s" % _format_recipe_from_key(str(key))
         items.append({"name": label, "count": int(tin_inventory[key])})
     return items
+
+func get_inventory_entries(include_zero: bool = false) -> Array:
+    var entries: Array = []
+    if include_zero or fish_count > 0:
+        entries.append({
+            "type": "fish",
+            "id": "fish",
+            "label": "Fish",
+            "count": fish_count,
+            "description": "Fresh catch ready for sale.",
+            "rarity": "Common",
+            "category": "catch",
+            "tags": ["fresh"],
+            "sell_value": get_fish_sell_price(),
+            "cost": 0
+        })
+    if include_zero or tin_count > 0:
+        entries.append({
+            "type": "tin",
+            "id": "tin",
+            "label": "Tins",
+            "count": tin_count,
+            "description": "Finished tins ready for market.",
+            "rarity": "Common",
+            "category": "canned",
+            "tags": ["canned"],
+            "sell_value": get_tin_sell_price(),
+            "cost": 0
+        })
+    var item_ids: Array = []
+    if include_zero:
+        for def in item_defs:
+            if typeof(def) != TYPE_DICTIONARY:
+                continue
+            var item_id := str(def.get("ingredient_id", def.get("item_id", "")))
+            if item_id == "":
+                continue
+            if not item_ids.has(item_id):
+                item_ids.append(item_id)
+    else:
+        item_ids = item_counts.keys()
+    for item_id in item_ids:
+        var count := int(item_counts.get(item_id, 0))
+        if not include_zero and count <= 0:
+            continue
+        var def: Dictionary = get_item_def(str(item_id))
+        entries.append({
+            "type": "item",
+            "id": str(item_id),
+            "label": _get_item_display_name(str(item_id)),
+            "count": count,
+            "description": str(def.get("description", "")),
+            "rarity": str(def.get("rarity", "")),
+            "category": str(def.get("category", "")),
+            "tags": def.get("tags", []),
+            "sell_value": int(def.get("sell_value", 0)),
+            "cost": 0
+        })
+    return entries
 
 func get_recipe_list() -> Array:
     var out: Array = []
@@ -2544,17 +2751,20 @@ func get_recipe_list() -> Array:
         out.append(str(recipe_def.get("display_name", id_str)))
     return out
 
-func _unlock_recipe(recipe_id: String, method_id: String, ingredient_id: String) -> void:
+func _unlock_recipe(recipe_id: String, method_id: String, ingredient_ids: Array) -> void:
     if recipe_id != "":
         if not recipes_unlocked.has(recipe_id):
             recipes_unlocked.append(recipe_id)
         return
-    var label := _format_recipe(method_id, ingredient_id)
+    var label := _format_recipe(method_id, ingredient_ids)
     if not recipes_unlocked.has(label):
         recipes_unlocked.append(label)
 
-func _make_tin_key(method_id: String, ingredient_id: String) -> String:
-    return "%s|%s" % [method_id, ingredient_id]
+func _make_tin_key(method_id: String, ingredient_ids: Array) -> String:
+    var ids := _normalize_ingredient_ids(ingredient_ids)
+    if ids.is_empty():
+        return "%s|none" % method_id
+    return "%s|%s" % [method_id, ",".join(ids)]
 
 func _format_recipe_from_key(key: String) -> String:
     if recipe_defs_by_id.has(key):
@@ -2563,15 +2773,24 @@ func _format_recipe_from_key(key: String) -> String:
     var parts := key.split("|")
     if parts.size() < 2:
         return _title(key)
-    return _format_recipe(parts[0], parts[1])
+    if parts.size() >= 2:
+        var ingredient_part := parts[1]
+        if ingredient_part == "none" or ingredient_part == "":
+            return _format_recipe(parts[0], [])
+        var ids := ingredient_part.split(",", false)
+        return _format_recipe(parts[0], ids)
+    return _format_recipe(parts[0], [])
 
-func _format_recipe(method_id: String, ingredient_id: String) -> String:
+func _format_recipe(method_id: String, ingredient_ids: Array) -> String:
     var method_name := _title(method_id)
-    var ingredient_name := "Plain" if ingredient_id == "none" else _title(ingredient_id)
+    var labels: Array = []
+    for ingredient_id in _normalize_ingredient_ids(ingredient_ids):
+        labels.append(_get_item_display_name(ingredient_id))
+    var ingredient_name := "Plain" if labels.is_empty() else ", ".join(labels)
     return "%s + %s" % [method_name, ingredient_name]
 
-func format_recipe(method_id: String, ingredient_id: String) -> String:
-    return _format_recipe(method_id, ingredient_id)
+func format_recipe(method_id: String, ingredient_ids: Array) -> String:
+    return _format_recipe(method_id, ingredient_ids)
 
 func _title(text: String) -> String:
     var parts := text.replace("_", " ").split(" ")
@@ -2694,9 +2913,12 @@ func _reset_run_state() -> void:
     tin_count = 0
     money = 0
     garlic_count = 0
+    item_counts.clear()
     fish_stock_by_id.clear()
     tin_inventory.clear()
     recipes_unlocked.clear()
+    tin_method_id = "raw"
+    tin_ingredient_ids = []
     lifetime_money_earned = 0
     tins_sold = 0
     fish_sold = 0

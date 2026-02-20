@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://cuycoalmdivpd"]
+[gd_scene load_steps=7 format=3 uid="uid://cuycoalmdivpd"]
 
 [ext_resource type="Script" uid="uid://by05ycqgenspy" path="res://src/ui/screens/market/market_screen.gd" id="1_yt0j7"]
 [ext_resource type="PackedScene" uid="uid://c0c5uueyrmmcq" path="res://src/ui/components/close_button/close_button.tscn" id="2_7fa8d"]
 [ext_resource type="StyleBox" uid="uid://e0qv2iqvjwn" path="res://src/ui/components/styles/button_color_normal.tres" id="3_4idej"]
 [ext_resource type="ButtonGroup" uid="uid://dlyf4rrsi7gse" path="res://src/ui/components/styles/market-sell-button-group.tres" id="3_7fa8d"]
 [ext_resource type="StyleBox" uid="uid://dr88dhdndumkx" path="res://src/ui/components/styles/button_color_pressed.tres" id="4_s7xmv"]
+[ext_resource type="PackedScene" path="res://src/ui/components/item_grid/item_grid.tscn" id="5_itemgrid"]
 
 [node name="MarketScreen" type="PanelContainer"]
 anchors_preset = 15
@@ -12,12 +13,23 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+layout_direction = 0
 script = ExtResource("1_yt0j7")
 red_style = ExtResource("3_4idej")
 green_style = ExtResource("4_s7xmv")
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 2
+
+[node name="Bg" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.06, 0.07, 0.09, 1.0)
 
 [node name="CloseButton" parent="Control" instance=ExtResource("2_7fa8d")]
 layout_mode = 1
@@ -26,141 +38,154 @@ offset_top = 0.0
 offset_right = 0.0
 offset_bottom = 40.0
 
-[node name="LeftPanel" type="Control" parent="Control"]
-layout_mode = 0
-offset_left = 40.0
-offset_top = 60.0
-offset_right = 260.0
-offset_bottom = -40.0
-
-[node name="SellTitle" type="Label" parent="Control/LeftPanel"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 200.0
-offset_bottom = 20.0
-text = "Sell"
-
-[node name="SellButtons" type="VBoxContainer" parent="Control/LeftPanel"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 30.0
-offset_right = 200.0
-offset_bottom = 120.0
-theme_override_constants/separation = 10
-
-[node name="SellFishButton" type="Button" parent="Control/LeftPanel/SellButtons"]
-toggle_mode = true
-button_pressed = true
-button_group = ExtResource("3_7fa8d")
-text = "Sell Fish"
-
-[node name="SellTinsButton" type="Button" parent="Control/LeftPanel/SellButtons"]
-toggle_mode = true
-button_group = ExtResource("3_7fa8d")
-text = "Sell Tins"
-
-[node name="Separator" type="ColorRect" parent="Control"]
-layout_mode = 0
-offset_left = 300.0
-offset_top = 60.0
-offset_right = 302.0
-offset_bottom = -40.0
-color = Color(0.3, 0.3, 0.3, 1)
-
-[node name="RightPanel" type="Control" parent="Control"]
-layout_mode = 0
-offset_left = 320.0
-offset_top = 60.0
-offset_right = -40.0
-offset_bottom = -40.0
-
-[node name="BuyTitle" type="Label" parent="Control/RightPanel"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 200.0
-offset_bottom = 20.0
-text = "Buy"
-
-[node name="ItemGrid" type="GridContainer" parent="Control/RightPanel"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 30.0
-offset_right = 300.0
-offset_bottom = 200.0
-columns = 4
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
-
-[node name="GarlicSlot" type="PanelContainer" parent="Control/RightPanel/ItemGrid"]
-custom_minimum_size = Vector2(72, 72)
-
-[node name="GarlicButton" type="Button" parent="Control/RightPanel/ItemGrid/GarlicSlot"]
+[node name="MainRow" type="HBoxContainer" parent="Control"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-text = "Garlic"
+offset_left = 40.0
+offset_top = 60.0
+offset_right = -40.0
+offset_bottom = -40.0
+theme_override_constants/separation = 20
 
-[node name="QtyLabel" type="Label" parent="Control/RightPanel"]
-layout_mode = 0
+[node name="Sidebar" type="PanelContainer" parent="Control/MainRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+size_flags_vertical = 3
+
+[node name="SidebarVBox" type="VBoxContainer" parent="Control/MainRow/Sidebar"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="SidebarTitle" type="Label" parent="Control/MainRow/Sidebar/SidebarVBox"]
+layout_mode = 2
+text = "Market"
+
+[node name="ModeButtons" type="VBoxContainer" parent="Control/MainRow/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SellModeButton" type="Button" parent="Control/MainRow/Sidebar/SidebarVBox/ModeButtons"]
+toggle_mode = true
+button_pressed = true
+button_group = ExtResource("3_7fa8d")
+text = "Sell"
+
+[node name="BuyModeButton" type="Button" parent="Control/MainRow/Sidebar/SidebarVBox/ModeButtons"]
+toggle_mode = true
+button_group = ExtResource("3_7fa8d")
+text = "Buy"
+
+[node name="Content" type="VBoxContainer" parent="Control/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="ContentTitle" type="Label" parent="Control/MainRow/Content"]
+layout_mode = 2
+text = "Sell"
+
+[node name="ContentSplit" type="HSplitContainer" parent="Control/MainRow/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -320
+
+[node name="ItemListPanel" type="Control" parent="Control/MainRow/Content/ContentSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ItemScroll" type="ScrollContainer" parent="Control/MainRow/Content/ContentSplit/ItemListPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = 0.0
-offset_top = 220.0
-offset_right = 200.0
-offset_bottom = 240.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+horizontal_scroll_mode = 0
+
+[node name="ItemGrid" parent="Control/MainRow/Content/ContentSplit/ItemListPanel/ItemScroll" instance=ExtResource("5_itemgrid")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+columns = 4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+slot_size = Vector2(96, 96)
+
+[node name="DetailPanel" type="PanelContainer" parent="Control/MainRow/Content/ContentSplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(320, 0)
+size_flags_horizontal = 0
+size_flags_vertical = 3
+
+[node name="DetailVBox" type="VBoxContainer" parent="Control/MainRow/Content/ContentSplit/DetailPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="DetailTitle" type="Label" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox"]
+layout_mode = 2
+text = "Select an item"
+
+[node name="DetailInfo" type="Label" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Click an item to see details."
+
+[node name="DetailSpacer" type="Control" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 10)
+
+[node name="QtyLabel" type="Label" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox"]
+layout_mode = 2
 text = "Quantity"
 
-[node name="QtyButtons" type="HBoxContainer" parent="Control/RightPanel"]
+[node name="QtyButtons" type="HBoxContainer" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox"]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 245.0
-offset_right = 460.0
-offset_bottom = 275.0
 theme_override_constants/separation = 6
 
-[node name="Qty1" type="Button" parent="Control/RightPanel/QtyButtons"]
+[node name="Qty1" type="Button" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox/QtyButtons"]
 toggle_mode = true
 button_pressed = true
 text = "1"
 
-[node name="Qty5" type="Button" parent="Control/RightPanel/QtyButtons"]
+[node name="Qty5" type="Button" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox/QtyButtons"]
 toggle_mode = true
 text = "5"
 
-[node name="Qty10" type="Button" parent="Control/RightPanel/QtyButtons"]
+[node name="Qty10" type="Button" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox/QtyButtons"]
 toggle_mode = true
 text = "10"
 
-[node name="Qty25" type="Button" parent="Control/RightPanel/QtyButtons"]
+[node name="Qty25" type="Button" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox/QtyButtons"]
 toggle_mode = true
 text = "25"
 
-[node name="Qty50" type="Button" parent="Control/RightPanel/QtyButtons"]
+[node name="Qty50" type="Button" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox/QtyButtons"]
 toggle_mode = true
 text = "50"
 
-[node name="Qty100" type="Button" parent="Control/RightPanel/QtyButtons"]
+[node name="Qty100" type="Button" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox/QtyButtons"]
 toggle_mode = true
 text = "100"
 
-[node name="HoverLabel" type="Label" parent="Control/RightPanel"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 290.0
-offset_right = 400.0
-offset_bottom = 310.0
-text = ""
-
-[node name="GarlicCountLabel" type="Label" parent="Control/RightPanel"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 320.0
-offset_right = 200.0
-offset_bottom = 340.0
-text = "Garlic: 0"
+[node name="ActionButton" type="Button" parent="Control/MainRow/Content/ContentSplit/DetailPanel/DetailVBox"]
+layout_mode = 2
+text = "Select an item"
 
 [connection signal="pressed" from="Control/CloseButton" to="." method="_on_close_button_pressed"]
-[connection signal="pressed" from="Control/LeftPanel/SellButtons/SellFishButton" to="." method="_on_sell_fish_button_pressed"]
-[connection signal="pressed" from="Control/LeftPanel/SellButtons/SellTinsButton" to="." method="_on_sell_tins_button_pressed"]
-[connection signal="pressed" from="Control/RightPanel/ItemGrid/GarlicSlot/GarlicButton" to="." method="_on_garlic_button_pressed"]
+[connection signal="pressed" from="Control/MainRow/Sidebar/SidebarVBox/ModeButtons/SellModeButton" to="." method="_on_sell_mode_pressed"]
+[connection signal="pressed" from="Control/MainRow/Sidebar/SidebarVBox/ModeButtons/BuyModeButton" to="." method="_on_buy_mode_pressed"]

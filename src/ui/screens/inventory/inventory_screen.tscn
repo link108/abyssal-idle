@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/ui/screens/inventory/inventory_screen.gd" id="1_4n1a7"]
 [ext_resource type="PackedScene" path="res://src/ui/components/close_button/close_button.tscn" id="2_5k6as"]
+[ext_resource type="PackedScene" path="res://src/ui/components/item_grid/item_grid.tscn" id="3_itemgrid"]
 
 [node name="InventoryScreen" type="PanelContainer"]
 anchors_preset = 15
@@ -13,6 +14,16 @@ script = ExtResource("1_4n1a7")
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 2
+
+[node name="Bg" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.06, 0.07, 0.09, 1.0)
 
 [node name="CloseButton" parent="Control" instance=ExtResource("2_5k6as")]
 layout_mode = 1
@@ -29,7 +40,7 @@ offset_right = 200.0
 offset_bottom = 40.0
 text = "Inventory"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Control"]
+[node name="BodySplit" type="HSplitContainer" parent="Control"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -37,8 +48,15 @@ offset_left = 20.0
 offset_top = 60.0
 offset_right = -20.0
 offset_bottom = -20.0
+split_offset = -300
 
-[node name="Grid" type="GridContainer" parent="Control/ScrollContainer"]
+[node name="GridScroll" type="ScrollContainer" parent="Control/BodySplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ItemGrid" parent="Control/BodySplit/GridScroll" instance=ExtResource("3_itemgrid")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -47,6 +65,30 @@ size_flags_vertical = 3
 columns = 5
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
+slot_size = Vector2(96, 96)
+
+[node name="DetailPanel" type="PanelContainer" parent="Control/BodySplit"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 0)
+size_flags_horizontal = 0
+size_flags_vertical = 3
+
+[node name="DetailVBox" type="VBoxContainer" parent="Control/BodySplit/DetailPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="DetailTitle" type="Label" parent="Control/BodySplit/DetailPanel/DetailVBox"]
+layout_mode = 2
+text = "Select an item"
+
+[node name="DetailInfo" type="Label" parent="Control/BodySplit/DetailPanel/DetailVBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Click an item to see details."
 
 [connection signal="close_requested" from="Control/CloseButton" to="." method="_on_close_button_close_requested"]
 [connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]

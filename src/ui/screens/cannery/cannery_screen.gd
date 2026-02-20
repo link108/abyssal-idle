@@ -4,6 +4,7 @@ signal make_tin_requested
 
 const OPTIONS_PATH := "res://data/raw/cannery_options.json"
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
+const MAX_INGREDIENTS := 3
 
 const PROCESS_CATEGORIES := [
     {"id": "prep", "label": "Prep (max 2)", "max": 2},
@@ -13,8 +14,8 @@ const PROCESS_CATEGORIES := [
 ]
 
 @onready var method_select := $Control/MethodSelect
-@onready var ingredient_select := $Control/IngredientSelect
-@onready var garlic_label := $Control/GarlicCountLabel
+@onready var ingredient_label := $Control/IngredientLabel
+@onready var ingredient_list := $Control/IngredientScroll/IngredientList
 @onready var produce_toggle: CheckBox = $Control/ProduceToggle
 @onready var make_tin_button := $Control/MakeTinButton
 @onready var make_tin_progress := $Control/MakeTinButton/MakeTinProgress
@@ -30,7 +31,6 @@ const PROCESS_CATEGORIES := [
 @onready var finish_label := $Control/ProcessPanel/FinishLabel
 
 var methods: Array = []
-var ingredients: Array = []
 var _process_lists: Dictionary = {}
 var _selected_process_ids: Dictionary = {
     "prep": [],
@@ -38,6 +38,7 @@ var _selected_process_ids: Dictionary = {
     "heat": [],
     "preserve": []
 }
+var _selected_ingredient_ids: Array = []
 
 func _ready() -> void:
     _load_options()
@@ -53,9 +54,9 @@ func _ready() -> void:
     GameState.changed.connect(_refresh_process_state)
     GameState.changed.connect(_refresh_experiment_feedback)
     _refresh_counts()
+    ingredient_label.text = "Ingredients (max %d)" % MAX_INGREDIENTS
     make_tin_progress.show_percentage = false
     method_select.item_selected.connect(_on_method_selected)
-    ingredient_select.item_selected.connect(_on_ingredient_selected)
     produce_toggle.toggled.connect(_on_produce_toggle_toggled)
     refine_last_button.pressed.connect(_on_refine_last_button_pressed)
     _sync_selection_from_game_state()
@@ -74,13 +75,13 @@ func _on_close_button_close_requested() -> void:
 
 func _on_make_tin_button_pressed() -> void:
     var method_id: String = _get_selected_id(method_select, "raw")
-    var ingredient_id: String = _get_selected_id(ingredient_select, "none")
+    var ingredient_ids: Array = _selected_ingredient_ids.duplicate()
     var produce_tin := produce_toggle.button_pressed
-    var made: bool = GameState.try_run_cannery_attempt(method_id, ingredient_id, produce_tin)
+    var made: bool = GameState.try_run_cannery_attempt(method_id, ingredient_ids, produce_tin)
     if made:
         var process_summary := _format_process_summary()
         var feedback: Dictionary = GameState.get_last_craft_feedback()
-        var summary := str(feedback.get("summary", GameState.format_recipe(method_id, ingredient_id)))
+        var summary := str(feedback.get("summary", GameState.format_recipe(method_id, ingredient_ids)))
         var prefix := "Made" if produce_tin else "Tested"
         last_made_label.text = "%s: %s%s" % [prefix, summary, process_summary]
     make_tin_requested.emit()
@@ -97,19 +98,13 @@ func _load_options() -> void:
     if typeof(parsed) != TYPE_DICTIONARY:
         return
     methods = parsed.get("methods", [])
-    ingredients = parsed.get("ingredients", [])
 
 func _populate_options() -> void:
     method_select.clear()
-    ingredient_select.clear()
     for m in methods:
         if typeof(m) == TYPE_DICTIONARY:
             method_select.add_item(str(m.get("name", "Method")))
             method_select.set_item_metadata(method_select.item_count - 1, m.get("id", "raw"))
-    for i in ingredients:
-        if typeof(i) == TYPE_DICTIONARY:
-            ingredient_select.add_item(str(i.get("name", "Ingredient")))
-            ingredient_select.set_item_metadata(ingredient_select.item_count - 1, i.get("id", "none"))
 
 func _get_selected_id(option: OptionButton, fallback: String) -> String:
     if option.item_count <= 0:
@@ -121,7 +116,8 @@ func _get_selected_id(option: OptionButton, fallback: String) -> String:
     return str(meta)
 
 func _refresh_counts() -> void:
-    garlic_label.text = "Garlic: %d" % GameState.garlic_count
+    _sync_selection_from_game_state()
+    _rebuild_ingredient_list()
 
 
 func _update_cooldown_ui() -> void:
@@ -153,17 +149,13 @@ func _update_cooldown_ui() -> void:
 func _on_method_selected(_index: int) -> void:
     _sync_selection_to_game_state()
 
-func _on_ingredient_selected(_index: int) -> void:
-    _sync_selection_to_game_state()
-
 func _sync_selection_to_game_state() -> void:
     var method_id: String = _get_selected_id(method_select, "raw")
-    var ingredient_id: String = _get_selected_id(ingredient_select, "none")
-    GameState.set_tin_selection(method_id, ingredient_id)
+    GameState.set_tin_selection(method_id, _selected_ingredient_ids)
 
 func _sync_selection_from_game_state() -> void:
     _set_option_to_id(method_select, GameState.tin_method_id)
-    _set_option_to_id(ingredient_select, GameState.tin_ingredient_id)
+    _selected_ingredient_ids = (GameState.tin_ingredient_ids as Array).duplicate()
 
 func _set_option_to_id(option: OptionButton, target_id: String) -> void:
     if option.item_count <= 0:
@@ -179,6 +171,7 @@ func _on_refine_last_button_pressed() -> void:
         return
     _sync_selection_from_game_state()
     _load_processes()
+    _rebuild_ingredient_list()
     _refresh_experiment_feedback()
 
 func _on_produce_toggle_toggled(pressed: bool) -> void:
@@ -198,6 +191,41 @@ func _load_processes() -> void:
         "preserve": GameState.get_selected_processes("preserve")
     }
     _rebuild_process_groups()
+
+func _rebuild_ingredient_list() -> void:
+    for child in ingredient_list.get_children():
+        child.queue_free()
+
+    var defs: Array = GameState.get_item_defs()
+    for def in defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        if not bool(def.get("is_consumable", true)):
+            continue
+        var item_id := str(def.get("ingredient_id", def.get("item_id", "")))
+        if item_id == "":
+            continue
+        var count := GameState.get_item_count(item_id)
+        var checkbox := CheckBox.new()
+        checkbox.text = "%s x%d" % [str(def.get("display_name", item_id)), count]
+        checkbox.button_pressed = _selected_ingredient_ids.has(item_id)
+        var at_max := _selected_ingredient_ids.size() >= MAX_INGREDIENTS
+        if count <= 0 or (at_max and not checkbox.button_pressed):
+            checkbox.disabled = true
+        checkbox.toggled.connect(_on_ingredient_toggled.bind(item_id, checkbox))
+        ingredient_list.add_child(checkbox)
+
+func _on_ingredient_toggled(pressed: bool, item_id: String, checkbox: CheckBox) -> void:
+    if pressed:
+        if _selected_ingredient_ids.size() >= MAX_INGREDIENTS:
+            checkbox.button_pressed = false
+            return
+        if not _selected_ingredient_ids.has(item_id):
+            _selected_ingredient_ids.append(item_id)
+    else:
+        _selected_ingredient_ids.erase(item_id)
+    _sync_selection_to_game_state()
+    _rebuild_ingredient_list()
 
 func _refresh_process_state() -> void:
     finish_label.text = "Finish: Pack + Seal" if GameState.is_cannery_unlocked else "Finish: Unlock cannery to pack + seal"

@@ -11,26 +11,24 @@ const SLOT_HEIGHT := 96
 @onready var recipes_button: Button = $Control/MainRow/Sidebar/SidebarMargin/SidebarVBox/RecipesButton
 @onready var category_title: Label = $Control/MainRow/Content/ContentMargin/ContentVBox/CategoryTitle
 @onready var grid_scroll: ScrollContainer = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/GridScroll
-@onready var item_grid: GridContainer = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/GridScroll/ItemGrid
+@onready var item_grid := $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/GridScroll/ItemGrid
 @onready var detail_panel: PanelContainer = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel
 @onready var detail_name: Label = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox/DetailName
 @onready var detail_meta: Label = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox/DetailMeta
 @onready var detail_desc: Label = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox/DetailDescription
 @onready var detail_extra: Label = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox/DetailExtra
 
-var _slot_style := StyleBoxFlat.new()
-var _selected_slot_style := StyleBoxFlat.new()
 var _selected_category: String = CATEGORY_FISH
 var _fish_defs: Array = []
 var _recipe_defs: Array = []
 var _selected_item_id: String = ""
 
 func _ready() -> void:
-    _setup_style()
     _load_data()
     fish_button.pressed.connect(_on_fish_button_pressed)
     recipes_button.pressed.connect(_on_recipes_button_pressed)
     GameState.changed.connect(_refresh_visible_category)
+    item_grid.item_selected.connect(_on_item_grid_selected)
     _set_category(CATEGORY_FISH)
 
 func _notification(what: int) -> void:
@@ -60,42 +58,14 @@ func _set_category(category: String) -> void:
     _clear_detail()
     _refresh_visible_category()
 
-func _setup_style() -> void:
-    _slot_style.bg_color = Color(0.1, 0.12, 0.16, 0.9)
-    _slot_style.border_color = Color(0.35, 0.35, 0.4, 1)
-    _slot_style.border_width_left = 1
-    _slot_style.border_width_right = 1
-    _slot_style.border_width_top = 1
-    _slot_style.border_width_bottom = 1
-    _slot_style.corner_radius_top_left = 6
-    _slot_style.corner_radius_top_right = 6
-    _slot_style.corner_radius_bottom_left = 6
-    _slot_style.corner_radius_bottom_right = 6
-
-    _selected_slot_style.bg_color = Color(0.16, 0.2, 0.26, 0.95)
-    _selected_slot_style.border_color = Color(0.45, 0.8, 1.0, 1.0)
-    _selected_slot_style.border_width_left = 2
-    _selected_slot_style.border_width_right = 2
-    _selected_slot_style.border_width_top = 2
-    _selected_slot_style.border_width_bottom = 2
-    _selected_slot_style.corner_radius_top_left = 6
-    _selected_slot_style.corner_radius_top_right = 6
-    _selected_slot_style.corner_radius_bottom_left = 6
-    _selected_slot_style.corner_radius_bottom_right = 6
-
 func _load_data() -> void:
     _fish_defs = GameState.get_collection_fish_defs()
     _recipe_defs = GameState.get_collection_recipe_defs()
 
 func _refresh_visible_category() -> void:
-    for child in item_grid.get_children():
-        child.queue_free()
-
     item_grid.columns = _get_fitting_columns()
-    if _selected_category == CATEGORY_FISH:
-        _rebuild_fish_grid()
-    else:
-        _rebuild_recipe_grid()
+    var entries: Array = _build_entries_for_category()
+    item_grid.set_items(entries, _selected_item_id)
     _refresh_selected_detail_after_grid_rebuild()
 
 func _get_fitting_columns() -> int:
@@ -109,66 +79,67 @@ func _get_fitting_columns() -> int:
     var fit: int = max(1, int(floor(float(available_width + spacing) / float(per_column))))
     return clampi(fit, 1, max(1, columns))
 
-func _rebuild_fish_grid() -> void:
-    for fish_def in _fish_defs:
-        if typeof(fish_def) != TYPE_DICTIONARY:
-            continue
-        var discovered := _is_fish_discovered(fish_def)
-        item_grid.add_child(_make_item_slot(fish_def, discovered, CATEGORY_FISH))
-
-func _rebuild_recipe_grid() -> void:
-    for recipe_def in _recipe_defs:
-        if typeof(recipe_def) != TYPE_DICTIONARY:
-            continue
-        var discovered := _is_recipe_discovered(recipe_def)
-        item_grid.add_child(_make_item_slot(recipe_def, discovered, CATEGORY_RECIPES))
-
-func _make_item_slot(item_def: Dictionary, discovered: bool, category: String) -> Control:
-    var button := Button.new()
-    button.custom_minimum_size = Vector2(SLOT_WIDTH, SLOT_HEIGHT)
-    button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-    button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-    button.clip_text = true
-    button.autowrap_mode = TextServer.AUTOWRAP_OFF
-    button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-    button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-    var item_id := _get_item_id(item_def, category)
-    var is_selected := discovered and item_id != "" and item_id == _selected_item_id
-    var style: StyleBoxFlat = _selected_slot_style if is_selected else _slot_style
-    button.add_theme_stylebox_override("normal", style)
-    button.add_theme_stylebox_override("hover", style)
-    button.add_theme_stylebox_override("pressed", style)
-
-    var display_name := str(item_def.get("display_name", "Unknown"))
-    var placeholder_name := "???"
-    var hint_text := str(item_def.get("lore_hint", "Undiscovered."))
-    var hinted := false
-
-    if category == CATEGORY_RECIPES:
-        var recipe_state := _get_recipe_state(item_def)
-        hinted = recipe_state == "hinted"
-        if hinted:
-            placeholder_name = "Shadowed Entry"
-            hint_text = GameState.get_recipe_silhouette_hint(str(item_def.get("recipe_id", "")))
-        else:
-            var req_fish := str(item_def.get("required_fish_name", "an unknown fish"))
-            hint_text = "Requires %s" % req_fish
-
-    if discovered:
-        button.text = display_name
-        button.modulate = Color(1, 1, 1, 1)
-        button.pressed.connect(_on_item_selected.bind(item_def, category))
-    elif hinted and category == CATEGORY_RECIPES:
-        button.text = placeholder_name
-        button.modulate = Color(0.78, 0.78, 0.86, 1)
-        button.tooltip_text = hint_text
-        button.pressed.connect(_on_item_selected.bind(item_def, category))
+func _build_entries_for_category() -> Array:
+    var entries: Array = []
+    if _selected_category == CATEGORY_FISH:
+        for fish_def in _fish_defs:
+            if typeof(fish_def) != TYPE_DICTIONARY:
+                continue
+            var item_id := _get_item_id(fish_def, CATEGORY_FISH)
+            if item_id == "":
+                continue
+            var discovered := _is_fish_discovered(fish_def)
+            var display_name := str(fish_def.get("display_name", "Unknown"))
+            var hint_text := str(fish_def.get("lore_hint", "Undiscovered."))
+            var label := display_name if discovered else "???"
+            var tooltip := "" if discovered else hint_text
+            var modulate := Color(1, 1, 1, 1) if discovered else Color(0.65, 0.65, 0.65, 1)
+            entries.append({
+                "id": item_id,
+                "label": label,
+                "count": 0,
+                "show_count": false,
+                "disabled": not discovered,
+                "tooltip": tooltip,
+                "modulate": modulate,
+                "payload": {"def": fish_def, "category": CATEGORY_FISH}
+            })
     else:
-        button.text = placeholder_name
-        button.modulate = Color(0.65, 0.65, 0.65, 1)
-        button.tooltip_text = hint_text
+        for recipe_def in _recipe_defs:
+            if typeof(recipe_def) != TYPE_DICTIONARY:
+                continue
+            var item_id := _get_item_id(recipe_def, CATEGORY_RECIPES)
+            if item_id == "":
+                continue
+            var discovered := _is_recipe_discovered(recipe_def)
+            var recipe_state := _get_recipe_state(recipe_def)
+            var hinted := recipe_state == "hinted"
+            var display_name := str(recipe_def.get("display_name", "Unknown"))
+            var placeholder_name := "Shadowed Entry" if hinted else "???"
+            var req_fish := str(recipe_def.get("required_fish_name", "an unknown fish"))
+            var hint_text := GameState.get_recipe_silhouette_hint(str(recipe_def.get("recipe_id", ""))) if hinted else "Requires %s" % req_fish
+            var label := display_name if discovered else placeholder_name
+            var tooltip := "" if discovered else hint_text
+            var modulate := Color(1, 1, 1, 1) if discovered else (Color(0.78, 0.78, 0.86, 1) if hinted else Color(0.65, 0.65, 0.65, 1))
+            var disabled := not discovered and not hinted
+            entries.append({
+                "id": item_id,
+                "label": label,
+                "count": 0,
+                "show_count": false,
+                "disabled": disabled,
+                "tooltip": tooltip,
+                "modulate": modulate,
+                "payload": {"def": recipe_def, "category": CATEGORY_RECIPES}
+            })
+    return entries
 
-    return button
+func _on_item_grid_selected(_item_id: String, payload: Dictionary) -> void:
+    if not payload.has("def") or not payload.has("category"):
+        return
+    var item_def: Dictionary = payload.get("def", {})
+    var category: String = str(payload.get("category", ""))
+    _on_item_selected(item_def, category)
 
 func _on_item_selected(item_def: Dictionary, category: String) -> void:
     if category == CATEGORY_FISH and not _is_fish_discovered(item_def):
