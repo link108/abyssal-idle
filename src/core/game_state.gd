@@ -22,7 +22,7 @@ const SILHOUETTE_DATA_PATH := "res://data/raw/silhouettes.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
-const SAVE_VERSION := 12
+const SAVE_VERSION := 13
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -42,7 +42,10 @@ const UPGRADES_VISIBLE_PER_CATEGORY := 3
 const MAX_EXPERIMENT_LOG_ENTRIES := 120
 
 const SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL := 1
+const SUSTAINABLE_FISH_SELL_COUNT_ADD_PER_LEVEL := -1
 const SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL := 0.01
+const INDUSTRIAL_FISH_SELL_ADD_PER_LEVEL := -1
+const INDUSTRIAL_FISH_SELL_COUNT_ADD_PER_LEVEL := 1
 const INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL := 1
 const INDUSTRIAL_TIN_TIME_ADD_PER_LEVEL := -0.1
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
@@ -59,6 +62,7 @@ var tin_inventory: Dictionary = {}
 var recipes_unlocked: Array = []
 var tin_cooldown_remaining: float = 0.0
 var tin_method_id: String = "raw"
+var tin_fish_id: String = ""
 var tin_ingredient_ids: Array = []
 var cannery_produce_enabled: bool = true
 var tins_sold: int = 0
@@ -200,6 +204,7 @@ func save_game() -> void:
         "tin_inventory": tin_inventory,
         "recipes_unlocked": recipes_unlocked,
         "tin_method_id": tin_method_id,
+        "tin_fish_id": tin_fish_id,
         "tin_ingredient_ids": tin_ingredient_ids,
         "selected_processes": selected_processes,
         "cannery_produce_enabled": cannery_produce_enabled,
@@ -246,6 +251,7 @@ func new_game() -> void:
     tin_inventory.clear()
     recipes_unlocked.clear()
     tin_method_id = "raw"
+    tin_fish_id = ""
     tin_ingredient_ids = []
     selected_processes = {
         "prep": [],
@@ -322,6 +328,7 @@ func _apply_save(data: Dictionary) -> void:
     tin_inventory = data.get("tin_inventory", {})
     recipes_unlocked = data.get("recipes_unlocked", [])
     tin_method_id = str(data.get("tin_method_id", "raw"))
+    tin_fish_id = str(data.get("tin_fish_id", ""))
     tin_ingredient_ids = data.get("tin_ingredient_ids", [])
     if typeof(tin_ingredient_ids) != TYPE_ARRAY:
         tin_ingredient_ids = []
@@ -356,6 +363,8 @@ func _apply_save(data: Dictionary) -> void:
         fish_stock_by_id = {}
     if typeof(selected_processes) != TYPE_DICTIONARY:
         selected_processes = {}
+    if tin_fish_id != "" and not fish_defs_by_id.has(tin_fish_id):
+        tin_fish_id = ""
     for category in ["prep", "transform", "heat", "preserve"]:
         var process_ids: Array = selected_processes.get(category, [])
         if typeof(process_ids) != TYPE_ARRAY:
@@ -401,6 +410,8 @@ func _migrate_save(version: int) -> void:
         _rebuild_policy_state()
     if version < 12:
         _normalize_meta_state()
+    if version < 13:
+        tin_fish_id = ""
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -575,8 +586,11 @@ func attempt_manual_catch(timing_success: bool) -> Dictionary:
 func make_tin() -> bool:
     if fish_count <= 0:
         return false
+    var selected_fish_id := str(tin_fish_id)
+    var consumed_fish_id := _consume_fish_from_stock_preferred(selected_fish_id, selected_fish_id == "")
+    if consumed_fish_id == "":
+        return false
     fish_count -= 1
-    var consumed_fish_id := _consume_fish_from_stock()
     var yield_count := get_fish_cannery_yield(consumed_fish_id)
     tin_count += yield_count
     if consumed_fish_id != "":
@@ -607,12 +621,15 @@ func _execute_cannery_attempt(method_id: String, ingredient_ids: Array, produce_
     var normalized_ingredients := _normalize_ingredient_ids(ingredient_ids)
     if not _can_consume_items(normalized_ingredients):
         return false
+    var selected_fish_id := str(tin_fish_id)
+    var consumed_fish_id := _consume_fish_from_stock_preferred(selected_fish_id, selected_fish_id == "")
+    if consumed_fish_id == "":
+        return false
     fish_count -= 1
     _consume_items(normalized_ingredients)
     var process_sequence: Array = build_process_sequence()
     last_tin_process_ids = process_sequence
     last_tin_process_tags = get_process_tags(process_sequence)
-    var consumed_fish_id := _consume_fish_from_stock()
     var yield_count: int = 1
     if produce_tin:
         yield_count = get_fish_cannery_yield(consumed_fish_id)
@@ -1420,6 +1437,7 @@ func apply_attempt_to_selection(attempt_id: int = -1) -> bool:
         return false
 
     tin_method_id = str(target.get("method_id", "raw"))
+    tin_fish_id = str(target.get("fish_id", ""))
     var ingredient_ids: Array = target.get("ingredient_ids", [])
     if typeof(ingredient_ids) != TYPE_ARRAY:
         ingredient_ids = []
@@ -2648,7 +2666,8 @@ func get_tin_sell_price() -> int:
     return 10 + _get_effect_total("tin_sell_add") + _get_meta_bonus_int("tin_sell_add") + _get_skill_effect_total_int("tin_sell_add")
 
 func get_fish_sell_count() -> int:
-    return 1 + _get_effect_total("fish_sell_count_add") + _get_skill_effect_total_int("fish_sell_count_add")
+    var count := 1 + _get_effect_total("fish_sell_count_add") + _get_meta_bonus_int("fish_sell_count_add") + _get_skill_effect_total_int("fish_sell_count_add")
+    return max(1, count)
 
 func get_green_zone_ratio() -> float:
     return min(1.0, GREEN_ZONE_BASE_RATIO + _get_effect_total_float("green_zone_add_pct") + _get_meta_bonus_float("green_zone_add_pct") + _get_skill_effect_total_float("green_zone_add_pct"))
@@ -2673,6 +2692,12 @@ func set_tin_selection(method_id: String, ingredient_ids: Array) -> void:
     tin_method_id = method_id
     tin_ingredient_ids = _normalize_ingredient_ids(ingredient_ids)
 
+func set_tin_fish_selection(fish_id: String) -> void:
+    tin_fish_id = str(fish_id)
+
+func get_tin_selected_fish_id() -> String:
+    return tin_fish_id
+
 func set_cannery_produce_enabled(enabled: bool) -> void:
     cannery_produce_enabled = enabled
 
@@ -2680,6 +2705,8 @@ func _can_auto_tin() -> bool:
     if not can_make_tin():
         return false
     if fish_count <= 0:
+        return false
+    if tin_fish_id != "" and int(fish_stock_by_id.get(tin_fish_id, 0)) <= 0:
         return false
     if not _can_consume_items(tin_ingredient_ids):
         return false
@@ -3040,6 +3067,20 @@ func _calculate_reputation_gain() -> int:
 func _apply_reputation_gain(rep_gain: int) -> void:
     if rep_gain <= 0:
         return
+    # Use policy alignment to weight sustainable vs industrial bonuses.
+    var alignment := _get_policy_alignment_scores()
+    var sustainable_score: float = float(alignment.get("sustainable", 0.0))
+    var industrial_score: float = float(alignment.get("industrial", 0.0))
+    var total_score: float = sustainable_score + industrial_score
+    if total_score <= 0.0:
+        _apply_reputation_gain_from_run_metrics(rep_gain)
+        return
+    var sustainable_gain: int = int(floor(rep_gain * (sustainable_score / total_score)))
+    var industrial_gain: int = rep_gain - sustainable_gain
+    meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + sustainable_gain
+    meta_state["industrial_bonus_level"] = int(meta_state.get("industrial_bonus_level", 0)) + industrial_gain
+
+func _apply_reputation_gain_from_run_metrics(rep_gain: int) -> void:
     var total_sales: int = fish_sold + tins_sold
     if total_sales <= 0:
         meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + rep_gain
@@ -3062,6 +3103,31 @@ func _apply_reputation_gain(rep_gain: int) -> void:
     meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + sustainable_gain
     meta_state["industrial_bonus_level"] = int(meta_state.get("industrial_bonus_level", 0)) + industrial_gain
 
+func _get_policy_alignment_scores() -> Dictionary:
+    var sustainable_score := 0.0
+    var industrial_score := 0.0
+    for group_id in chosen_exclusive_groups.keys():
+        var group_id_str := str(group_id)
+        if not group_id_str.begins_with("policy_"):
+            continue
+        var upgrade_id := str(chosen_exclusive_groups.get(group_id, ""))
+        if upgrade_id == "":
+            continue
+        var weight := 1.0
+        var def: Dictionary = upgrade_defs_by_id.get(upgrade_id, {})
+        if typeof(def) == TYPE_DICTIONARY and not def.is_empty():
+            var stage := _get_policy_stage(def)
+            if stage > 0:
+                weight = float(stage)
+        if upgrade_id.begins_with("sust_"):
+            sustainable_score += weight
+        elif upgrade_id.begins_with("ind_"):
+            industrial_score += weight
+    return {
+        "sustainable": sustainable_score,
+        "industrial": industrial_score
+    }
+
 func _reset_run_state() -> void:
     fish_count = 0
     tin_count = 0
@@ -3072,6 +3138,7 @@ func _reset_run_state() -> void:
     tin_inventory.clear()
     recipes_unlocked.clear()
     tin_method_id = "raw"
+    tin_fish_id = ""
     tin_ingredient_ids = []
     lifetime_money_earned = 0
     tins_sold = 0
@@ -3095,7 +3162,9 @@ func _get_meta_bonus_int(effect_type: String) -> int:
     var industrial_level := int(meta_state.get("industrial_bonus_level", 0))
     match effect_type:
         "fish_sell_add":
-            return sustainable_level * SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL
+            return (sustainable_level * SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL) + (industrial_level * INDUSTRIAL_FISH_SELL_ADD_PER_LEVEL)
+        "fish_sell_count_add":
+            return (sustainable_level * SUSTAINABLE_FISH_SELL_COUNT_ADD_PER_LEVEL) + (industrial_level * INDUSTRIAL_FISH_SELL_COUNT_ADD_PER_LEVEL)
         "tin_sell_add":
             return industrial_level * INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL
     return 0
@@ -3232,7 +3301,12 @@ func _set_ending_state(state: EndingState) -> void:
     ending_state = state
     run_paused = true
     var summary := _build_run_summary()
+    _clear_prestige_bonuses()
     ending_reached.emit(int(state), summary)
+
+func _clear_prestige_bonuses() -> void:
+    meta_state["sustainable_bonus_level"] = 0
+    meta_state["industrial_bonus_level"] = 0
 
 func _build_run_summary() -> Dictionary:
     return {
