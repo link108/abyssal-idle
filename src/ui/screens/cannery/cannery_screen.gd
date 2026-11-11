@@ -8,11 +8,12 @@ const MAX_INGREDIENTS := 4
 const PLUS_COLOR := Color(0.3, 1.0, 0.4, 1.0)
 const NORMAL_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 
+const RecipeTags = preload("res://src/data/recipe_tags.gd")
 const PROCESS_CATEGORIES := [
-	{"id": "prep", "label": "Prep (max 2)", "max": 2},
-	{"id": "transform", "label": "Transform (max 1)", "max": 1},
-	{"id": "heat", "label": "Heat (optional)", "max": 1},
-	{"id": "preserve", "label": "Preserve (optional)", "max": 1}
+	{"id": "prep", "label": "Prep (max 2)", "max": RecipeTags.PROCESS_CATEGORY_LIMITS["prep"]},
+	{"id": "transform", "label": "Transform (max 2)", "max": RecipeTags.PROCESS_CATEGORY_LIMITS["transform"]},
+	{"id": "heat", "label": "Heat (optional, max 2)", "max": RecipeTags.PROCESS_CATEGORY_LIMITS["heat"]},
+	{"id": "preserve", "label": "Preserve (optional, max 2)", "max": RecipeTags.PROCESS_CATEGORY_LIMITS["preserve"]}
 ]
 
 enum PickerMode { NONE, FISH, ADDON }
@@ -88,6 +89,15 @@ func _ready() -> void:
 	_refresh_counts()
 	_refresh_process_state()
 	_refresh_experiment_feedback()
+	visibility_changed.connect(_on_visibility_changed)
+
+func _on_visibility_changed() -> void:
+	# The selection can change elsewhere (e.g. "Use recipe" in Collections).
+	if not visible:
+		return
+	_sync_selection_from_game_state()
+	_load_processes()
+	_refresh_selection_buttons()
 
 func _process(_delta: float) -> void:
 	_update_cooldown_ui()

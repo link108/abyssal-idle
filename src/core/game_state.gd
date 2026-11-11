@@ -1324,18 +1324,11 @@ func get_selected_processes(category: String) -> Array:
 
 func build_process_sequence() -> Array:
     var sequence: Array = []
-    var prep: Array = selected_processes.get("prep", [])
-    var transform: Array = selected_processes.get("transform", [])
-    var heat: Array = selected_processes.get("heat", [])
-    var preserve: Array = selected_processes.get("preserve", [])
-    for pid in prep:
-        sequence.append(str(pid))
-    if transform.size() > 0:
-        sequence.append(str(transform[0]))
-    if heat.size() > 0:
-        sequence.append(str(heat[0]))
-    if preserve.size() > 0:
-        sequence.append(str(preserve[0]))
+    for category in ["prep", "transform", "heat", "preserve"]:
+        var selected: Array = selected_processes.get(category, [])
+        var limit := int(RecipeTags.PROCESS_CATEGORY_LIMITS.get(category, 1))
+        for i in range(min(limit, selected.size())):
+            sequence.append(str(selected[i]))
     sequence.append("tin_pack")
     sequence.append("tin_seal")
     return sequence
@@ -1523,14 +1516,33 @@ func apply_attempt_to_selection(attempt_id: int = -1) -> bool:
     if typeof(ingredient_ids) != TYPE_ARRAY:
         ingredient_ids = []
     tin_ingredient_ids = _normalize_ingredient_ids(ingredient_ids)
+    selected_processes = _selection_from_process_ids(_string_array(target.get("process_ids", [])))
+    changed.emit()
+    return true
 
+# Loads a discovered recipe's fish, add-ons and processes into the cannery.
+func apply_recipe_to_selection(recipe_id: String) -> bool:
+    var recipe_def: Dictionary = recipe_defs_by_id.get(recipe_id, {})
+    if recipe_def.is_empty() or not is_recipe_discovered(recipe_id):
+        return false
+    _apply_recipe_selection(recipe_def)
+    changed.emit()
+    return true
+
+func _apply_recipe_selection(recipe_def: Dictionary) -> void:
+    var process_ids := _string_array(recipe_def.get("processes", []))
+    tin_method_id = "smoked" if process_ids.has("smoke") else "raw"
+    tin_fish_id = _get_recipe_fish_id(recipe_def)
+    tin_ingredient_ids = _normalize_ingredient_ids(get_recipe_addon_ids(recipe_def))
+    selected_processes = _selection_from_process_ids(process_ids)
+
+func _selection_from_process_ids(process_ids: Array) -> Dictionary:
     var next_selected := {
         "prep": [],
         "transform": [],
         "heat": [],
         "preserve": []
     }
-    var process_ids: Array = _string_array(target.get("process_ids", []))
     for process_id in process_ids:
         if process_id == "tin_pack" or process_id == "tin_seal":
             continue
@@ -1544,9 +1556,7 @@ func apply_attempt_to_selection(attempt_id: int = -1) -> bool:
         if not list.has(process_id):
             list.append(process_id)
         next_selected[category] = list
-    selected_processes = next_selected
-    changed.emit()
-    return true
+    return next_selected
 
 func get_recipe_silhouette_state(recipe_id: String) -> String:
     if recipe_id == "":

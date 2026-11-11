@@ -54,7 +54,7 @@ layout_mode = 2
 
 [node name="TransformLabel" type="Label" parent="Control/ProcessPanel/TransformGroup"]
 layout_mode = 2
-text = "Transform (max 1)"
+text = "Transform (max 2)"
 
 [node name="TransformList" type="VBoxContainer" parent="Control/ProcessPanel/TransformGroup"]
 layout_mode = 2
@@ -64,7 +64,7 @@ layout_mode = 2
 
 [node name="HeatLabel" type="Label" parent="Control/ProcessPanel/HeatGroup"]
 layout_mode = 2
-text = "Heat (optional)"
+text = "Heat (optional, max 2)"
 
 [node name="HeatList" type="VBoxContainer" parent="Control/ProcessPanel/HeatGroup"]
 layout_mode = 2
@@ -74,7 +74,7 @@ layout_mode = 2
 
 [node name="PreserveLabel" type="Label" parent="Control/ProcessPanel/PreserveGroup"]
 layout_mode = 2
-text = "Preserve (optional)"
+text = "Preserve (optional, max 2)"
 
 [node name="PreserveList" type="VBoxContainer" parent="Control/ProcessPanel/PreserveGroup"]
 layout_mode = 2

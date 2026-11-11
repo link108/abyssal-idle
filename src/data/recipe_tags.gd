@@ -32,6 +32,14 @@ const GENERIC_SILHOUETTE_TAGS := [
 
 const MAX_RECIPE_ADDONS := 4
 
+# How many processes the cannery lets the player pick per category.
+const PROCESS_CATEGORY_LIMITS := {
+    "prep": 2,
+    "transform": 2,
+    "heat": 2,
+    "preserve": 2
+}
+
 
 static func is_display_only(tag: String) -> bool:
     return DISPLAY_ONLY_RECIPE_TAGS.has(tag)

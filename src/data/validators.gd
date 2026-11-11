@@ -360,6 +360,15 @@ static func validate_recipes(entries: Array, registries: Dictionary, report: Dic
                     continue
                 if not registries["processes"].has(process_id):
                     _push_error(report, "recipes.json (%s): unknown process_id '%s'." % [id_for_logs, process_id])
+            var counts_by_category := {}
+            for process_id in processes:
+                var process_def: Dictionary = registries["processes"].get(str(process_id), {})
+                var category := str(process_def.get("category", ""))
+                counts_by_category[category] = int(counts_by_category.get(category, 0)) + 1
+            for category in RecipeTags.PROCESS_CATEGORY_LIMITS:
+                var limit := int(RecipeTags.PROCESS_CATEGORY_LIMITS[category])
+                if int(counts_by_category.get(category, 0)) > limit:
+                    _push_error(report, "recipes.json (%s): %d '%s' processes; the cannery allows %d." % [id_for_logs, int(counts_by_category[category]), category, limit])
 
         validate_requires(recipe, "recipes.json", id_for_logs, registries, report)
 

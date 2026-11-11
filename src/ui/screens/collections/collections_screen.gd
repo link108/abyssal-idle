@@ -19,6 +19,8 @@ const SLOT_HEIGHT := 96
 @onready var detail_extra: Label = $Control/MainRow/Content/ContentMargin/ContentVBox/BodyRow/DetailPanel/DetailMargin/DetailVBox/DetailExtra
 
 var _selected_category: String = CATEGORY_FISH
+var _use_recipe_button: Button
+var _use_recipe_status: Label
 var _fish_defs: Array = []
 var _recipe_defs: Array = []
 var _selected_item_id: String = ""
@@ -158,6 +160,7 @@ func _on_item_selected(item_def: Dictionary, category: String) -> void:
     _refresh_visible_category()
 
 func _show_fish_detail(fish_def: Dictionary) -> void:
+    _hide_use_recipe()
     var fish_id := str(fish_def.get("fish_id", ""))
     var name_text := str(fish_def.get("display_name", "Unknown Fish"))
     var rarity := str(fish_def.get("rarity", "Unknown"))
@@ -190,6 +193,7 @@ func _show_recipe_detail(recipe_def: Dictionary) -> void:
     var progress := GameState.get_recipe_silhouette_progress(recipe_id)
     var hint_text := GameState.get_recipe_silhouette_hint(recipe_id)
 
+    _show_use_recipe(recipe_id, recipe_state == "discovered")
     if recipe_state == "discovered":
         detail_name.text = name_text
         detail_meta.text = "Rarity: %s\nTier: %d\nRequired Fish: %s" % [rarity, tier, required_fish]
@@ -205,7 +209,38 @@ func _show_recipe_detail(recipe_def: Dictionary) -> void:
     detail_desc.text = hint_text
     detail_extra.text = "Keep experimenting to fully discover this recipe."
 
+# "Use recipe" loads a discovered recipe into the cannery selection.
+func _show_use_recipe(recipe_id: String, discovered: bool) -> void:
+    if _use_recipe_button == null:
+        var detail_vbox := detail_extra.get_parent()
+        _use_recipe_button = Button.new()
+        _use_recipe_button.text = "Use recipe"
+        _use_recipe_button.pressed.connect(_on_use_recipe_pressed)
+        detail_vbox.add_child(_use_recipe_button)
+        detail_vbox.move_child(_use_recipe_button, detail_extra.get_index() + 1)
+        _use_recipe_status = Label.new()
+        _use_recipe_status.autowrap_mode = TextServer.AUTOWRAP_WORD
+        detail_vbox.add_child(_use_recipe_status)
+        detail_vbox.move_child(_use_recipe_status, _use_recipe_button.get_index() + 1)
+    _use_recipe_button.set_meta("recipe_id", recipe_id)
+    _use_recipe_button.visible = discovered
+    _use_recipe_status.text = ""
+    _use_recipe_status.visible = discovered
+
+func _hide_use_recipe() -> void:
+    if _use_recipe_button != null:
+        _use_recipe_button.visible = false
+        _use_recipe_status.visible = false
+
+func _on_use_recipe_pressed() -> void:
+    var recipe_id := str(_use_recipe_button.get_meta("recipe_id", ""))
+    if GameState.apply_recipe_to_selection(recipe_id):
+        _use_recipe_status.text = "Loaded into cannery."
+    else:
+        _use_recipe_status.text = "Recipe not discovered yet."
+
 func _clear_detail() -> void:
+    _hide_use_recipe()
     detail_panel.visible = true
     _selected_item_id = ""
     detail_name.text = "Select an entry"
