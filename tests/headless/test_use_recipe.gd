@@ -34,10 +34,23 @@ func run_tests(gs) -> void:
     for item_id in gs.tin_ingredient_ids:
         gs.item_counts[item_id] = 5
     gs.tin_inventory = {}
-    check(gs.try_run_cannery_attempt(gs.tin_method_id, gs.tin_ingredient_ids, true), "cannery attempt runs")
+    check(gs.try_run_cannery_attempt(gs.tin_ingredient_ids, true), "cannery attempt runs")
     check(int(gs.tin_inventory.get(RECIPE_ID, 0)) > 0, "the tin produced is the recipe")
 
     gs.meta_state["discovered_recipe_ids"] = []
     gs._mark_recipe_discovered("obsidian_smoked_gloommaw")
     gs.apply_recipe_to_selection("obsidian_smoked_gloommaw")
     check(gs.tin_method_id == "smoked", "method is smoked when the recipe smokes")
+    check(gs.get_selected_method_id() == "smoked", "selected method follows the Smoke process")
+
+    # No method control: an attempt takes its method from the processes.
+    gs.tin_method_id = "raw"
+    gs.tin_fish_id = "gloommaw_devourer"
+    gs.fish_count = 1
+    gs.fish_stock_by_id = {"gloommaw_devourer": 1}
+    for item_id in gs.tin_ingredient_ids:
+        gs.item_counts[item_id] = 5
+    gs.tin_cooldown_remaining = 0.0
+    check(gs.try_run_cannery_attempt(gs.tin_ingredient_ids, false), "smoked attempt runs")
+    check(gs.tin_method_id == "smoked", "attempt derives the smoked method from its processes")
+    gs.meta_state["discovered_recipe_ids"] = []

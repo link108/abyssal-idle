@@ -46,7 +46,6 @@
 - `data/raw/items.json`
 - `data/raw/equipment.json`
 - `data/raw/processes.json`
-- `data/raw/cannery_options.json`
 
 ## Next-Phase Scaffolding
 - `src/data/data_registry.gd`

@@ -7,7 +7,6 @@ const RECIPES_PATH := "res://data/raw/recipes.json"
 const ITEMS_PATH := "res://data/raw/items.json"
 const EQUIPMENT_PATH := "res://data/raw/equipment.json"
 const PROCESSES_PATH := "res://data/raw/processes.json"
-const CANNERY_OPTIONS_PATH := "res://data/raw/cannery_options.json"
 const SILHOUETTES_PATH := "res://data/raw/silhouettes.json"
 const DESTINATIONS_PATH := "res://data/raw/destinations.json"
 
@@ -20,7 +19,6 @@ var equipment: Array = []
 var processes: Array = []
 var silhouettes: Array = []
 var destinations: Array = []
-var cannery_options: Dictionary = {}
 
 var upgrades_by_id: Dictionary = {}
 var skill_nodes_by_id: Dictionary = {}
@@ -38,7 +36,6 @@ func load_all(include_optional: bool = false) -> void:
     skill_nodes = _read_json_array(SKILL_TREE_PATH)
     fish = _read_json_array(FISH_PATH)
     recipes = _read_json_array(RECIPES_PATH)
-    cannery_options = _read_json_object(CANNERY_OPTIONS_PATH)
     destinations = _read_json_array(DESTINATIONS_PATH)
 
     if include_optional:
@@ -65,7 +62,6 @@ func clear_cache() -> void:
     processes.clear()
     silhouettes.clear()
     destinations.clear()
-    cannery_options.clear()
     upgrades_by_id.clear()
     skill_nodes_by_id.clear()
     fish_by_id.clear()

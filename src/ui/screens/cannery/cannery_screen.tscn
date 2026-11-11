@@ -101,51 +101,36 @@ max_value = 1.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="MethodLabel" type="Label" parent="Control"]
+[node name="FishLabel" type="Label" parent="Control"]
 layout_mode = 0
 offset_left = 340.0
 offset_top = 140.0
 offset_right = 460.0
 offset_bottom = 160.0
-text = "Method"
-
-[node name="MethodSelect" type="OptionButton" parent="Control"]
-layout_mode = 0
-offset_left = 340.0
-offset_top = 165.0
-offset_right = 560.0
-offset_bottom = 195.0
-
-[node name="FishLabel" type="Label" parent="Control"]
-layout_mode = 0
-offset_left = 340.0
-offset_top = 210.0
-offset_right = 460.0
-offset_bottom = 230.0
 text = "Fish"
 
 [node name="FishSlotButton" type="Button" parent="Control"]
 layout_mode = 0
 offset_left = 340.0
-offset_top = 235.0
+offset_top = 165.0
 offset_right = 560.0
-offset_bottom = 275.0
+offset_bottom = 205.0
 text = "+"
 
 [node name="AddonLabel" type="Label" parent="Control"]
 layout_mode = 0
 offset_left = 340.0
-offset_top = 285.0
+offset_top = 215.0
 offset_right = 560.0
-offset_bottom = 305.0
+offset_bottom = 235.0
 text = "Add-ons (max 4)"
 
 [node name="AddonSlots" type="VBoxContainer" parent="Control"]
 layout_mode = 0
 offset_left = 340.0
-offset_top = 310.0
+offset_top = 240.0
 offset_right = 560.0
-offset_bottom = 470.0
+offset_bottom = 400.0
 theme_override_constants/separation = 8
 
 [node name="AddonSlot0" type="Button" parent="Control/AddonSlots"]

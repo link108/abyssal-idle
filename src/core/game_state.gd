@@ -603,7 +603,7 @@ func _process(delta: float) -> void:
     if tin_cooldown_remaining > 0.0:
         tin_cooldown_remaining = max(0.0, tin_cooldown_remaining - delta)
     if get_auto_tin_enabled() and _can_auto_tin():
-        try_make_tin(tin_method_id, tin_ingredient_ids)
+        try_make_tin(tin_ingredient_ids)
     _regenerate_ocean_health(delta)
     _track_ocean_health(delta)
     _sample_ocean_trend(delta)
@@ -688,24 +688,24 @@ func make_tin() -> bool:
     changed.emit()
     return true
 
-func make_tin_with(_method_id: String, _ingredient_ids: Array) -> bool:
-    return _execute_cannery_attempt(_method_id, _ingredient_ids, true)
+func make_tin_with(ingredient_ids: Array) -> bool:
+    return _execute_cannery_attempt(ingredient_ids, true)
 
-func try_make_tin(method_id: String, ingredient_ids: Array) -> bool:
-    return try_run_cannery_attempt(method_id, ingredient_ids, true)
+func try_make_tin(ingredient_ids: Array) -> bool:
+    return try_run_cannery_attempt(ingredient_ids, true)
 
-func try_run_cannery_attempt(method_id: String, ingredient_ids: Array, produce_tin: bool = true) -> bool:
+func try_run_cannery_attempt(ingredient_ids: Array, produce_tin: bool = true) -> bool:
     if produce_tin and not can_make_tin():
         return false
     if not is_cannery_unlocked:
         return false
-    if not _execute_cannery_attempt(method_id, ingredient_ids, produce_tin):
+    if not _execute_cannery_attempt(ingredient_ids, produce_tin):
         return false
     if produce_tin:
         start_tin_cooldown()
     return true
 
-func _execute_cannery_attempt(method_id: String, ingredient_ids: Array, produce_tin: bool) -> bool:
+func _execute_cannery_attempt(ingredient_ids: Array, produce_tin: bool) -> bool:
     if fish_count <= 0:
         return false
     var normalized_ingredients := _normalize_ingredient_ids(ingredient_ids)
@@ -718,6 +718,8 @@ func _execute_cannery_attempt(method_id: String, ingredient_ids: Array, produce_
     fish_count -= 1
     _consume_items(normalized_ingredients)
     var process_sequence: Array = build_process_sequence()
+    var method_id := get_method_for_processes(process_sequence)
+    tin_method_id = method_id
     last_tin_process_ids = process_sequence
     last_tin_process_tags = get_process_tags(process_sequence)
     var yield_count: int = 1
@@ -1610,13 +1612,13 @@ func apply_attempt_to_selection(attempt_id: int = -1) -> bool:
     if target.is_empty():
         return false
 
-    tin_method_id = str(target.get("method_id", "raw"))
     tin_fish_id = str(target.get("fish_id", ""))
     var ingredient_ids: Array = target.get("ingredient_ids", [])
     if typeof(ingredient_ids) != TYPE_ARRAY:
         ingredient_ids = []
     tin_ingredient_ids = _normalize_ingredient_ids(ingredient_ids)
     selected_processes = _selection_from_process_ids(_string_array(target.get("process_ids", [])))
+    tin_method_id = get_selected_method_id()
     changed.emit()
     return true
 
@@ -1631,7 +1633,7 @@ func apply_recipe_to_selection(recipe_id: String) -> bool:
 
 func _apply_recipe_selection(recipe_def: Dictionary) -> void:
     var process_ids := _string_array(recipe_def.get("processes", []))
-    tin_method_id = "smoked" if process_ids.has("smoke") else "raw"
+    tin_method_id = get_method_for_processes(process_ids)
     tin_fish_id = _get_recipe_fish_id(recipe_def)
     tin_ingredient_ids = _normalize_ingredient_ids(get_recipe_addon_ids(recipe_def))
     selected_processes = _selection_from_process_ids(process_ids)
@@ -3034,9 +3036,16 @@ func start_tin_cooldown() -> void:
 func clear_tin_cooldown() -> void:
     tin_cooldown_remaining = 0.0
 
-func set_tin_selection(method_id: String, ingredient_ids: Array) -> void:
-    tin_method_id = method_id
+func set_tin_ingredients(ingredient_ids: Array) -> void:
     tin_ingredient_ids = _normalize_ingredient_ids(ingredient_ids)
+
+# The method (raw/smoked) follows the processes: smoked iff Smoke is chosen.
+# tin_method_id is kept in saves and logs for compatibility.
+func get_method_for_processes(process_ids: Array) -> String:
+    return "smoked" if process_ids.has("smoke") else "raw"
+
+func get_selected_method_id() -> String:
+    return get_method_for_processes(build_process_sequence())
 
 func set_tin_fish_selection(fish_id: String) -> void:
     tin_fish_id = str(fish_id)

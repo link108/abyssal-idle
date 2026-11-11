@@ -49,7 +49,6 @@ static func validate_all(data_registry: Object) -> void:
     validate_equipment(data_registry.equipment, registries, report)
     validate_processes(data_registry.processes, registries, report)
     validate_silhouettes(data_registry.silhouettes, registries, report)
-    validate_cannery_options(data_registry.cannery_options, registries, report)
     validate_destinations(data_registry.destinations, registries, report)
 
     _emit_report(report, OS.is_debug_build())
@@ -470,15 +469,6 @@ static func validate_processes(entries: Array, registries: Dictionary, report: D
         validate_requires(process, "processes.json", id_for_logs, registries, report)
 
 
-static func validate_cannery_options(options: Dictionary, _registries: Dictionary, report: Dictionary) -> void:
-    if typeof(options) != TYPE_DICTIONARY:
-        _push_error(report, "cannery_options.json: root must be an object.")
-        return
-    var methods: Array = options.get("methods", [])
-    var ingredients: Array = options.get("ingredients", [])
-    _validate_cannery_group(methods, "methods", report)
-    _validate_cannery_group(ingredients, "ingredients", report)
-
 
 static func validate_silhouettes(entries: Array, registries: Dictionary, report: Dictionary) -> void:
     for entry in entries:
@@ -518,34 +508,6 @@ static func _validate_tag_array(value, field: String, file_label: String, id_for
             _push_error(report, "%s (%s): %s entries must be strings." % [file_label, id_for_logs, field])
 
 
-static func _validate_cannery_group(entries: Array, label: String, report: Dictionary) -> void:
-    if typeof(entries) != TYPE_ARRAY:
-        _push_error(report, "cannery_options.json: %s must be an array." % label)
-        return
-    var seen: Dictionary = {}
-    for idx in range(entries.size()):
-        var entry = entries[idx]
-        if typeof(entry) != TYPE_DICTIONARY:
-            _push_error(report, "cannery_options.json: %s[%d] must be an object." % [label, idx])
-            continue
-        var entry_dict: Dictionary = entry
-        var entry_id = str(entry_dict.get("id", ""))
-        var entry_name = str(entry_dict.get("name", ""))
-        if entry_id == "":
-            _push_error(report, "cannery_options.json: %s[%d] missing id." % [label, idx])
-        if entry_name == "":
-            _push_error(report, "cannery_options.json: %s[%d] missing name." % [label, idx])
-        if entry_id != "":
-            if seen.has(entry_id):
-                _push_error(report, "cannery_options.json: duplicate %s id '%s'." % [label, entry_id])
-            seen[entry_id] = true
-
-
-static func _validate_cannery_unique_ids(options: Dictionary, report: Dictionary) -> void:
-    if typeof(options) != TYPE_DICTIONARY:
-        return
-    _validate_cannery_group(options.get("methods", []), "methods", report)
-    _validate_cannery_group(options.get("ingredients", []), "ingredients", report)
 
 
 static func _require_fields(entry: Dictionary, fields: Array, file_label: String, id_for_logs: String, report: Dictionary) -> void:

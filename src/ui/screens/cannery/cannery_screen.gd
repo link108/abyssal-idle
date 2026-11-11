@@ -2,7 +2,6 @@ extends PanelContainer
 
 signal make_tin_requested
 
-const OPTIONS_PATH := "res://data/raw/cannery_options.json"
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
 const MAX_INGREDIENTS := 4
 const PLUS_COLOR := Color(0.3, 1.0, 0.4, 1.0)
@@ -18,7 +17,6 @@ const PROCESS_CATEGORIES := [
 
 enum PickerMode { NONE, FISH, ADDON }
 
-@onready var method_select := $Control/MethodSelect
 @onready var fish_slot_button: Button = $Control/FishSlotButton
 @onready var addon_slot_buttons := [
 	$Control/AddonSlots/AddonSlot0,
@@ -46,7 +44,6 @@ enum PickerMode { NONE, FISH, ADDON }
 @onready var picker_clear_button: Button = $Control/PickerModal/ModalPanel/ModalVBox/PickerButtons/PickerClearButton
 @onready var picker_close_button: Button = $Control/PickerModal/ModalPanel/ModalVBox/PickerButtons/PickerCloseButton
 
-var methods: Array = []
 var _process_lists: Dictionary = {}
 var _selected_process_ids: Dictionary = {
 	"prep": [],
@@ -60,8 +57,6 @@ var _picker_mode: PickerMode = PickerMode.NONE
 var _picker_addon_index: int = -1
 
 func _ready() -> void:
-	_load_options()
-	_populate_options()
 	_process_lists = {
 		"prep": prep_list,
 		"transform": transform_list,
@@ -72,7 +67,6 @@ func _ready() -> void:
 	GameState.changed.connect(_refresh_counts)
 	GameState.changed.connect(_refresh_process_state)
 	GameState.changed.connect(_refresh_experiment_feedback)
-	method_select.item_selected.connect(_on_method_selected)
 	produce_toggle.toggled.connect(_on_produce_toggle_toggled)
 	refine_last_button.pressed.connect(_on_refine_last_button_pressed)
 	fish_slot_button.pressed.connect(_on_fish_slot_pressed)
@@ -111,46 +105,18 @@ func _on_close_button_close_requested() -> void:
 func _on_make_tin_button_pressed() -> void:
 	if _selected_fish_id == "":
 		return
-	var method_id: String = _get_selected_id(method_select, "raw")
 	var ingredient_ids: Array = _selected_ingredient_ids.duplicate()
 	var produce_tin := produce_toggle.button_pressed
-	var made: bool = GameState.try_run_cannery_attempt(method_id, ingredient_ids, produce_tin)
+	var made: bool = GameState.try_run_cannery_attempt(ingredient_ids, produce_tin)
 	if made:
 		var process_summary := _format_process_summary()
 		var feedback: Dictionary = GameState.get_last_craft_feedback()
-		var summary := str(feedback.get("summary", GameState.format_recipe(method_id, ingredient_ids)))
+		var summary := str(feedback.get("summary", GameState.format_recipe(GameState.tin_method_id, ingredient_ids)))
 		var prefix := "Made" if produce_tin else "Tested"
 		last_made_label.text = "%s: %s%s" % [prefix, summary, process_summary]
 	make_tin_requested.emit()
 	_refresh_counts()
 	_refresh_experiment_feedback()
-
-func _load_options() -> void:
-	if not FileAccess.file_exists(OPTIONS_PATH):
-		return
-	var file := FileAccess.open(OPTIONS_PATH, FileAccess.READ)
-	var raw := file.get_as_text()
-	file.close()
-	var parsed = JSON.parse_string(raw)
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return
-	methods = parsed.get("methods", [])
-
-func _populate_options() -> void:
-	method_select.clear()
-	for m in methods:
-		if typeof(m) == TYPE_DICTIONARY:
-			method_select.add_item(str(m.get("name", "Method")))
-			method_select.set_item_metadata(method_select.item_count - 1, m.get("id", "raw"))
-
-func _get_selected_id(option: OptionButton, fallback: String) -> String:
-	if option.item_count <= 0:
-		return fallback
-	var idx: int = option.selected
-	var meta: Variant = option.get_item_metadata(idx)
-	if meta == null:
-		return fallback
-	return str(meta)
 
 func _refresh_counts() -> void:
 	_sync_selection_from_game_state()
@@ -348,29 +314,15 @@ func _update_cooldown_ui() -> void:
 		else:
 			make_tin_button.text = "%d%%" % pct
 
-func _on_method_selected(_index: int) -> void:
-	_sync_selection_to_game_state()
-
 func _sync_selection_to_game_state() -> void:
-	var method_id: String = _get_selected_id(method_select, "raw")
-	GameState.set_tin_selection(method_id, _selected_ingredient_ids)
+	GameState.set_tin_ingredients(_selected_ingredient_ids)
 	GameState.set_tin_fish_selection(_selected_fish_id)
 
 func _sync_selection_from_game_state() -> void:
-	_set_option_to_id(method_select, GameState.tin_method_id)
 	_selected_fish_id = str(GameState.get_tin_selected_fish_id())
 	_selected_ingredient_ids = (GameState.tin_ingredient_ids as Array).duplicate()
 	if _selected_ingredient_ids.size() > MAX_INGREDIENTS:
 		_selected_ingredient_ids = _selected_ingredient_ids.slice(0, MAX_INGREDIENTS)
-
-func _set_option_to_id(option: OptionButton, target_id: String) -> void:
-	if option.item_count <= 0:
-		return
-	for i in range(option.item_count):
-		var meta: Variant = option.get_item_metadata(i)
-		if str(meta) == target_id:
-			option.select(i)
-			return
 
 func _on_refine_last_button_pressed() -> void:
 	if not GameState.apply_attempt_to_selection():
