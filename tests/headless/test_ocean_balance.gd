@@ -4,8 +4,9 @@ extends "res://tests/headless/test_base.gd"
 # real catch, trip, destination, fatigue and ocean functions.
 
 const SIM_SECONDS := 1800
-# Assumed manual fishing rate while the player is active (fish per second).
-const MANUAL_FISH_PER_SEC := 0.25
+# Assumed successful manual catches per second while the player is active;
+# rod/bait upgrades add fish to each one.
+const MANUAL_CATCHES_PER_SEC := 0.25
 const RNG_SEED := 1108
 
 const MID_UPGRADES := {
@@ -54,6 +55,8 @@ func run_tests(gs) -> void:
     check(late_sust["avg"] >= gs.SUSTAINABLE_HEALTH_AVG_THRESHOLD, "late sustainable: average ocean >= %.2f (%.2f)" % [gs.SUSTAINABLE_HEALTH_AVG_THRESHOLD, late_sust["avg"]])
     var share: float = float(late_sust["income"]) / max(1.0, float(late_ind["income"]))
     check(share >= 0.55, "late sustainable earns >= 55%% of industrial (%d%%)" % int(round(share * 100.0)))
+    # Industrial must still pay more, or the policy choice has no tradeoff.
+    check(share <= 0.9, "late industrial out-earns sustainable by 10%%+ (%d%%)" % int(round(share * 100.0)))
 
 
 func _simulate(gs, profile_name: String, upgrades: Dictionary, policies: Array, prestige: int, crew: bool, rotation: Array) -> Dictionary:
@@ -76,13 +79,10 @@ func _simulate(gs, profile_name: String, upgrades: Dictionary, policies: Array, 
     var manual_owed := 0.0
     var rotation_index := 0
     for second in range(1, SIM_SECONDS + 1):
-        manual_owed += MANUAL_FISH_PER_SEC
+        manual_owed += MANUAL_CATCHES_PER_SEC
         while manual_owed >= 1.0:
             manual_owed -= 1.0
-            var fish_id: String = gs._pick_catchable_fish_id()
-            gs.fish_count += 1
-            gs._record_caught_fish_by_id(fish_id, 1)
-            gs._apply_ocean_health_pressure(1)
+            gs._land_manual_catch(gs._pick_catchable_fish_id())
         if crew:
             if not gs.crew_trip_active:
                 gs.select_crew_destination(str(rotation[rotation_index % rotation.size()]))

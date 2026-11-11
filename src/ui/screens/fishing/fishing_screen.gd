@@ -70,7 +70,8 @@ func _show_result(outcome: Dictionary) -> void:
     var reason := str(outcome.get("reason", ""))
     var fish_name := str(outcome.get("fish_name", "that fish"))
     if success:
-        result_label.text = "Caught %s!" % fish_name
+        var count := int(outcome.get("count", 1))
+        result_label.text = "Caught %s!" % fish_name if count <= 1 else "Caught %d %s!" % [count, fish_name]
         result_label.modulate = Color(0.2, 0.9, 0.2, 1)
     elif reason == "escaped":
         result_label.text = "%s escaped!" % fish_name

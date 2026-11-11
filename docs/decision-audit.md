@@ -20,8 +20,8 @@ Backlog ticket for the owner to decide on.
 | Cannery method dropdown (`data/raw/cannery_options.json`) | Raw vs smoked | Duplicates the Smoke process and the derived `raw` tag | Yes: redundant with processes | seconds | **Cut**: [ABYSS-19](#proposals) |
 | Items / vendor (`data/raw/items.json`, market buy mode) | Which ingredients to stock | Money now vs recipes later; flavor tags now act as clues | No | minutes | **Keep** |
 | Market sell mode (`sell_tick`, `sell_tins_by_key`) | Sell fish raw or which tins | Raw fish vs experimental tins (usually worse) vs recipe tins (always better); each tin kind is listed with its own price | No: depends on what's in stock | minutes | **Keep** |
-| Run upgrades (`data/raw/upgrades.json`, non-policy) | Purchase order | Mostly pure upside stat bumps | Yes: buy all in cost order | minutes | **Keep** as pacing; **rework** Rod/Bait: [ABYSS-17](#proposals), since they don't affect manual catches as described |
-| Policies (`upgrades.json` `policy_*` groups) | Sustainable vs industrial, five exclusive stages | Catch/tin speed vs ocean pressure/regen, now applied (ABYSS-2); balanced by `test_ocean_balance.gd` | No: both paths viable (sustainable earns 57% of industrial over 30 min but keeps the ocean, rare fish and its ending) | hours | **Keep**: the core decision |
+| Run upgrades (`data/raw/upgrades.json`, non-policy) | Purchase order; active (Rod/Bait: fish per manual catch) vs idle (Bigger Nets: crew haul) | Mostly pure upside stat bumps, but Rod/Bait only pay while you play the minigame (ABYSS-17) | Mostly yes: buy all in cost order | minutes | **Keep** as pacing |
+| Policies (`upgrades.json` `policy_*` groups) | Sustainable vs industrial, five exclusive stages | Catch/tin speed vs ocean pressure/regen, now applied (ABYSS-2); balanced by `test_ocean_balance.gd` | No: both paths viable (sustainable earns 71% of industrial over 30 min but keeps the ocean, rare fish and its ending; the sim checks 55-90%) | hours | **Keep**: the core decision |
 | Skill tree (`data/raw/skill_tree.json`) | Which node to buy next with reputation | Order only: no exclusivity, reputation persists across prestiges | Yes in the long run: everything gets bought | hours | **Rework**: [ABYSS-20](#proposals) |
 | Collections (`collections_screen.gd`) | None | n/a | n/a | n/a | **Keep**: Meier's "the world matters too"; also hosts "Use recipe" |
 | Prestige (`can_prestige`, `_apply_reputation_gain_from_run_metrics`) | When to reset (100 tins sold) | Reset progress vs reputation; gain shaped by run alignment | No: timing depends on the run | hours | **Keep** |
@@ -33,7 +33,7 @@ Backlog ticket for the owner to decide on.
 Each is a Backlog child of ABYSS-1; none are implemented.
 
 - ~~**ABYSS-16: Price tins by recipe so discovery pays off**~~ (rework, high). Done: see the Recipes row.
-- **ABYSS-17: Make Rod/Bait upgrades do what they say** (rework, medium). "+1 fish per catch" only applies to crew trips; manual catches always add 1.
+- ~~**ABYSS-17: Make Rod/Bait upgrades do what they say**~~ (rework, medium). Done: they add fish per manual catch (`manual_catch_add`); crew hauls use Bigger Nets.
 - **ABYSS-18: Merge equipment into process unlocks, or make levels matter** (merge, medium). Equipment levels and process durations/quality are dead data.
 - **ABYSS-19: Cut the cannery Method dropdown** (cut, low). It duplicates the Smoke process.
 - **ABYSS-20: Make skill tree branch choice matter** (rework, low). No exclusivity, so it becomes a checklist.

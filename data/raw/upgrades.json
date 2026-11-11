@@ -29,7 +29,7 @@
   {
     "upgrade_id": "rod_strength",
     "display_name": "Stronger Rod",
-    "description": "+1 fish per catch.",
+    "description": "+1 fish per manual catch.",
     "category": "fishing",
     "tier": 1,
     "max_level": 5,
@@ -46,7 +46,7 @@
     ],
     "effects": [
       {
-        "type": "catch_add",
+        "type": "manual_catch_add",
         "value": 1
       }
     ],
@@ -56,7 +56,7 @@
   {
     "upgrade_id": "bait_bucket",
     "display_name": "Better Bait",
-    "description": "+1 fish per catch.",
+    "description": "+1 fish per manual catch.",
     "category": "fishing",
     "tier": 1,
     "max_level": 5,
@@ -78,7 +78,7 @@
     ],
     "effects": [
       {
-        "type": "catch_add",
+        "type": "manual_catch_add",
         "value": 1
       }
     ],

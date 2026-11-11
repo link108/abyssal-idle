@@ -610,13 +610,13 @@ func _process(delta: float) -> void:
     _track_run_time(delta)
     _check_endings()
 
-# biomes limits which species are caught (empty = anywhere); pressure_mult
-# scales the ocean cost, e.g. for a crew destination and its fatigue.
+# Crew hauls. catch_add is a vessel effect; manual catches use
+# manual_catch_add instead. biomes limits which species are caught (empty =
+# anywhere); pressure_mult scales the ocean cost, e.g. for a crew destination
+# and its fatigue.
 func catch_fish(amount: int = 1, biomes: Array = [], pressure_mult: float = 1.0) -> void:
     var bonus: int = _get_effect_total("catch_add") + _get_skill_effect_total_int("catch_add")
-    var mult: float = 1.0 + _get_effect_total_float("catch_mult") + _get_skill_effect_total_float("catch_mult")
-    mult = max(0.1, mult)
-    var catch_total: int = max(1, int(round(float(amount + bonus) * mult * get_ocean_catch_mult())))
+    var catch_total: int = max(1, int(round(float(amount + bonus) * get_catch_mult() * get_ocean_catch_mult())))
     fish_count += catch_total
     _record_caught_fish(catch_total, biomes)
     _apply_ocean_health_pressure(catch_total, pressure_mult)
@@ -646,17 +646,32 @@ func attempt_manual_catch(timing_success: bool) -> Dictionary:
             "fish_name": fish_name,
             "catch_chance": catch_chance
         }
-    fish_count += 1
-    _record_caught_fish_by_id(fish_id, 1)
-    _apply_ocean_health_pressure(1)
+    var count := _land_manual_catch(fish_id)
     changed.emit()
     return {
         "success": true,
         "reason": "caught",
         "fish_id": fish_id,
         "fish_name": fish_name,
+        "count": count,
         "catch_chance": catch_chance
     }
+
+# Rod and bait (manual_catch_add) land extra fish of the same species.
+# Policies (catch_mult) and a depleted ocean scale it like a crew haul.
+func get_manual_catch_amount() -> int:
+    var bonus := _get_effect_total("manual_catch_add") + _get_skill_effect_total_int("manual_catch_add")
+    return max(1, int(round(float(1 + bonus) * get_catch_mult() * get_ocean_catch_mult())))
+
+func get_catch_mult() -> float:
+    return maxf(0.1, 1.0 + _get_effect_total_float("catch_mult") + _get_skill_effect_total_float("catch_mult"))
+
+func _land_manual_catch(fish_id: String) -> int:
+    var count := get_manual_catch_amount()
+    fish_count += count
+    _record_caught_fish_by_id(fish_id, count)
+    _apply_ocean_health_pressure(count)
+    return count
 
 func make_tin() -> bool:
     if fish_count <= 0:
