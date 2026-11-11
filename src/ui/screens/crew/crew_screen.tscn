@@ -11,6 +11,10 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_wg5a0")
 
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 2
+color = Color(0.04, 0.05, 0.08, 1)
+
 [node name="Control" type="Control" parent="."]
 layout_mode = 2
 

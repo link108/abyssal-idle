@@ -337,7 +337,7 @@ text = "steady"
 
 [node name="OceanStatusLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 848.0
+offset_left = 872.0
 offset_top = 54.0
 offset_right = 1140.0
 offset_bottom = 77.0
