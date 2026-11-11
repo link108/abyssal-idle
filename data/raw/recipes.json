@@ -1593,5 +1593,183 @@
       }
     ],
     "required_fish_id": "pale_cathedral_cod"
+  },
+  {
+    "recipe_id": "hollowgill_bulk_brine",
+    "display_name": "Hollowgill in Bulk Brine",
+    "rarity": "Common",
+    "tier": 1,
+    "required_fish_name": "Hollowgill Remnant",
+    "ingredients": [
+      {
+        "item_id": "fish_hollowgill_remnant",
+        "qty": 1
+      },
+      {
+        "item_id": "brine",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
+    ],
+    "processes": [
+      "clean",
+      "cut",
+      "brine_cure",
+      "tin_pack",
+      "tin_seal"
+    ],
+    "tags": [
+      "brined",
+      "bulk",
+      "mutated"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "required_fish_id": "hollowgill_remnant"
+  },
+  {
+    "recipe_id": "hollowgill_ink_mash",
+    "display_name": "Hollowgill Ink Mash",
+    "rarity": "Uncommon",
+    "tier": 2,
+    "required_fish_name": "Hollowgill Remnant",
+    "ingredients": [
+      {
+        "item_id": "fish_hollowgill_remnant",
+        "qty": 1
+      },
+      {
+        "item_id": "ink_sauce",
+        "qty": 1
+      },
+      {
+        "item_id": "sea_onion",
+        "qty": 1
+      },
+      {
+        "item_id": "salt",
+        "qty": 1
+      }
+    ],
+    "processes": [
+      "clean",
+      "blend",
+      "mix",
+      "tin_pack",
+      "tin_seal"
+    ],
+    "tags": [
+      "spread",
+      "inky",
+      "mutated"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "required_fish_id": "hollowgill_remnant"
+  },
+  {
+    "recipe_id": "saltblind_fused_fillets_dark_oil",
+    "display_name": "Saltblind Fused Fillets in Dark Oil",
+    "rarity": "Rare",
+    "tier": 3,
+    "required_fish_name": "Saltblind Choir",
+    "ingredients": [
+      {
+        "item_id": "fish_saltblind_choir",
+        "qty": 1
+      },
+      {
+        "item_id": "oil_dark",
+        "qty": 1
+      },
+      {
+        "item_id": "black_salt",
+        "qty": 1
+      },
+      {
+        "item_id": "kelp_oil_bitter",
+        "qty": 1
+      }
+    ],
+    "processes": [
+      "clean",
+      "cut",
+      "salt_cure",
+      "tin_pack",
+      "pack_in_oil",
+      "tin_seal"
+    ],
+    "tags": [
+      "oily",
+      "dark",
+      "mutated"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "required_fish_id": "saltblind_choir"
+  },
+  {
+    "recipe_id": "silent_choir_marrow_preserve",
+    "display_name": "Silent Choir Marrow Preserve",
+    "rarity": "Legendary",
+    "tier": 4,
+    "required_fish_name": "Saltblind Choir",
+    "ingredients": [
+      {
+        "item_id": "fish_saltblind_choir",
+        "qty": 1
+      },
+      {
+        "item_id": "thick_brine",
+        "qty": 1
+      },
+      {
+        "item_id": "spice_mix",
+        "qty": 1
+      },
+      {
+        "item_id": "blood",
+        "qty": 1
+      }
+    ],
+    "processes": [
+      "clean",
+      "extract",
+      "simmer",
+      "brine_cure",
+      "tin_pack",
+      "tin_seal"
+    ],
+    "tags": [
+      "forbidden",
+      "special_cut",
+      "mutated"
+    ],
+    "yield": 1,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ],
+    "required_fish_id": "saltblind_choir"
   }
 ]

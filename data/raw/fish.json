@@ -322,5 +322,79 @@
         "value": 1
       }
     ]
+  },
+  {
+    "fish_id": "hollowgill_remnant",
+    "display_name": "Hollowgill Remnant",
+    "fish_type": "Mutated Scavenger",
+    "rarity": "Uncommon",
+    "description": "A Veilscale Mourner grown thick and wrong in emptied water. Its funeral ribbons have fused into a single grey caul, and its gills open onto nothing: a smooth hollow where the throat should be. It does not struggle on the line.",
+    "lore_hint": "It swims toward the nets.",
+    "biome": "Emptied Shelf",
+    "depth_min_m": 200,
+    "depth_max_m": 900,
+    "base_value": 18,
+    "weight_kg_min": 0.8,
+    "weight_kg_max": 2.6,
+    "catch_difficulty": 0.15,
+    "spawn_weight": 25,
+    "cannery_yield": 3,
+    "tags": [
+      "mutated",
+      "scavenger",
+      "hollow"
+    ],
+    "effects": [],
+    "sprite_key": "fish/hollowgill_remnant",
+    "icon_key": "icon/hollowgill_remnant",
+    "tinned_recipe_ids": [
+      "hollowgill_bulk_brine",
+      "hollowgill_ink_mash"
+    ],
+    "requires": [
+      {
+        "type": "ocean_health_below",
+        "value": 0.35
+      }
+    ]
+  },
+  {
+    "fish_id": "saltblind_choir",
+    "display_name": "Saltblind Choir",
+    "fish_type": "Mutated Drifter",
+    "rarity": "Rare",
+    "description": "Where the Choirfin once sang, these drift in silence: eyeless, fused in pairs along the spine, fins rasping like wet paper. Their flesh is cured through with brine before it ever reaches the cannery.",
+    "lore_hint": "The harmony is gone. Something is still keeping time.",
+    "biome": "Silent Trench",
+    "depth_min_m": 1400,
+    "depth_max_m": 2600,
+    "base_value": 110,
+    "weight_kg_min": 3.0,
+    "weight_kg_max": 9.5,
+    "catch_difficulty": 0.35,
+    "spawn_weight": 8,
+    "cannery_yield": 6,
+    "tags": [
+      "mutated",
+      "drifter",
+      "fused"
+    ],
+    "effects": [],
+    "sprite_key": "fish/saltblind_choir",
+    "icon_key": "icon/saltblind_choir",
+    "tinned_recipe_ids": [
+      "saltblind_fused_fillets_dark_oil",
+      "silent_choir_marrow_preserve"
+    ],
+    "requires": [
+      {
+        "type": "ocean_health_below",
+        "value": 0.15
+      },
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
+    ]
   }
 ]

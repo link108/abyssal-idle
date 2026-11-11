@@ -46,8 +46,8 @@ Goal: Introduce meaningful tradeoffs and visible systems.
 - [ ] Auto-processing stations (single method per station).
 - [ ] Ingredient inventory (buy + consume).
 - [ ] Ocean health meter becomes visible.
-- [ ] Rare fish spawn only if ocean health high.
-- [ ] Mutated fish spawn if ocean health low.
+- [x] Rare fish spawn only if ocean health high.
+- [x] Mutated fish spawn if ocean health low.
 - [ ] Collection page (fish discovered, best quality, totals).
 - [ ] Achievement tracking (first rare fish, first collapse, etc.).
 
