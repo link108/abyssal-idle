@@ -18,7 +18,7 @@ Structural/type checks:
 
 Referential integrity:
 - `recipes.json` references `fish.json`, `items.json`, and `processes.json`.
-- `processes.json` references `equipment.json`.
+- `processes.json` references `equipment.json`, and equipment `speeds_up` lists reference `processes.json`. `base_speed_multiplier` must be positive.
 - `fish.json` references `recipes.json` for `tinned_recipe_ids`.
 - `requires` conditions reference valid upgrade/item/equipment IDs.
 

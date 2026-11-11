@@ -12,7 +12,6 @@
       "cleaned",
       "clean"
     ],
-    "quality_modifier": 0,
     "requires": [
       {
         "type": "always",
@@ -33,7 +32,6 @@
       "cut",
       "flaked"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -54,7 +52,6 @@
       "extracted",
       "special_cut"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -74,7 +71,6 @@
     "adds_tags": [
       "mixed"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -95,7 +91,6 @@
       "blended",
       "spread"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -115,7 +110,6 @@
     "adds_tags": [
       "infused"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -137,7 +131,6 @@
       "charred",
       "crisp"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -158,7 +151,6 @@
       "simmered",
       "broth"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -178,7 +170,6 @@
     "adds_tags": [
       "poached"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -198,7 +189,6 @@
     "adds_tags": [
       "smoked"
     ],
-    "quality_modifier": 2,
     "requires": [
       {
         "type": "always",
@@ -218,7 +208,6 @@
     "adds_tags": [
       "confit"
     ],
-    "quality_modifier": 2,
     "requires": [
       {
         "type": "always",
@@ -238,7 +227,6 @@
     "adds_tags": [
       "brined"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -258,7 +246,6 @@
     "adds_tags": [
       "salted"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -278,7 +265,6 @@
     "adds_tags": [
       "dried"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -298,7 +284,6 @@
     "adds_tags": [
       "pickled"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -318,7 +303,6 @@
     "adds_tags": [
       "oil_packed"
     ],
-    "quality_modifier": 1,
     "requires": [
       {
         "type": "always",
@@ -339,7 +323,6 @@
       "fermented",
       "funky"
     ],
-    "quality_modifier": 2,
     "requires": [
       {
         "type": "always",
@@ -359,7 +342,6 @@
     "adds_tags": [
       "packed"
     ],
-    "quality_modifier": 0,
     "requires": [
       {
         "type": "always",
@@ -379,7 +361,6 @@
     "adds_tags": [
       "sealed"
     ],
-    "quality_modifier": 0,
     "requires": [
       {
         "type": "always",

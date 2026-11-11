@@ -445,6 +445,16 @@ static func validate_equipment(entries: Array, registries: Dictionary, report: D
         _require_fields(equipment, [
             ["equipment_id", TYPE_STRING]
         ], "equipment.json", id_for_logs, report)
+        var speed = equipment.get("base_speed_multiplier", 1.0)
+        if not _is_number(speed) or float(speed) <= 0.0:
+            _push_error(report, "equipment.json (%s): base_speed_multiplier must be a positive number." % id_for_logs)
+        var speeds_up = equipment.get("speeds_up", [])
+        if typeof(speeds_up) != TYPE_ARRAY:
+            _push_error(report, "equipment.json (%s): speeds_up must be an array." % id_for_logs)
+        else:
+            for process_id in speeds_up:
+                if not registries["processes"].has(str(process_id)):
+                    _push_error(report, "equipment.json (%s): speeds_up has unknown process_id '%s'." % [id_for_logs, str(process_id)])
         validate_requires(equipment, "equipment.json", id_for_logs, registries, report)
 
 

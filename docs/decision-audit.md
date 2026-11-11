@@ -15,8 +15,8 @@ Backlog ticket for the owner to decide on.
 | Crew + destinations (`data/raw/destinations.json`, `game_state.gd` destinations section) | Where to send each trip | Trip time vs catch vs ocean pressure; zone fatigue rewards rotating | No: shallows are fast and safe, the trench is rich and costly, and repeating a spot costs more | minutes | **Keep** |
 | Cannery experimentation (`_evaluate_attempt_outcome`, `cannery_screen.gd`) | Which fish, add-ons and processes to try | Experimental tins sell at $6-10 (below raw for most fish); a found recipe sells at a premium; the cannery shows both next to the raw price | No: depends on fish, hints and what's undiscovered | minutes | **Keep** |
 | Recipes + silhouettes (`data/raw/recipes.json`, `_build_silhouette_from_recipe`) | Which recipe to chase or reuse ("Use recipe") | Recipe tins sell at cost-plus (fish + add-ons) times a rarity margin, 1.25x Common to 2.25x Mythic (`get_recipe_tin_price`, ABYSS-16) | No: rarer recipes and pricier fish pay more, but take more experiments to find | hours | **Keep** |
-| Equipment (`data/raw/equipment.json`, `equipment_screen.gd`) | What to buy | None: it only unlocks processes; `max_level`, `base_speed_multiplier`, `capacity` are never read | Yes: buy everything eventually | minutes | **Merge**: [ABYSS-18](#proposals) |
-| Processes (`data/raw/processes.json`) | Which steps to apply | Shapes tags and score; `base_duration_s` and `quality_modifier` are unused | No for discovery; yes once known ("Use recipe") | minutes | **Keep**; dead fields covered by ABYSS-18 |
+| Equipment (`data/raw/equipment.json`, `equipment_screen.gd`) | What to buy and which to upgrade | Upgrades (1.6x cost per level) speed up the processes the equipment runs; speed tools (`speeds_up`) only speed up a process. Faster processes mean faster tins (ABYSS-18) | No: worth upgrading only what your recipes use | minutes | **Keep** |
+| Processes (`data/raw/processes.json`) | Which steps to apply | Shapes tags and score; each process adds `base_duration_s` x 0.25 to tin time, so complex recipes are slower but worth more | No for discovery; yes once known ("Use recipe") | minutes | **Keep** |
 | Cannery method dropdown (removed) | n/a | Cut in ABYSS-19: the method is derived from processes (`get_method_for_processes`: smoked iff Smoke is chosen) | n/a | n/a | **Cut** (done) |
 | Items / vendor (`data/raw/items.json`, market buy mode) | Which ingredients to stock | Money now vs recipes later; flavor tags now act as clues | No | minutes | **Keep** |
 | Market sell mode (`sell_tick`, `sell_tins_by_key`) | Sell fish raw or which tins | Raw fish vs experimental tins (usually worse) vs recipe tins (always better); each tin kind is listed with its own price | No: depends on what's in stock | minutes | **Keep** |
@@ -34,7 +34,7 @@ Each is a Backlog child of ABYSS-1; none are implemented.
 
 - ~~**ABYSS-16: Price tins by recipe so discovery pays off**~~ (rework, high). Done: see the Recipes row.
 - ~~**ABYSS-17: Make Rod/Bait upgrades do what they say**~~ (rework, medium). Done: they add fish per manual catch (`manual_catch_add`); crew hauls use Bigger Nets.
-- **ABYSS-18: Merge equipment into process unlocks, or make levels matter** (merge, medium). Equipment levels and process durations/quality are dead data.
+- ~~**ABYSS-18: Merge equipment into process unlocks, or make levels matter**~~ (merge, medium). Done: levels and process durations now set tin time; dead fields removed.
 - ~~**ABYSS-19: Cut the cannery Method dropdown**~~ (cut, low). Done: removed with `cannery_options.json`.
 - **ABYSS-20: Make skill tree branch choice matter** (rework, low). No exclusivity, so it becomes a checklist.
 

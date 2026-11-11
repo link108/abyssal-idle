@@ -299,7 +299,7 @@ func _update_cooldown_ui() -> void:
 		make_tin_progress.value = 1.0
 		make_tin_button.text = action_label
 		return
-	var total: float = GameState.get_tin_make_time()
+	var total: float = GameState.get_tin_cooldown_total()
 	var remaining: float = GameState.tin_cooldown_remaining
 	if total <= 0.0:
 		make_tin_progress.value = 1.0
@@ -373,7 +373,7 @@ func _add_process_checkbox(list_node: VBoxContainer, category_info: Dictionary, 
 	var process_id := str(process_def.get("process_id", ""))
 	var label := str(process_def.get("display_name", process_id))
 	var checkbox := CheckBox.new()
-	checkbox.text = label
+	checkbox.text = "%s  +%.1fs" % [label, GameState.get_process_duration(process_id) * GameState.PROCESS_TIME_SCALE]
 	checkbox.button_pressed = _selected_process_ids[category_info["id"]].has(process_id)
 	var availability := _get_process_availability(process_def)
 	checkbox.disabled = not availability["available"]

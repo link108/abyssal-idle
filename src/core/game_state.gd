@@ -23,6 +23,12 @@ const DESTINATION_DATA_PATH := "res://data/raw/destinations.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
+# Each selected process (besides pack + seal, covered by the base time) adds
+# its base_duration_s x this scale to tin time, sped up by equipment.
+const PROCESS_TIME_SCALE := 0.25
+# Equipment speed: base_speed_multiplier x (1 + this per level above 1).
+const EQUIPMENT_SPEED_PER_LEVEL := 0.25
+const EQUIPMENT_UPGRADE_COST_MULT := 1.6
 const SAVE_VERSION := 14
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
@@ -105,6 +111,7 @@ var fish_stock_by_id: Dictionary = {}
 var tin_inventory: Dictionary = {}
 var recipes_unlocked: Array = []
 var tin_cooldown_remaining: float = 0.0
+var tin_cooldown_total: float = 0.0
 var tin_method_id: String = "raw"
 var tin_fish_id: String = ""
 var tin_ingredient_ids: Array = []
@@ -134,6 +141,7 @@ var meta_state: Dictionary = {
     "discovered_recipe_ids": [],
     "recipe_lifetime_stats": {},
     "owned_equipment_ids": [],
+    "equipment_levels": {},
     "silhouette_progress_by_id": {},
     "experiment_log": [],
     "attempt_counter": 0
@@ -357,6 +365,7 @@ func new_game() -> void:
         "discovered_recipe_ids": [],
         "recipe_lifetime_stats": {},
         "owned_equipment_ids": [],
+        "equipment_levels": {},
         "silhouette_progress_by_id": {},
         "experiment_log": [],
         "attempt_counter": 0
@@ -508,6 +517,8 @@ func _normalize_meta_state() -> void:
         meta_state["recipe_lifetime_stats"] = {}
     if not meta_state.has("owned_equipment_ids"):
         meta_state["owned_equipment_ids"] = []
+    if not meta_state.has("equipment_levels"):
+        meta_state["equipment_levels"] = {}
     if not meta_state.has("silhouette_progress_by_id"):
         meta_state["silhouette_progress_by_id"] = {}
     if not meta_state.has("experiment_log"):
@@ -524,6 +535,8 @@ func _normalize_meta_state() -> void:
         meta_state["recipe_lifetime_stats"] = {}
     if typeof(meta_state["owned_equipment_ids"]) != TYPE_ARRAY:
         meta_state["owned_equipment_ids"] = []
+    if typeof(meta_state["equipment_levels"]) != TYPE_DICTIONARY:
+        meta_state["equipment_levels"] = {}
     if typeof(meta_state["silhouette_progress_by_id"]) != TYPE_DICTIONARY:
         meta_state["silhouette_progress_by_id"] = {}
     if typeof(meta_state["experiment_log"]) != TYPE_ARRAY:
@@ -1477,7 +1490,7 @@ func get_equipment_defs_by_category(show_purchased: bool = false) -> Dictionary:
         var equipment_id := str(def.get("equipment_id", ""))
         if equipment_id == "":
             continue
-        if not show_purchased and owns_equipment(equipment_id):
+        if not show_purchased and owns_equipment(equipment_id) and is_equipment_maxed(equipment_id):
             continue
         var category := str(def.get("category", ""))
         if category == "":
@@ -1531,6 +1544,75 @@ func purchase_equipment(id: String) -> bool:
     meta_state["owned_equipment_ids"] = owned
     changed.emit()
     return true
+
+func get_equipment_level(equipment_id: String) -> int:
+    if not owns_equipment(equipment_id):
+        return 0
+    var levels: Dictionary = meta_state.get("equipment_levels", {})
+    return maxi(1, int(levels.get(equipment_id, 1)))
+
+func get_equipment_max_level(equipment_id: String) -> int:
+    var def: Dictionary = get_equipment_def(equipment_id)
+    if not bool(def.get("upgradeable", false)):
+        return 1
+    return maxi(1, int(def.get("max_level", 1)))
+
+func is_equipment_maxed(equipment_id: String) -> bool:
+    return get_equipment_level(equipment_id) >= get_equipment_max_level(equipment_id)
+
+func get_equipment_upgrade_cost(equipment_id: String) -> int:
+    var level := get_equipment_level(equipment_id)
+    return int(round(float(get_equipment_cost(equipment_id)) * pow(EQUIPMENT_UPGRADE_COST_MULT, level)))
+
+func can_upgrade_equipment(equipment_id: String) -> bool:
+    if not owns_equipment(equipment_id) or is_equipment_maxed(equipment_id):
+        return false
+    return money >= get_equipment_upgrade_cost(equipment_id)
+
+func upgrade_equipment(equipment_id: String) -> bool:
+    if not can_upgrade_equipment(equipment_id):
+        return false
+    money -= get_equipment_upgrade_cost(equipment_id)
+    var levels: Dictionary = meta_state.get("equipment_levels", {})
+    levels[equipment_id] = get_equipment_level(equipment_id) + 1
+    meta_state["equipment_levels"] = levels
+    changed.emit()
+    return true
+
+# Speed of one owned piece of equipment (0 if not owned).
+func get_equipment_speed(equipment_id: String) -> float:
+    var level := get_equipment_level(equipment_id)
+    if level <= 0:
+        return 0.0
+    var base := float(get_equipment_def(equipment_id).get("base_speed_multiplier", 1.0))
+    return base * (1.0 + EQUIPMENT_SPEED_PER_LEVEL * float(level - 1))
+
+# Equipment that speeds a process: the equipment it requires, plus tools
+# that list it in speeds_up.
+func get_process_speed_equipment_ids(process_id: String) -> Array:
+    var out: Array = _string_array(get_process_def(process_id).get("required_equipment", []))
+    for def in equipment_defs:
+        var equipment_id := str(def.get("equipment_id", ""))
+        if not out.has(equipment_id) and _string_array(def.get("speeds_up", [])).has(process_id):
+            out.append(equipment_id)
+    return out
+
+# Display names of the processes this equipment runs or speeds up.
+func get_equipment_process_names(equipment_id: String) -> Array:
+    var names: Array = []
+    for def in process_defs:
+        var process_id := str(def.get("process_id", ""))
+        if get_process_speed_equipment_ids(process_id).has(equipment_id):
+            names.append(str(def.get("display_name", process_id)))
+    return names
+
+func get_process_duration(process_id: String) -> float:
+    var duration := float(get_process_def(process_id).get("base_duration_s", 0.0))
+    for equipment_id in get_process_speed_equipment_ids(process_id):
+        var speed := get_equipment_speed(str(equipment_id))
+        if speed > 0.0:
+            duration /= speed
+    return duration
 
 func owns_equipment(equipment_id: String) -> bool:
     if equipment_id == "":
@@ -1763,7 +1845,7 @@ func get_tin_value_text() -> String:
     var recipe_id := get_selected_discovered_recipe_id()
     if recipe_id != "":
         var price := get_recipe_tin_price(recipe_id)
-        return "Makes %d tins at $%d each ($%d). Raw fish: $%d." % [tins, price, tins * price, raw]
+        return "Makes %d tins at $%d each ($%d) in %.1fs. Raw fish: $%d." % [tins, price, tins * price, get_selected_tin_make_time(), raw]
     var experimental := get_experimental_tin_price_range()
     var text := "Experiments make %d tins at $%d-%d each. Raw fish: $%d." % [tins, experimental.x, experimental.y, raw]
     var recipe_range := _get_recipe_tin_price_range(tin_fish_id)
@@ -3031,10 +3113,27 @@ func can_make_tin() -> bool:
     return tin_cooldown_remaining <= 0.0
 
 func start_tin_cooldown() -> void:
-    tin_cooldown_remaining = get_tin_make_time()
+    tin_cooldown_total = get_selected_tin_make_time()
+    tin_cooldown_remaining = tin_cooldown_total
 
 func clear_tin_cooldown() -> void:
     tin_cooldown_remaining = 0.0
+
+func get_tin_cooldown_total() -> float:
+    return tin_cooldown_total if tin_cooldown_total > 0.0 else get_selected_tin_make_time()
+
+# Tin time for a process list: the base time (upgrades) plus each process's
+# duration, scaled and sped up by the equipment that runs it.
+func get_tin_make_time_for_processes(process_ids: Array) -> float:
+    var time := get_tin_make_time()
+    for process_id in process_ids:
+        if process_id == "tin_pack" or process_id == "tin_seal":
+            continue
+        time += get_process_duration(str(process_id)) * PROCESS_TIME_SCALE
+    return time
+
+func get_selected_tin_make_time() -> float:
+    return get_tin_make_time_for_processes(build_process_sequence())
 
 func set_tin_ingredients(ingredient_ids: Array) -> void:
     tin_ingredient_ids = _normalize_ingredient_ids(ingredient_ids)
