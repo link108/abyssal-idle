@@ -1,0 +1,58 @@
+[
+  {
+    "destination_id": "shallows",
+    "display_name": "Siltfields Shallows",
+    "description": "Short runs over the silt flats. Small hauls, close to home.",
+    "biomes": [
+      "Siltfields",
+      "Emptied Shelf"
+    ],
+    "trip_duration_mult": 0.75,
+    "catch_mult": 0.8,
+    "ocean_pressure_mult": 1.0,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "destination_id": "midnight_drop",
+    "display_name": "Midnight Drop",
+    "description": "The shelf edge where the light gives out.",
+    "biomes": [
+      "Midnight Drop",
+      "Glassgarden"
+    ],
+    "trip_duration_mult": 1.0,
+    "catch_mult": 1.0,
+    "ocean_pressure_mult": 1.0,
+    "requires": [
+      {
+        "type": "always",
+        "value": true
+      }
+    ]
+  },
+  {
+    "destination_id": "deep_trench",
+    "display_name": "The Deep Trench",
+    "description": "Long hauls into the trenches. Rich catches; the deep remembers.",
+    "biomes": [
+      "Trench Choir",
+      "Obsidian Trench",
+      "Abyssal Rift",
+      "Silent Trench"
+    ],
+    "trip_duration_mult": 1.6,
+    "catch_mult": 1.3,
+    "ocean_pressure_mult": 1.5,
+    "requires": [
+      {
+        "type": "depth_tier_at_least",
+        "value": 2
+      }
+    ]
+  }
+]

@@ -40,6 +40,7 @@ Requires validation:
 - `data/raw/equipment.json`
 - `data/raw/processes.json`
 - `data/raw/cannery_options.json`
+- `data/raw/destinations.json` (crew trip destinations; biomes must match a fish biome)
 
 ## How To Extend
 

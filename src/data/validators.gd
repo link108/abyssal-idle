@@ -28,6 +28,7 @@ static func validate_all(data_registry: Object) -> void:
     validate_unique_ids(data_registry.equipment, "equipment_id", "equipment.json", report)
     validate_unique_ids(data_registry.processes, "process_id", "processes.json", report)
     validate_unique_ids(data_registry.silhouettes, "silhouette_id", "silhouettes.json", report)
+    validate_unique_ids(data_registry.destinations, "destination_id", "destinations.json", report)
     var registries = {
         "upgrades": data_registry.upgrades_by_id,
         "skills": data_registry.skill_nodes_by_id,
@@ -49,6 +50,7 @@ static func validate_all(data_registry: Object) -> void:
     validate_processes(data_registry.processes, registries, report)
     validate_silhouettes(data_registry.silhouettes, registries, report)
     validate_cannery_options(data_registry.cannery_options, registries, report)
+    validate_destinations(data_registry.destinations, registries, report)
 
     _emit_report(report, OS.is_debug_build())
 
@@ -387,6 +389,36 @@ static func _collect_producible_tags(registries: Dictionary) -> Dictionary:
             for tag in def_tags:
                 tags[str(tag)] = true
     return tags
+
+
+static func validate_destinations(entries: Array, registries: Dictionary, report: Dictionary) -> void:
+    if entries.is_empty():
+        _push_error(report, "destinations.json: at least one destination is required.")
+    var known_biomes := {}
+    for fish_def in registries["fish"].values():
+        if typeof(fish_def) == TYPE_DICTIONARY:
+            known_biomes[str(fish_def.get("biome", ""))] = true
+    for entry in entries:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var destination: Dictionary = entry
+        var destination_id = _get_string_id(destination, "destination_id")
+        var id_for_logs = _label_id("destination_id", destination_id)
+        _require_fields(destination, [
+            ["destination_id", TYPE_STRING],
+            ["display_name", TYPE_STRING],
+            ["biomes", TYPE_ARRAY]
+        ], "destinations.json", id_for_logs, report)
+        for field in ["trip_duration_mult", "catch_mult", "ocean_pressure_mult"]:
+            var value = destination.get(field, null)
+            if not _is_number(value) or float(value) <= 0.0:
+                _push_error(report, "destinations.json (%s): %s must be a number > 0." % [id_for_logs, field])
+        var biomes = destination.get("biomes", [])
+        if typeof(biomes) == TYPE_ARRAY:
+            for biome in biomes:
+                if not known_biomes.has(str(biome)):
+                    _push_error(report, "destinations.json (%s): biome '%s' matches no fish." % [id_for_logs, str(biome)])
+        validate_requires(destination, "destinations.json", id_for_logs, registries, report)
 
 
 static func validate_items(entries: Array, registries: Dictionary, report: Dictionary) -> void:

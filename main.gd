@@ -167,10 +167,12 @@ func _update_crew_ui() -> void:
         crew_button.text = "Send Crew"
         crew_button.disabled = GameState.crew_trip_active
         if GameState.crew_trip_active:
-            crew_status_label.text = "At sea: %ds" % int(ceil(GameState.crew_trip_remaining))
+            var trip_destination := GameState.get_destination_def(GameState.crew_trip_destination_id)
+            crew_status_label.text = "At sea (%s): %ds" % [str(trip_destination.get("display_name", "")), int(ceil(GameState.crew_trip_remaining))]
             crew_progress.value = GameState.get_crew_trip_progress()
         else:
-            crew_status_label.text = "Ready"
+            var destination := GameState.get_destination_def(GameState.crew_destination_id)
+            crew_status_label.text = "Ready: %s" % str(destination.get("display_name", ""))
             crew_progress.value = 0.0
     elif GameState.crew_unlock_is_visible():
         crew_button.visible = true

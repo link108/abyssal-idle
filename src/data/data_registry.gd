@@ -9,6 +9,7 @@ const EQUIPMENT_PATH := "res://data/raw/equipment.json"
 const PROCESSES_PATH := "res://data/raw/processes.json"
 const CANNERY_OPTIONS_PATH := "res://data/raw/cannery_options.json"
 const SILHOUETTES_PATH := "res://data/raw/silhouettes.json"
+const DESTINATIONS_PATH := "res://data/raw/destinations.json"
 
 var upgrades: Array = []
 var skill_nodes: Array = []
@@ -18,6 +19,7 @@ var items: Array = []
 var equipment: Array = []
 var processes: Array = []
 var silhouettes: Array = []
+var destinations: Array = []
 var cannery_options: Dictionary = {}
 
 var upgrades_by_id: Dictionary = {}
@@ -29,6 +31,7 @@ var items_by_id: Dictionary = {}
 var equipment_by_id: Dictionary = {}
 var processes_by_id: Dictionary = {}
 var silhouettes_by_id: Dictionary = {}
+var destinations_by_id: Dictionary = {}
 
 func load_all(include_optional: bool = false) -> void:
     upgrades = _read_json_array(UPGRADES_PATH)
@@ -36,6 +39,7 @@ func load_all(include_optional: bool = false) -> void:
     fish = _read_json_array(FISH_PATH)
     recipes = _read_json_array(RECIPES_PATH)
     cannery_options = _read_json_object(CANNERY_OPTIONS_PATH)
+    destinations = _read_json_array(DESTINATIONS_PATH)
 
     if include_optional:
         items = _read_json_array(ITEMS_PATH)
@@ -60,6 +64,7 @@ func clear_cache() -> void:
     equipment.clear()
     processes.clear()
     silhouettes.clear()
+    destinations.clear()
     cannery_options.clear()
     upgrades_by_id.clear()
     skill_nodes_by_id.clear()
@@ -70,6 +75,7 @@ func clear_cache() -> void:
     equipment_by_id.clear()
     processes_by_id.clear()
     silhouettes_by_id.clear()
+    destinations_by_id.clear()
 
 
 func _build_maps() -> void:
@@ -132,6 +138,14 @@ func _build_maps() -> void:
         var process_id := str(entry.get("process_id", ""))
         if process_id != "":
             processes_by_id[process_id] = entry
+
+    destinations_by_id.clear()
+    for entry in destinations:
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var destination_id := str(entry.get("destination_id", ""))
+        if destination_id != "":
+            destinations_by_id[destination_id] = entry
 
     silhouettes_by_id.clear()
     for entry in silhouettes:

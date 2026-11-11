@@ -150,7 +150,7 @@ max_value = 1.0
 layout_mode = 0
 offset_left = 24.0
 offset_top = 438.0
-offset_right = 190.0
+offset_right = 380.0
 offset_bottom = 460.0
 text = "Crew locked"
 
@@ -160,7 +160,7 @@ offset_left = 24.0
 offset_top = 466.0
 offset_right = 190.0
 offset_bottom = 496.0
-text = "Crew Roster"
+text = "Destinations"
 
 [node name="InventoryButton" type="Button" parent="."]
 layout_mode = 0

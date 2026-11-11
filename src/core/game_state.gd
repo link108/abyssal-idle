@@ -19,10 +19,11 @@ const ITEM_DATA_PATH := "res://data/raw/items.json"
 const EQUIPMENT_DATA_PATH := "res://data/raw/equipment.json"
 const PROCESS_DATA_PATH := "res://data/raw/processes.json"
 const SILHOUETTE_DATA_PATH := "res://data/raw/silhouettes.json"
+const DESTINATION_DATA_PATH := "res://data/raw/destinations.json"
 const SAVE_PATH := "user://save.json"
 const GREEN_ZONE_BASE_RATIO := 0.10
 const TIN_MAKE_BASE_TIME := 3.0
-const SAVE_VERSION := 13
+const SAVE_VERSION := 14
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -140,6 +141,17 @@ const GARLIC_PRICE := 5
 # Crew trips
 const CREW_TRIP_BASE_DURATION := 12.0
 const CREW_TRIP_BASE_CATCH := 3
+const DEFAULT_DESTINATION_ID := "shallows"
+# Consecutive trips to the same destination add ocean pressure, so rotating
+# fishing grounds is a real choice.
+const ZONE_FATIGUE_STEP := 0.1
+const ZONE_FATIGUE_MAX := 0.5
+var destination_defs: Array = []
+var destination_defs_by_id: Dictionary = {}
+var crew_destination_id: String = DEFAULT_DESTINATION_ID
+var crew_trip_destination_id: String = DEFAULT_DESTINATION_ID
+var crew_last_trip_destination_id: String = ""
+var crew_zone_fatigue_trips: int = 0
 var crew_trip_active: bool = false
 var crew_trip_remaining: float = 0.0
 var crew_trip_paused: bool = false
@@ -192,6 +204,7 @@ func _ready() -> void:
     _load_process_defs()
     _load_equipment_defs()
     _load_silhouette_defs()
+    _load_destination_defs()
     _ensure_default_equipment_ownership()
     _run_data_validation()
     _rng.randomize()
@@ -236,6 +249,10 @@ func save_game() -> void:
         "cannery_produce_enabled": cannery_produce_enabled,
         "crew_trip_active": crew_trip_active,
         "crew_trip_remaining": crew_trip_remaining,
+        "crew_destination_id": crew_destination_id,
+        "crew_trip_destination_id": crew_trip_destination_id,
+        "crew_last_trip_destination_id": crew_last_trip_destination_id,
+        "crew_zone_fatigue_trips": crew_zone_fatigue_trips,
         "tins_sold": tins_sold,
         "fish_sold": fish_sold,
         "meta_state": meta_state,
@@ -309,6 +326,7 @@ func new_game() -> void:
     crew_trip_active = false
     crew_trip_remaining = 0.0
     crew_trip_paused = false
+    _reset_crew_destination_state()
     meta_state = {
         "reputation": 0,
         "prestige_count": 0,
@@ -367,6 +385,10 @@ func _apply_save(data: Dictionary) -> void:
     cannery_produce_enabled = bool(data.get("cannery_produce_enabled", true))
     crew_trip_active = bool(data.get("crew_trip_active", false))
     crew_trip_remaining = float(data.get("crew_trip_remaining", 0.0))
+    crew_destination_id = _valid_destination_id(str(data.get("crew_destination_id", DEFAULT_DESTINATION_ID)))
+    crew_trip_destination_id = _valid_destination_id(str(data.get("crew_trip_destination_id", crew_destination_id)))
+    crew_last_trip_destination_id = str(data.get("crew_last_trip_destination_id", ""))
+    crew_zone_fatigue_trips = int(data.get("crew_zone_fatigue_trips", 0))
     tins_sold = int(data.get("tins_sold", 0))
     fish_sold = int(data.get("fish_sold", 0))
     meta_state = data.get("meta_state", meta_state)
@@ -441,6 +463,8 @@ func _migrate_save(version: int) -> void:
         _normalize_meta_state()
     if version < 13:
         tin_fish_id = ""
+    if version < 14:
+        _reset_crew_destination_state()
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -567,14 +591,16 @@ func _process(delta: float) -> void:
     _track_run_time(delta)
     _check_endings()
 
-func catch_fish(amount: int = 1) -> void:
+# biomes limits which species are caught (empty = anywhere); pressure_mult
+# scales the ocean cost, e.g. for a crew destination and its fatigue.
+func catch_fish(amount: int = 1, biomes: Array = [], pressure_mult: float = 1.0) -> void:
     var bonus: int = _get_effect_total("catch_add") + _get_skill_effect_total_int("catch_add")
     var mult: float = 1.0 + _get_effect_total_float("catch_mult") + _get_skill_effect_total_float("catch_mult")
     mult = max(0.1, mult)
     var catch_total: int = max(1, int(round(float(amount + bonus) * mult)))
     fish_count += catch_total
-    _record_caught_fish(catch_total)
-    _apply_ocean_health_pressure(catch_total)
+    _record_caught_fish(catch_total, biomes)
+    _apply_ocean_health_pressure(catch_total, pressure_mult)
     changed.emit()
 
 func attempt_manual_catch(timing_success: bool) -> Dictionary:
@@ -2068,9 +2094,9 @@ func _get_recipe_fish_id(recipe_def: Dictionary) -> String:
 func _build_recipe_hint(recipe_def: Dictionary) -> String:
     return _format_recipe_hint(recipe_def, 0)
 
-func _record_caught_fish(count: int) -> void:
+func _record_caught_fish(count: int, biomes: Array = []) -> void:
     for _i in range(count):
-        var fish_id := _pick_catchable_fish_id()
+        var fish_id := _pick_catchable_fish_id(biomes)
         if fish_id == "":
             continue
         _record_caught_fish_by_id(fish_id, 1)
@@ -2174,14 +2200,22 @@ func _record_recipe_sale(recipe_id: String, revenue: int) -> void:
         return
     _increment_recipe_lifetime_stat(recipe_id, "revenue_generated", max(0, revenue))
 
-func _pick_catchable_fish_id() -> String:
-    var fish_def := _pick_catchable_fish_def()
+func _pick_catchable_fish_id(biomes: Array = []) -> String:
+    var fish_def := _pick_catchable_fish_def(biomes)
     if fish_def.is_empty():
         return ""
     return str(fish_def.get("fish_id", ""))
 
-func _pick_catchable_fish_def() -> Dictionary:
+func _pick_catchable_fish_def(biomes: Array = []) -> Dictionary:
     var available_defs := _get_catchable_fish_defs()
+    if not biomes.is_empty():
+        var in_biomes := _filter_fish_by_biomes(available_defs, biomes)
+        if in_biomes.is_empty():
+            # Nothing catchable there yet: the crew falls back to the shallows.
+            var shallows := get_destination_def(DEFAULT_DESTINATION_ID)
+            in_biomes = _filter_fish_by_biomes(available_defs, _string_array(shallows.get("biomes", [])))
+        if not in_biomes.is_empty():
+            available_defs = in_biomes
     if available_defs.is_empty():
         return _get_fallback_fish_def()
 
@@ -2201,6 +2235,13 @@ func _pick_catchable_fish_def() -> Dictionary:
         if roll <= running:
             return fish_dict
     return _get_fallback_fish_def()
+
+func _filter_fish_by_biomes(defs: Array, biomes: Array) -> Array:
+    var out: Array = []
+    for fish_def in defs:
+        if typeof(fish_def) == TYPE_DICTIONARY and biomes.has(str(fish_def.get("biome", ""))):
+            out.append(fish_def)
+    return out
 
 func _get_catchable_fish_defs() -> Array:
     var out: Array = []
@@ -3187,6 +3228,14 @@ func can_start_crew_trip() -> bool:
 func start_crew_trip() -> bool:
     if not can_start_crew_trip():
         return false
+    if not is_destination_unlocked(crew_destination_id):
+        crew_destination_id = DEFAULT_DESTINATION_ID
+    if crew_destination_id == crew_last_trip_destination_id:
+        crew_zone_fatigue_trips += 1
+    else:
+        crew_zone_fatigue_trips = 0
+    crew_last_trip_destination_id = crew_destination_id
+    crew_trip_destination_id = crew_destination_id
     crew_trip_active = true
     crew_trip_remaining = get_crew_trip_duration()
     crew_trip_updated.emit()
@@ -3196,16 +3245,92 @@ func start_crew_trip() -> bool:
 func _complete_crew_trip() -> void:
     crew_trip_active = false
     crew_trip_remaining = 0.0
-    var catch_amount := get_crew_trip_catch()
-    catch_fish(catch_amount)
+    var destination := get_destination_def(crew_trip_destination_id)
+    var pressure_mult := float(destination.get("ocean_pressure_mult", 1.0)) + get_zone_fatigue_bonus()
+    catch_fish(get_crew_trip_catch(), _string_array(destination.get("biomes", [])), pressure_mult)
     crew_trip_updated.emit()
 
 func get_crew_trip_duration() -> float:
     var mult := 1.0 + _get_effect_total_float("crew_trip_duration_mult")
-    return max(2.0, CREW_TRIP_BASE_DURATION * mult)
+    var destination := get_destination_def(_current_trip_destination_id())
+    return max(2.0, CREW_TRIP_BASE_DURATION * mult * float(destination.get("trip_duration_mult", 1.0)))
 
 func get_crew_trip_catch() -> int:
-    return CREW_TRIP_BASE_CATCH + _get_effect_total("crew_trip_catch_add")
+    var destination := get_destination_def(_current_trip_destination_id())
+    var base := CREW_TRIP_BASE_CATCH + _get_effect_total("crew_trip_catch_add")
+    return max(1, int(round(float(base) * float(destination.get("catch_mult", 1.0)))))
+
+func _current_trip_destination_id() -> String:
+    return crew_trip_destination_id if crew_trip_active else crew_destination_id
+
+################
+# Destinations
+################
+func _load_destination_defs() -> void:
+    destination_defs = _read_json_array(DESTINATION_DATA_PATH)
+    destination_defs_by_id.clear()
+    for def in destination_defs:
+        if typeof(def) != TYPE_DICTIONARY:
+            continue
+        var destination_id := str(def.get("destination_id", ""))
+        if destination_id != "":
+            destination_defs_by_id[destination_id] = def
+
+func get_destination_defs() -> Array:
+    return destination_defs
+
+func get_destination_def(destination_id: String) -> Dictionary:
+    var def: Dictionary = destination_defs_by_id.get(destination_id, {})
+    if def.is_empty():
+        def = destination_defs_by_id.get(DEFAULT_DESTINATION_ID, {})
+    return def
+
+func is_destination_unlocked(destination_id: String) -> bool:
+    var def: Dictionary = destination_defs_by_id.get(destination_id, {})
+    if def.is_empty():
+        return false
+    return RequiresEval.is_met(RequiresEval.get_requires(def), self)
+
+func get_destination_lock_reason(destination_id: String) -> String:
+    var def: Dictionary = destination_defs_by_id.get(destination_id, {})
+    if def.is_empty():
+        return "Unknown destination"
+    if is_destination_unlocked(destination_id):
+        return ""
+    for req in RequiresEval.get_requires(def):
+        if typeof(req) == TYPE_DICTIONARY and str(req.get("type", "")) == "depth_tier_at_least":
+            return "Requires depth tier %d" % int(req.get("value", 0))
+    return "Locked"
+
+func select_crew_destination(destination_id: String) -> bool:
+    if not is_destination_unlocked(destination_id):
+        return false
+    crew_destination_id = destination_id
+    crew_trip_updated.emit()
+    changed.emit()
+    return true
+
+# Extra ocean pressure for the current (or next) trip from fishing the same
+# destination back to back.
+func get_zone_fatigue_bonus() -> float:
+    return min(ZONE_FATIGUE_MAX, float(crew_zone_fatigue_trips) * ZONE_FATIGUE_STEP)
+
+# Fatigue the next trip to a destination would carry if sent now.
+func get_next_trip_fatigue_bonus(destination_id: String) -> float:
+    if destination_id != crew_last_trip_destination_id:
+        return 0.0
+    return min(ZONE_FATIGUE_MAX, float(crew_zone_fatigue_trips + 1) * ZONE_FATIGUE_STEP)
+
+func _valid_destination_id(destination_id: String) -> String:
+    if destination_defs_by_id.has(destination_id):
+        return destination_id
+    return DEFAULT_DESTINATION_ID
+
+func _reset_crew_destination_state() -> void:
+    crew_destination_id = DEFAULT_DESTINATION_ID
+    crew_trip_destination_id = DEFAULT_DESTINATION_ID
+    crew_last_trip_destination_id = ""
+    crew_zone_fatigue_trips = 0
 
 func _should_auto_send_crew() -> bool:
     if crew_trip_paused:
@@ -3349,6 +3474,7 @@ func _reset_run_state() -> void:
     crew_trip_active = false
     crew_trip_remaining = 0.0
     crew_trip_paused = false
+    _reset_crew_destination_state()
     ocean_health = OCEAN_HEALTH_MAX
     _reset_ocean_trend()
     ocean_health_time_accum = 0.0
@@ -3420,10 +3546,10 @@ func get_ocean_pressure_mult() -> float:
 func get_ocean_regen_mult() -> float:
     return max(0.1, 1.0 + _get_ocean_effect_total("ocean_regen_mult"))
 
-func _apply_ocean_health_pressure(fish_caught: int) -> void:
+func _apply_ocean_health_pressure(fish_caught: int, extra_mult: float = 1.0) -> void:
     if fish_caught <= 0:
         return
-    ocean_health = clamp(ocean_health - (float(fish_caught) * OCEAN_HEALTH_FISH_COST * get_ocean_pressure_mult()), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
+    ocean_health = clamp(ocean_health - (float(fish_caught) * OCEAN_HEALTH_FISH_COST * get_ocean_pressure_mult() * extra_mult), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
     ocean_health_changed.emit()
 
 func _regenerate_ocean_health(delta: float) -> void:
