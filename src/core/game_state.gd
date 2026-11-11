@@ -50,6 +50,22 @@ const UPGRADES_VISIBLE_PER_CATEGORY := 3
 const MAX_EXPERIMENT_LOG_ENTRIES := 120
 # Selling price at which the cannery warns that an experiment uses up a valuable fish.
 const EXPERIMENT_RISK_MIN_PRICE := 100
+# Tin pricing: experimental tins sell at or below the base price; a discovered
+# recipe's tins sell at cost-plus (fish value + add-ons, split across the yield)
+# times a margin set by the recipe's rarity, so finding recipes pays off.
+const TIN_BASE_PRICE := 10
+const EXPERIMENTAL_TIN_PRICE_MULTS := {
+    "experimental_tin_rough": 0.6,
+    "experimental_tin_odd": 0.8,
+    "experimental_tin_stable": 1.0
+}
+const RECIPE_TIN_RARITY_MARGINS := {
+    "Common": 1.25,
+    "Uncommon": 1.4,
+    "Rare": 1.6,
+    "Legendary": 1.9,
+    "Mythic": 2.25
+}
 const ITEM_CATEGORY_PHRASES := {
     "oil": "an oil",
     "spice": "a spice",
@@ -767,7 +783,7 @@ func sell_tick() -> void:
                 var sold_recipe_key := _remove_random_tin()
                 # Sanity: tins_sold should only advance when a tin is sold.
                 tins_sold += 1
-                var sale_price := get_tin_sell_price()
+                var sale_price := get_tin_sell_price_for_key(sold_recipe_key)
                 _record_recipe_sale(sold_recipe_key, sale_price)
                 _add_money(sale_price)
     changed.emit()
@@ -817,12 +833,30 @@ func sell_tins(count: int) -> int:
     if count <= 0 or tin_count <= 0:
         return 0
     var actual: int = min(count, tin_count)
-    var sale_price: int = get_tin_sell_price()
+    var revenue := 0
     for _i in range(actual):
         tin_count -= 1
         var sold_recipe_key := _remove_random_tin()
         tins_sold += 1
+        var sale_price := get_tin_sell_price_for_key(sold_recipe_key)
         _record_recipe_sale(sold_recipe_key, sale_price)
+        revenue += sale_price
+    _add_money(revenue)
+    return actual
+
+func sell_tins_by_key(key: String, count: int) -> int:
+    var owned := int(tin_inventory.get(key, 0))
+    if key == "" or count <= 0 or owned <= 0:
+        return 0
+    var actual: int = mini(count, owned)
+    if actual >= owned:
+        tin_inventory.erase(key)
+    else:
+        tin_inventory[key] = owned - actual
+    tin_count = max(0, tin_count - actual)
+    tins_sold += actual
+    var sale_price := get_tin_sell_price_for_key(key)
+    _record_recipe_sale(key, sale_price * actual)
     _add_money(sale_price * actual)
     return actual
 
@@ -1688,6 +1722,9 @@ func get_experiment_risk_text() -> String:
     return "Experimenting uses a fish that sells for $%d." % price
 
 func selection_matches_discovered_recipe() -> bool:
+    return get_selected_discovered_recipe_id() != ""
+
+func get_selected_discovered_recipe_id() -> String:
     var addons := _normalize_ingredient_ids(tin_ingredient_ids)
     var selected := _core_process_set(build_process_sequence())
     for recipe_id in recipe_ids_by_fish_id.get(tin_fish_id, []):
@@ -1697,8 +1734,34 @@ func selection_matches_discovered_recipe() -> bool:
         if _normalize_ingredient_ids(get_recipe_addon_ids(recipe_def)) != addons:
             continue
         if _core_process_set(_string_array(recipe_def.get("processes", []))) == selected:
-            return true
-    return false
+            return str(recipe_id)
+    return ""
+
+# What the cannery's current selection is worth, next to selling the fish raw.
+func get_tin_value_text() -> String:
+    if tin_fish_id == "":
+        return ""
+    var tins := get_fish_cannery_yield(tin_fish_id)
+    var raw := get_fish_sell_price_for_id(tin_fish_id)
+    var recipe_id := get_selected_discovered_recipe_id()
+    if recipe_id != "":
+        var price := get_recipe_tin_price(recipe_id)
+        return "Makes %d tins at $%d each ($%d). Raw fish: $%d." % [tins, price, tins * price, raw]
+    var experimental := get_experimental_tin_price_range()
+    var text := "Experiments make %d tins at $%d-%d each. Raw fish: $%d." % [tins, experimental.x, experimental.y, raw]
+    var recipe_range := _get_recipe_tin_price_range(tin_fish_id)
+    if recipe_range.y > 0:
+        text += " Its recipes sell for $%d-%d a tin." % [recipe_range.x, recipe_range.y]
+    return text
+
+func _get_recipe_tin_price_range(fish_id: String) -> Vector2i:
+    var low := 0
+    var high := 0
+    for recipe_id in recipe_ids_by_fish_id.get(fish_id, []):
+        var price := get_recipe_tin_price(str(recipe_id))
+        low = price if high == 0 else mini(low, price)
+        high = maxi(high, price)
+    return Vector2i(low, high)
 
 func _core_process_set(process_ids: Array) -> Array:
     var out: Array = []
@@ -2903,8 +2966,35 @@ func get_fish_cannery_yield(fish_id: String) -> int:
         return 1
     return max(1, int(fish_def.get("cannery_yield", 1)))
 
+# Base tin price (a stable experimental tin), including tin_sell_add bonuses.
 func get_tin_sell_price() -> int:
-    return 10 + _get_effect_total("tin_sell_add") + _get_meta_bonus_int("tin_sell_add") + _get_skill_effect_total_int("tin_sell_add")
+    return TIN_BASE_PRICE + _get_tin_sell_bonus()
+
+func _get_tin_sell_bonus() -> int:
+    return _get_effect_total("tin_sell_add") + _get_meta_bonus_int("tin_sell_add") + _get_skill_effect_total_int("tin_sell_add")
+
+func get_tin_sell_price_for_key(key: String) -> int:
+    if recipe_defs_by_id.has(key):
+        return get_recipe_tin_price(key)
+    var mult := float(EXPERIMENTAL_TIN_PRICE_MULTS.get(key, 1.0))
+    return max(1, int(round(TIN_BASE_PRICE * mult)) + _get_tin_sell_bonus())
+
+func get_recipe_tin_price(recipe_id: String) -> int:
+    var recipe_def: Dictionary = recipe_defs_by_id.get(recipe_id, {})
+    if recipe_def.is_empty():
+        return get_tin_sell_price()
+    var fish_id := _get_recipe_fish_id(recipe_def)
+    var input_value := float(get_fish_sell_price_for_id(fish_id))
+    for item_id in get_recipe_addon_ids(recipe_def):
+        input_value += float(get_item_cost(str(item_id)))
+    var per_tin := maxf(float(TIN_BASE_PRICE), input_value / float(get_fish_cannery_yield(fish_id)))
+    var margin := float(RECIPE_TIN_RARITY_MARGINS.get(str(recipe_def.get("rarity", "")), 1.0))
+    return int(round(per_tin * margin)) + _get_tin_sell_bonus()
+
+func get_experimental_tin_price_range() -> Vector2i:
+    var low := get_tin_sell_price_for_key("experimental_tin_rough")
+    var high := get_tin_sell_price_for_key("experimental_tin_stable")
+    return Vector2i(low, high)
 
 func get_fish_sell_count() -> int:
     var count := 1 + _get_effect_total("fish_sell_count_add") + _get_meta_bonus_int("fish_sell_count_add") + _get_skill_effect_total_int("fish_sell_count_add")
@@ -3060,19 +3150,7 @@ func get_inventory_items() -> Array:
 func get_inventory_entries(include_zero: bool = false) -> Array:
     var entries: Array = []
     entries.append_array(_build_fish_inventory_entries(include_zero))
-    if include_zero or tin_count > 0:
-        entries.append({
-            "type": "tin",
-            "id": "tin",
-            "label": "Tins",
-            "count": tin_count,
-            "description": "Finished tins ready for market.",
-            "rarity": "Common",
-            "category": "canned",
-            "tags": ["canned"],
-            "sell_value": get_tin_sell_price(),
-            "cost": 0
-        })
+    entries.append_array(_build_tin_inventory_entries())
     var item_ids: Array = []
     if include_zero:
         for def in item_defs:
@@ -3103,6 +3181,39 @@ func get_inventory_entries(include_zero: bool = false) -> Array:
             "cost": 0
         })
     return entries
+
+func _build_tin_inventory_entries() -> Array:
+    var out: Array = []
+    var keys: Array = tin_inventory.keys()
+    keys.sort_custom(func(a, b):
+        return get_tin_sell_price_for_key(str(a)) > get_tin_sell_price_for_key(str(b))
+    )
+    for key_any in keys:
+        var key := str(key_any)
+        var count := int(tin_inventory.get(key, 0))
+        if count <= 0:
+            continue
+        var recipe_def: Dictionary = recipe_defs_by_id.get(key, {})
+        var rarity := "Experimental"
+        var description := "An experimental tin. A discovered recipe sells for more."
+        var tags: Array = ["canned"]
+        if not recipe_def.is_empty():
+            rarity = str(recipe_def.get("rarity", "Common"))
+            description = "A discovered recipe."
+            tags = _string_array(recipe_def.get("tags", tags))
+        out.append({
+            "type": "tin",
+            "id": key,
+            "label": "Tin: %s" % _format_recipe_from_key(key),
+            "count": count,
+            "description": description,
+            "rarity": rarity,
+            "category": "canned",
+            "tags": tags,
+            "sell_value": get_tin_sell_price_for_key(key),
+            "cost": 0
+        })
+    return out
 
 func _build_fish_inventory_entries(include_zero: bool) -> Array:
     var out: Array = []

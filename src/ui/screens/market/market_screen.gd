@@ -225,7 +225,7 @@ func _on_action_pressed() -> void:
         "fish":
             GameState.sell_fish_by_id(_selected_id, qty)
         "tin":
-            GameState.sell_tins(qty)
+            GameState.sell_tins_by_key(_selected_id, qty)
         "item":
             GameState.sell_item(_selected_id, qty)
         _:

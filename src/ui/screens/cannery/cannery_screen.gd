@@ -162,7 +162,11 @@ func _refresh_selection_buttons() -> void:
 	_refresh_risk_label()
 
 func _refresh_risk_label() -> void:
-	risk_label.text = GameState.get_experiment_risk_text()
+	var lines: Array = []
+	for line in [GameState.get_tin_value_text(), GameState.get_experiment_risk_text()]:
+		if line != "":
+			lines.append(line)
+	risk_label.text = "\n".join(lines)
 
 func _refresh_fish_button() -> void:
 	if _selected_fish_id == "":
