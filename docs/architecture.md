@@ -36,3 +36,16 @@
   - support dev-only reload/clear flows
 
 This migration should be incremental: start with one dataset (fish), verify parity, then move other datasets.
+
+## Headless Tests
+
+Run `tests/run_headless_tests.sh` from the repo root. It runs every
+`tests/headless/test_*.gd` script and then boots `main.tscn` headless, and exits
+non-zero if any check fails or the boot prints an error. It uses `godot` when on
+PATH, otherwise the Flathub build (`flatpak run org.godotengine.Godot`).
+
+To add a test, create `tests/headless/test_<name>.gd` extending
+`res://tests/headless/test_base.gd`, override `run_tests(gs)` and call
+`check(condition, label)`. Tests must never call `GameState.new_game()` or
+`save_game()`: both write the player's real `user://save.json`. Set state on
+`gs` directly instead.

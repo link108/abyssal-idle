@@ -27,8 +27,6 @@ var _selected_type: String = ""
 var _buy_qty: int = 1
 
 func _ready() -> void:
-    sell_mode_button.pressed.connect(_on_sell_mode_pressed)
-    buy_mode_button.pressed.connect(_on_buy_mode_pressed)
     action_button.pressed.connect(_on_action_pressed)
     item_grid.item_selected.connect(_on_item_grid_selected)
     _setup_qty_buttons()
