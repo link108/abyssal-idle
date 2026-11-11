@@ -1,6 +1,7 @@
 extends RefCounted
 
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
+const RecipeTags = preload("res://src/data/recipe_tags.gd")
 
 const KNOWN_REQUIRE_TYPES := [
     "always",
@@ -290,6 +291,7 @@ static func validate_fish(entries: Array, registries: Dictionary, report: Dictio
 
 
 static func validate_recipes(entries: Array, registries: Dictionary, report: Dictionary) -> void:
+    var producible_tags := _collect_producible_tags(registries)
     for entry in entries:
         if typeof(entry) != TYPE_DICTIONARY:
             continue
@@ -334,6 +336,19 @@ static func validate_recipes(entries: Array, registries: Dictionary, report: Dic
                     if registries["fish"].has(fish_ref):
                         continue
                 _push_error(report, "recipes.json (%s): unknown ingredient item_id '%s'." % [id_for_logs, item_id])
+            var addon_count := 0
+            for ingredient in ingredients:
+                if typeof(ingredient) == TYPE_DICTIONARY and not str(ingredient.get("item_id", "")).begins_with("fish_"):
+                    addon_count += 1
+            if addon_count > RecipeTags.MAX_RECIPE_ADDONS:
+                _push_error(report, "recipes.json (%s): %d add-on ingredients; the cannery allows %d." % [id_for_logs, addon_count, RecipeTags.MAX_RECIPE_ADDONS])
+
+        var recipe_tags = recipe.get("tags", [])
+        if typeof(recipe_tags) == TYPE_ARRAY:
+            for tag in recipe_tags:
+                var tag_str := str(tag)
+                if not producible_tags.has(tag_str) and not RecipeTags.is_display_only(tag_str):
+                    _push_error(report, "recipes.json (%s): tag '%s' is never produced by an item, process, fish or method; add a source or list it in DISPLAY_ONLY_RECIPE_TAGS." % [id_for_logs, tag_str])
 
         var processes: Array = recipe.get("processes", [])
         if typeof(processes) != TYPE_ARRAY:
@@ -347,6 +362,22 @@ static func validate_recipes(entries: Array, registries: Dictionary, report: Dic
                     _push_error(report, "recipes.json (%s): unknown process_id '%s'." % [id_for_logs, process_id])
 
         validate_requires(recipe, "recipes.json", id_for_logs, registries, report)
+
+
+# Every tag a cannery attempt can carry (see GameState._build_attempt_tags).
+static func _collect_producible_tags(registries: Dictionary) -> Dictionary:
+    var tags := {"raw": true, "smoked": true, "unstable": true, "putrid": true}
+    for group in ["items", "processes", "fish"]:
+        var defs: Dictionary = registries.get(group, {})
+        for def in defs.values():
+            if typeof(def) != TYPE_DICTIONARY:
+                continue
+            var def_tags = def.get("adds_tags", def.get("tags", []))
+            if typeof(def_tags) != TYPE_ARRAY:
+                continue
+            for tag in def_tags:
+                tags[str(tag)] = true
+    return tags
 
 
 static func validate_items(entries: Array, registries: Dictionary, report: Dictionary) -> void:

@@ -54,6 +54,7 @@ const INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL := 1
 const INDUSTRIAL_TIN_TIME_ADD_PER_LEVEL := -0.1
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
 const DataRegistry = preload("res://src/data/data_registry.gd")
+const RecipeTags = preload("res://src/data/recipe_tags.gd")
 
 # Economy
 var fish_count: int = 0
@@ -1038,22 +1039,23 @@ func _build_silhouette_from_recipe(recipe_def: Dictionary) -> Dictionary:
     if recipe_id == "":
         return {}
     var fish_id := _get_recipe_fish_id(recipe_def)
-    var recipe_tags := _string_array(recipe_def.get("tags", []))
     var recipe_processes := _string_array(recipe_def.get("processes", []))
-    var process_tags := get_process_tags(recipe_processes)
+    var flavor_tags := get_recipe_flavor_tags(recipe_def)
+    # Required tags must come from the recipe's own inputs so its exact
+    # recipe can always be discovered.
     var required_tags: Array = []
     if fish_id != "":
         required_tags.append("fish:%s" % fish_id)
-    for tag in recipe_tags:
+    for tag in _get_recipe_distinctive_tags(recipe_def):
         if required_tags.size() >= 3:
             break
         if not required_tags.has(tag):
             required_tags.append(tag)
     var preferred_tags: Array = []
-    for tag in recipe_tags:
+    for tag in flavor_tags:
         if not preferred_tags.has(tag):
             preferred_tags.append(tag)
-    for tag in process_tags:
+    for tag in get_process_tags(recipe_processes):
         if not preferred_tags.has(tag):
             preferred_tags.append(tag)
     return {
@@ -1066,6 +1068,75 @@ func _build_silhouette_from_recipe(recipe_def: Dictionary) -> Dictionary:
         "forbidden_tags": [],
         "unlock_threshold": 75
     }
+
+# Tags produced by a recipe's own fish, add-on ingredients and processes.
+func get_recipe_input_tags(recipe_def: Dictionary) -> Array:
+    var tags: Array = []
+    var fish_def: Dictionary = fish_defs_by_id.get(_get_recipe_fish_id(recipe_def), {})
+    for tag in _string_array(fish_def.get("tags", [])):
+        if not tags.has(tag):
+            tags.append(tag)
+    for item_id in get_recipe_addon_ids(recipe_def):
+        for tag in _ingredient_tags_for_attempt(item_id):
+            if not tags.has(tag):
+                tags.append(tag)
+    for tag in get_process_tags(_string_array(recipe_def.get("processes", []))):
+        if not tags.has(tag):
+            tags.append(tag)
+    return tags
+
+# Recipe tags that its own inputs produce; display-only tags are excluded.
+func get_recipe_flavor_tags(recipe_def: Dictionary) -> Array:
+    var input_tags := get_recipe_input_tags(recipe_def)
+    var out: Array = []
+    for tag in _string_array(recipe_def.get("tags", [])):
+        if RecipeTags.is_display_only(tag) or not input_tags.has(tag):
+            continue
+        if not out.has(tag):
+            out.append(tag)
+    return out
+
+func get_recipe_addon_ids(recipe_def: Dictionary) -> Array:
+    var out: Array = []
+    var ingredients: Array = recipe_def.get("ingredients", [])
+    for ingredient in ingredients:
+        if typeof(ingredient) != TYPE_DICTIONARY:
+            continue
+        var item_id := str(ingredient.get("item_id", ""))
+        if item_id == "" or item_id.begins_with("fish_"):
+            continue
+        out.append(item_id)
+    return out
+
+# Ordered by how well a tag identifies the recipe. Add-on ingredient tags come
+# first so the right processes alone can't unlock a recipe; process tags only
+# fill in when the add-ons don't produce enough distinctive tags.
+func _get_recipe_distinctive_tags(recipe_def: Dictionary) -> Array:
+    var addon_tags: Array = []
+    for item_id in get_recipe_addon_ids(recipe_def):
+        for tag in _ingredient_tags_for_attempt(item_id):
+            if not RecipeTags.is_generic(tag) and not addon_tags.has(tag):
+                addon_tags.append(tag)
+    var flavor_tags := get_recipe_flavor_tags(recipe_def)
+    var out: Array = []
+    for tag in flavor_tags:
+        if addon_tags.has(tag) and not out.has(tag):
+            out.append(tag)
+    for tag in addon_tags:
+        if not out.has(tag):
+            out.append(tag)
+    for tag in flavor_tags:
+        if not RecipeTags.is_generic(tag) and not out.has(tag):
+            out.append(tag)
+    for process_id in _string_array(recipe_def.get("processes", [])):
+        var process_def := get_process_def(process_id)
+        var category := str(process_def.get("category", ""))
+        if category != "heat" and category != "preserve":
+            continue
+        for tag in _string_array(process_def.get("adds_tags", [])):
+            if not RecipeTags.is_generic(tag) and not out.has(tag):
+                out.append(tag)
+    return out
 
 func _index_silhouette_for_fish(silhouette_def: Dictionary) -> void:
     var fish_id := str(silhouette_def.get("required_fish_id", ""))

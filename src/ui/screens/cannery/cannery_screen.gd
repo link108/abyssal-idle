@@ -4,7 +4,7 @@ signal make_tin_requested
 
 const OPTIONS_PATH := "res://data/raw/cannery_options.json"
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
-const MAX_INGREDIENTS := 3
+const MAX_INGREDIENTS := 4
 const PLUS_COLOR := Color(0.3, 1.0, 0.4, 1.0)
 const NORMAL_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 
@@ -22,7 +22,8 @@ enum PickerMode { NONE, FISH, ADDON }
 @onready var addon_slot_buttons := [
 	$Control/AddonSlots/AddonSlot0,
 	$Control/AddonSlots/AddonSlot1,
-	$Control/AddonSlots/AddonSlot2
+	$Control/AddonSlots/AddonSlot2,
+	$Control/AddonSlots/AddonSlot3
 ]
 @onready var produce_toggle: CheckBox = $Control/ProduceToggle
 @onready var make_tin_button := $Control/MakeTinButton

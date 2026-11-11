@@ -9,7 +9,8 @@
       "knife"
     ],
     "adds_tags": [
-      "cleaned"
+      "cleaned",
+      "clean"
     ],
     "quality_modifier": 0,
     "requires": [
@@ -29,7 +30,8 @@
       "knife"
     ],
     "adds_tags": [
-      "cut"
+      "cut",
+      "flaked"
     ],
     "quality_modifier": 1,
     "requires": [
@@ -49,7 +51,8 @@
       "knife"
     ],
     "adds_tags": [
-      "extracted"
+      "extracted",
+      "special_cut"
     ],
     "quality_modifier": 1,
     "requires": [
@@ -89,7 +92,8 @@
       "blender"
     ],
     "adds_tags": [
-      "blended"
+      "blended",
+      "spread"
     ],
     "quality_modifier": 1,
     "requires": [
@@ -129,7 +133,9 @@
       "stove"
     ],
     "adds_tags": [
-      "seared"
+      "seared",
+      "charred",
+      "crisp"
     ],
     "quality_modifier": 1,
     "requires": [
@@ -149,7 +155,8 @@
       "stove"
     ],
     "adds_tags": [
-      "simmered"
+      "simmered",
+      "broth"
     ],
     "quality_modifier": 1,
     "requires": [
@@ -329,7 +336,8 @@
       "fermentation_crock"
     ],
     "adds_tags": [
-      "fermented"
+      "fermented",
+      "funky"
     ],
     "quality_modifier": 2,
     "requires": [

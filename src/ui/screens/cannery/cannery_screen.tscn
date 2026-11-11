@@ -138,14 +138,14 @@ offset_left = 340.0
 offset_top = 285.0
 offset_right = 560.0
 offset_bottom = 305.0
-text = "Add-ons (max 3)"
+text = "Add-ons (max 4)"
 
 [node name="AddonSlots" type="VBoxContainer" parent="Control"]
 layout_mode = 0
 offset_left = 340.0
 offset_top = 310.0
 offset_right = 560.0
-offset_bottom = 430.0
+offset_bottom = 470.0
 theme_override_constants/separation = 8
 
 [node name="AddonSlot0" type="Button" parent="Control/AddonSlots"]
@@ -159,6 +159,11 @@ size_flags_horizontal = 3
 text = "+"
 
 [node name="AddonSlot2" type="Button" parent="Control/AddonSlots"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+"
+
+[node name="AddonSlot3" type="Button" parent="Control/AddonSlots"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "+"

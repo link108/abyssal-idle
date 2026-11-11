@@ -9,7 +9,8 @@
     "sell_value": 1,
     "tags": [
       "seasoning",
-      "preservation"
+      "preservation",
+      "salty"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -32,7 +33,8 @@
     "sell_value": 2,
     "tags": [
       "seasoning",
-      "dark"
+      "dark",
+      "salty"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -54,7 +56,8 @@
     "base_cost": 2,
     "sell_value": 1,
     "tags": [
-      "seasoning"
+      "seasoning",
+      "salty"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -123,7 +126,8 @@
     "sell_value": 6,
     "tags": [
       "pickling",
-      "acidic"
+      "acidic",
+      "sharp"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -146,7 +150,8 @@
     "sell_value": 3,
     "tags": [
       "preservation",
-      "liquid"
+      "liquid",
+      "oily"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -169,7 +174,9 @@
     "sell_value": 5,
     "tags": [
       "preservation",
-      "rich"
+      "rich",
+      "oily",
+      "dark_oil"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -192,7 +199,8 @@
     "sell_value": 9,
     "tags": [
       "luxury",
-      "preservation"
+      "preservation",
+      "oily"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -215,7 +223,8 @@
     "sell_value": 3,
     "tags": [
       "spice",
-      "heat"
+      "heat",
+      "spicy"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -237,7 +246,8 @@
     "base_cost": 4,
     "sell_value": 2,
     "tags": [
-      "spice"
+      "spice",
+      "peppery"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -260,7 +270,8 @@
     "sell_value": 4,
     "tags": [
       "spice",
-      "blend"
+      "blend",
+      "spiced"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -282,7 +293,8 @@
     "base_cost": 3,
     "sell_value": 1,
     "tags": [
-      "aromatic"
+      "aromatic",
+      "garlicky"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -349,7 +361,8 @@
     "sell_value": 6,
     "tags": [
       "byproduct",
-      "luxury"
+      "luxury",
+      "roe"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -391,7 +404,8 @@
     "sell_value": 1,
     "tags": [
       "liquid",
-      "rare"
+      "rare",
+      "forbidden"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -414,7 +428,8 @@
     "sell_value": 2,
     "tags": [
       "dairy",
-      "rich"
+      "rich",
+      "creamy"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -437,7 +452,8 @@
     "sell_value": 2,
     "tags": [
       "sauce",
-      "dark"
+      "dark",
+      "inky"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -460,7 +476,9 @@
     "sell_value": 1,
     "tags": [
       "oil",
-      "bitter"
+      "bitter",
+      "oily",
+      "rare_oil"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -483,7 +501,8 @@
     "sell_value": 2,
     "tags": [
       "brine",
-      "spice"
+      "spice",
+      "mustardy"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -506,7 +525,8 @@
     "sell_value": 1,
     "tags": [
       "herb",
-      "aromatic"
+      "aromatic",
+      "herbal"
     ],
     "stack_size": 999,
     "is_consumable": true,
@@ -529,7 +549,8 @@
     "sell_value": 1,
     "tags": [
       "sweet",
-      "syrup"
+      "syrup",
+      "sweet_savory"
     ],
     "stack_size": 999,
     "is_consumable": true,
