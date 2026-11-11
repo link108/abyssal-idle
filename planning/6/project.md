@@ -16,9 +16,9 @@ Implement a data-driven experimentation loop in the cannery where players craft 
 - `planning/6/subproject-4.md` — Experimental log + refine loop + integration polish
 
 ## Checklist
-- [ ] Subproject 1 complete
-- [ ] Subproject 2 complete
-- [ ] Subproject 3 complete
+- [x] Subproject 1 complete (2026-11-10)
+- [x] Subproject 2 complete (2026-11-10)
+- [x] Subproject 3 complete (2026-11-10)
 - [ ] Subproject 4 complete
 - [ ] Integration pass across Cannery, Recipes/Collections views, and save/load flows
 - [ ] Smoke test: failed experiments produce lower-quality tins, near-matches progress silhouettes, exact matches register discoveries, and log entries persist across reload

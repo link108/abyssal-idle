@@ -210,6 +210,16 @@ offset_right = 780.0
 offset_bottom = 406.0
 text = "Refine Last"
 
+[node name="RiskLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 412.0
+offset_right = 780.0
+offset_bottom = 480.0
+theme_override_colors/font_color = Color(1, 0.72, 0.45, 1)
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 3
+
 [node name="LogLabel" type="Label" parent="Control"]
 layout_mode = 0
 offset_left = 800.0

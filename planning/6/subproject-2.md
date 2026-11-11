@@ -4,12 +4,12 @@
 Implement the core tag-scoring model that evaluates experiment proximity and provides useful hot/cold feedback without hard-spoiling full solutions.
 
 ## Checklist
-- [ ] Build attempt tag set generation from fish, ingredients, processes, and derived/system tags
-- [ ] Implement silhouette/recipe scoring with required, preferred, and forbidden tag behavior
-- [ ] Normalize final score to a stable player-facing scale and include score breakdown metadata for internal use
-- [ ] Select best candidate match per attempt and expose missing/misaligned tag signals
-- [ ] Show player-facing craft feedback that communicates closeness (score/progress language) without revealing exact full formulas too early
-- [ ] Ensure poor or partial attempts still resolve into lower-quality/random tins rather than hard-failing
+- [x] Build attempt tag set generation from fish, ingredients, processes, and derived/system tags
+- [x] Implement silhouette/recipe scoring with required, preferred, and forbidden tag behavior
+- [x] Normalize final score to a stable player-facing scale and include score breakdown metadata for internal use
+- [x] Select best candidate match per attempt and expose missing/misaligned tag signals
+- [x] Show player-facing craft feedback that communicates closeness (score/progress language) without revealing exact full formulas too early
+- [x] Ensure poor or partial attempts still resolve into lower-quality/random tins rather than hard-failing
 
 ## Update Instructions
 - Check off each task as soon as it is completed.

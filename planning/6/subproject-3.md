@@ -4,12 +4,12 @@
 Add hidden silhouette targets that reveal through experimentation and convert near-misses into tangible progression.
 
 ## Checklist
-- [ ] Finalize silhouette data fields and load behavior from `data/raw/silhouettes.json`
-- [ ] Implement per-silhouette discovery states (`undiscovered`, `hinted`, `discovered`) with save persistence
-- [ ] Trigger silhouette progress/unlock from scoring thresholds and preserve best progress per silhouette
-- [ ] Expose silhouette UI behaviors for hidden entries, vague hint text, and visible progress indicators
-- [ ] Reveal full silhouette details when discovery criteria are met
-- [ ] Ensure unlock/discovery flow is compatible with future silhouette expansion without schema rewrites
+- [x] Finalize silhouette data fields and load behavior from `data/raw/silhouettes.json`
+- [x] Implement per-silhouette discovery states (`undiscovered`, `hinted`, `discovered`) with save persistence
+- [x] Trigger silhouette progress/unlock from scoring thresholds and preserve best progress per silhouette
+- [x] Expose silhouette UI behaviors for hidden entries, vague hint text, and visible progress indicators
+- [x] Reveal full silhouette details when discovery criteria are met
+- [x] Ensure unlock/discovery flow is compatible with future silhouette expansion without schema rewrites
 
 ## Update Instructions
 - Check off each task as soon as it is completed.

@@ -33,6 +33,7 @@ enum PickerMode { NONE, FISH, ADDON }
 @onready var feedback_label := $Control/FeedbackLabel
 @onready var hint_label := $Control/HintLabel
 @onready var refine_last_button := $Control/RefineLastButton
+@onready var risk_label := $Control/RiskLabel
 @onready var log_label := $Control/LogLabel
 @onready var prep_list := $Control/ProcessPanel/PrepGroup/PrepList
 @onready var transform_list := $Control/ProcessPanel/TransformGroup/TransformList
@@ -158,6 +159,10 @@ func _refresh_counts() -> void:
 func _refresh_selection_buttons() -> void:
 	_refresh_fish_button()
 	_refresh_addon_buttons()
+	_refresh_risk_label()
+
+func _refresh_risk_label() -> void:
+	risk_label.text = GameState.get_experiment_risk_text()
 
 func _refresh_fish_button() -> void:
 	if _selected_fish_id == "":
@@ -456,6 +461,7 @@ func _on_process_toggled(pressed: bool, category_info: Dictionary, process_id: S
 		selected.erase(process_id)
 	_selected_process_ids[category_id] = selected
 	GameState.set_selected_processes(category_id, selected)
+	_refresh_risk_label()
 
 func _format_process_summary() -> String:
 	var sequence: Array = GameState.build_process_sequence()

@@ -44,6 +44,25 @@ const SUSTAINABLE_MIN_TOTAL_UPGRADES := 12
 const DUAL_MIN_LIFETIME_MONEY := 250000
 const UPGRADES_VISIBLE_PER_CATEGORY := 3
 const MAX_EXPERIMENT_LOG_ENTRIES := 120
+# Selling price at which the cannery warns that an experiment uses up a valuable fish.
+const EXPERIMENT_RISK_MIN_PRICE := 100
+const ITEM_CATEGORY_PHRASES := {
+    "oil": "an oil",
+    "spice": "a spice",
+    "base": "a base",
+    "aromatic": "an aromatic",
+    "acid": "an acid",
+    "plant": "a sea plant",
+    "fish_byproduct": "a fish byproduct",
+    "fuel": "a fuel"
+}
+const PROCESS_CATEGORY_PHRASES := {
+    "prep": "a prep step",
+    "transform": "a transform step",
+    "heat": "a heat process",
+    "preserve": "a preserving process",
+    "finish": "a finishing step"
+}
 
 const SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL := 1
 const SUSTAINABLE_FISH_SELL_COUNT_ADD_PER_LEVEL := -1
@@ -1112,6 +1131,9 @@ func get_recipe_addon_ids(recipe_def: Dictionary) -> Array:
 # first so the right processes alone can't unlock a recipe; process tags only
 # fill in when the add-ons don't produce enough distinctive tags.
 func _get_recipe_distinctive_tags(recipe_def: Dictionary) -> Array:
+    # The fish's own tags come with the fish, so they identify nothing.
+    var fish_def: Dictionary = fish_defs_by_id.get(_get_recipe_fish_id(recipe_def), {})
+    var fish_tags := _string_array(fish_def.get("tags", []))
     var addon_tags: Array = []
     for item_id in get_recipe_addon_ids(recipe_def):
         for tag in _ingredient_tags_for_attempt(item_id):
@@ -1126,7 +1148,7 @@ func _get_recipe_distinctive_tags(recipe_def: Dictionary) -> Array:
         if not out.has(tag):
             out.append(tag)
     for tag in flavor_tags:
-        if not RecipeTags.is_generic(tag) and not out.has(tag):
+        if not RecipeTags.is_generic(tag) and not fish_tags.has(tag) and not out.has(tag):
             out.append(tag)
     for process_id in _string_array(recipe_def.get("processes", [])):
         var process_def := get_process_def(process_id)
@@ -1572,11 +1594,91 @@ func get_recipe_silhouette_progress(recipe_id: String) -> int:
     var entry: Dictionary = progress.get(recipe_id, {})
     return int(entry.get("best_score", 0))
 
+# Reveals more of the recipe as the player's best score rises:
+# no progress -> fish only, under 50% -> one tag, 50%+ -> two tags.
 func get_recipe_silhouette_hint(recipe_id: String) -> String:
-    var def: Dictionary = silhouette_defs_by_id.get(recipe_id, {})
-    if def.is_empty():
+    var recipe_def: Dictionary = recipe_defs_by_id.get(recipe_id, {})
+    if recipe_def.is_empty():
         return "Keep experimenting with this fish."
-    return str(def.get("hint_text", "Keep experimenting with this fish."))
+    var best := get_recipe_silhouette_progress(recipe_id)
+    var reveal := 0
+    if best >= 50:
+        reveal = 2
+    elif best > 0:
+        reveal = 1
+    return _format_recipe_hint(recipe_def, reveal)
+
+func _format_recipe_hint(recipe_def: Dictionary, reveal: int) -> String:
+    var fish_name := str(recipe_def.get("required_fish_name", "an unknown fish"))
+    var tags := get_recipe_hint_tags(recipe_def).slice(0, reveal)
+    if tags.is_empty():
+        return "A hidden recipe for %s." % fish_name
+    var words: Array = []
+    for tag in tags:
+        words.append(_humanize_tag(str(tag)))
+    return "A %s recipe for %s." % [", ".join(words), fish_name]
+
+# Tags a hint may reveal, most telling first. Never display-only or generic.
+func get_recipe_hint_tags(recipe_def: Dictionary) -> Array:
+    var fish_def: Dictionary = fish_defs_by_id.get(_get_recipe_fish_id(recipe_def), {})
+    var fish_tags := _string_array(fish_def.get("tags", []))
+    var out: Array = []
+    for tag in get_recipe_flavor_tags(recipe_def):
+        if not RecipeTags.is_generic(tag) and not fish_tags.has(tag) and not out.has(tag):
+            out.append(tag)
+    for tag in _get_recipe_distinctive_tags(recipe_def):
+        if not out.has(tag):
+            out.append(tag)
+    return out
+
+# What kind of input produces a tag, e.g. "an oil" or "a heat process".
+# Names the category, never the exact item, so hints guide without spoiling.
+func get_tag_source_phrase(tag: String) -> String:
+    for item_def in item_defs:
+        if typeof(item_def) != TYPE_DICTIONARY:
+            continue
+        if _string_array(item_def.get("tags", [])).has(tag):
+            return str(ITEM_CATEGORY_PHRASES.get(str(item_def.get("category", "")), "an ingredient"))
+    for process_def in process_defs:
+        if typeof(process_def) != TYPE_DICTIONARY:
+            continue
+        if _string_array(process_def.get("adds_tags", [])).has(tag):
+            return str(PROCESS_CATEGORY_PHRASES.get(str(process_def.get("category", "")), "a process"))
+    return ""
+
+# Warns before an experiment uses up a valuable fish; empty when the fish is
+# cheap or the selection is already a discovered recipe.
+func get_experiment_risk_text() -> String:
+    if tin_fish_id == "":
+        return ""
+    var price := get_fish_sell_price_for_id(tin_fish_id)
+    if price < EXPERIMENT_RISK_MIN_PRICE:
+        return ""
+    if selection_matches_discovered_recipe():
+        return ""
+    return "Experimenting uses a fish that sells for $%d." % price
+
+func selection_matches_discovered_recipe() -> bool:
+    var addons := _normalize_ingredient_ids(tin_ingredient_ids)
+    var selected := _core_process_set(build_process_sequence())
+    for recipe_id in recipe_ids_by_fish_id.get(tin_fish_id, []):
+        if not is_recipe_discovered(str(recipe_id)):
+            continue
+        var recipe_def: Dictionary = recipe_defs_by_id.get(str(recipe_id), {})
+        if _normalize_ingredient_ids(get_recipe_addon_ids(recipe_def)) != addons:
+            continue
+        if _core_process_set(_string_array(recipe_def.get("processes", []))) == selected:
+            return true
+    return false
+
+func _core_process_set(process_ids: Array) -> Array:
+    var out: Array = []
+    for process_id in process_ids:
+        if process_id == "tin_pack" or process_id == "tin_seal" or out.has(process_id):
+            continue
+        out.append(process_id)
+    out.sort()
+    return out
 
 func _build_craft_attempt(fish_id: String, method_id: String, ingredient_ids: Array, process_sequence: Array) -> Dictionary:
     var attempt_id := int(meta_state.get("attempt_counter", 0)) + 1
@@ -1854,11 +1956,19 @@ func _build_feedback_summary(result: Dictionary, progression: Dictionary) -> Str
 func _build_feedback_hint(result: Dictionary) -> String:
     var missing_required: Array = result.get("missing_required_tags", [])
     if typeof(missing_required) == TYPE_ARRAY and not missing_required.is_empty():
-        return "Needs more %s." % _humanize_tag(str(missing_required[0]))
+        return _describe_missing_tag(str(missing_required[0]), "Needs")
     var missing_preferred: Array = result.get("missing_preferred_tags", [])
     if typeof(missing_preferred) == TYPE_ARRAY and not missing_preferred.is_empty():
-        return "Try adding %s." % _humanize_tag(str(missing_preferred[0]))
+        return _describe_missing_tag(str(missing_preferred[0]), "Try adding")
     return "Try a tighter process combination."
+
+func _describe_missing_tag(tag: String, lead: String) -> String:
+    if tag.begins_with("fish:"):
+        return "%s %s." % [lead, _humanize_tag(tag)]
+    var source := get_tag_source_phrase(tag)
+    if source == "":
+        return "%s more %s." % [lead, _humanize_tag(tag)]
+    return "%s something %s (%s)." % [lead, _humanize_tag(tag), source]
 
 func _humanize_tag(tag: String) -> String:
     if tag.begins_with("fish:"):
@@ -1956,11 +2066,7 @@ func _get_recipe_fish_id(recipe_def: Dictionary) -> String:
     return str(fish_name_to_id.get(required_fish_name, ""))
 
 func _build_recipe_hint(recipe_def: Dictionary) -> String:
-    var fish_name := str(recipe_def.get("required_fish_name", "an unknown fish"))
-    var tags := _string_array(recipe_def.get("tags", []))
-    if tags.is_empty():
-        return "A hidden preservation style for %s." % fish_name
-    return "A hidden %s profile for %s." % [_humanize_tag(str(tags[0])), fish_name]
+    return _format_recipe_hint(recipe_def, 0)
 
 func _record_caught_fish(count: int) -> void:
     for _i in range(count):
