@@ -28,10 +28,13 @@ const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
 const OCEAN_HEALTH_MIN := 0.0
-const OCEAN_HEALTH_FISH_COST := 0.5
+const OCEAN_HEALTH_FISH_COST := 0.012
 # Peak regen (at half health). Regen follows a logistic curve: fast mid-range,
 # slow near empty or full, so overfishing spirals and recovery takes time.
-const OCEAN_HEALTH_REGEN_PER_SEC := 0.6
+const OCEAN_HEALTH_REGEN_PER_SEC := 0.016
+# Crew catches shrink as the ocean empties: full catch at full health, down
+# to this fraction at zero ("output falls" as the ecosystem collapses).
+const OCEAN_HEALTH_CATCH_FLOOR := 0.2
 const OCEAN_HEALTH_REGEN_MIN_FACTOR := 0.15
 const OCEAN_TREND_WINDOW_SECONDS := 60
 const OCEAN_HEALTH_COLLAPSE_THRESHOLD := 0.0
@@ -597,7 +600,7 @@ func catch_fish(amount: int = 1, biomes: Array = [], pressure_mult: float = 1.0)
     var bonus: int = _get_effect_total("catch_add") + _get_skill_effect_total_int("catch_add")
     var mult: float = 1.0 + _get_effect_total_float("catch_mult") + _get_skill_effect_total_float("catch_mult")
     mult = max(0.1, mult)
-    var catch_total: int = max(1, int(round(float(amount + bonus) * mult)))
+    var catch_total: int = max(1, int(round(float(amount + bonus) * mult * get_ocean_catch_mult())))
     fish_count += catch_total
     _record_caught_fish(catch_total, biomes)
     _apply_ocean_health_pressure(catch_total, pressure_mult)
@@ -3539,6 +3542,9 @@ func _get_skill_effect_total_float(effect_type: String) -> float:
 func _get_ocean_effect_total(effect_type: String) -> float:
     # Ocean effects come from both run upgrades (policies) and the skill tree.
     return _get_effect_total_float(effect_type) + _get_skill_effect_total_float(effect_type)
+
+func get_ocean_catch_mult() -> float:
+    return OCEAN_HEALTH_CATCH_FLOOR + (1.0 - OCEAN_HEALTH_CATCH_FLOOR) * get_ocean_health_ratio()
 
 func get_ocean_pressure_mult() -> float:
     return max(0.1, 1.0 + _get_ocean_effect_total("ocean_pressure_mult"))

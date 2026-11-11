@@ -25,13 +25,14 @@ func _test_multipliers(gs) -> void:
         check(is_equal_approx(gs.get_crew_trip_duration(), want[0]), "%s trip time %.1fs (got %.2f)" % [destination_id, want[0], gs.get_crew_trip_duration()])
         check(gs.get_crew_trip_catch() == want[1], "%s catch %d (got %d)" % [destination_id, want[1], gs.get_crew_trip_catch()])
 
-    # Deep trench pressure: 4 fish x 0.5 cost x 1.5 destination = 3.0 health.
+    # Deep trench pressure: 4 fish x per-fish cost x 1.5 destination.
     gs.crew_last_trip_destination_id = ""
     gs.ocean_health = gs.OCEAN_HEALTH_MAX
     gs.select_crew_destination("deep_trench")
     gs.start_crew_trip()
     gs._complete_crew_trip()
-    check(is_equal_approx(gs.OCEAN_HEALTH_MAX - gs.ocean_health, 3.0), "deep trench applies its pressure multiplier (lost %.2f)" % (gs.OCEAN_HEALTH_MAX - gs.ocean_health))
+    var expected_loss: float = 4.0 * gs.OCEAN_HEALTH_FISH_COST * 1.5
+    check(is_equal_approx(gs.OCEAN_HEALTH_MAX - gs.ocean_health, expected_loss), "deep trench applies its pressure multiplier (lost %.3f, want %.3f)" % [gs.OCEAN_HEALTH_MAX - gs.ocean_health, expected_loss])
     gs.meta_state["prestige_count"] = 0
     gs._reset_crew_destination_state()
 
