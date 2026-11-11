@@ -68,6 +68,15 @@ static func _is_condition_met(req: Dictionary, game_state: Object, context: Dict
                 return false
             var meta: Dictionary = game_state.get("meta_state")
             return int(meta.get("prestige_count", 0)) >= needed_depth
+        "ocean_health_at_least", "ocean_health_below":
+            # Value is an ocean health ratio in 0..1.
+            if not game_state.has_method("get_ocean_health_ratio"):
+                return false
+            var ratio := float(game_state.call("get_ocean_health_ratio"))
+            var threshold := float(req.get("value", 0.0))
+            if req_type == "ocean_health_at_least":
+                return ratio >= threshold
+            return ratio < threshold
         "upgrade_purchased":
             var purchased_id := _get_upgrade_id(req)
             if purchased_id == "":

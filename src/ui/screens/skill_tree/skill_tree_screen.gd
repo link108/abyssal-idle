@@ -2,6 +2,7 @@ extends PanelContainer
 
 const NODE_SIZE := Vector2(48, 48)
 const BORDER_THICKNESS := 3
+const EffectText = preload("res://src/ui/components/effect_text/effect_text.gd")
 
 @onready var rep_label := $Control/RepLabel
 @onready var graph := $Control/Graph
@@ -176,40 +177,7 @@ func _format_effects(def: Dictionary) -> String:
     var effects: Array = def.get("effects", [])
     if effects.is_empty():
         return "No effects"
-    var lines: Array = []
-    for effect in effects:
-        if typeof(effect) != TYPE_DICTIONARY:
-            continue
-        var t: String = str(effect.get("type", ""))
-        var v = effect.get("value", 0)
-        lines.append(_format_effect_line(t, v))
-    return "\n".join(lines)
-
-func _format_effect_line(effect_type: String, value) -> String:
-    match effect_type:
-        "fish_sell_add":
-            return "Fish sell +%d" % int(value)
-        "tin_sell_add":
-            return "Tin sell +%d" % int(value)
-        "fish_sell_count_add":
-            return "Fish sold/tick +%d" % int(value)
-        "catch_add":
-            return "Catch +%d" % int(value)
-        "green_zone_add_pct":
-            return "Green zone +%d%%" % int(round(float(value) * 100.0))
-        "tin_time_add":
-            var secs := float(value)
-            if secs < 0.0:
-                return "Tin time %0.2fs" % secs
-            return "Tin time +%0.2fs" % secs
-        "ocean_pressure_mult":
-            return "Ocean pressure %d%%" % int(round(float(value) * 100.0))
-        "ocean_regen_mult":
-            return "Ocean regen +%d%%" % int(round(float(value) * 100.0))
-        "reputation_gain_mult":
-            return "Reputation gain +%d%%" % int(round(float(value) * 100.0))
-        _:
-            return "%s: %s" % [effect_type, str(value)]
+    return "\n".join(EffectText.format_effects(effects))
 
 func _on_skill_hovered(id_str: String) -> void:
     _hovered_id = id_str

@@ -21,6 +21,8 @@ const AUTOSAVE_INTERVAL := 30.0
 @onready var reputation_label := $ReputationLabel
 @onready var ocean_health_bar := $OceanHealthBar
 @onready var ocean_health_fill := $OceanHealthBar/OceanHealthFill
+@onready var ocean_trend_label := $OceanTrendLabel
+@onready var ocean_status_label := $OceanStatusLabel
 @onready var cannery_button := $CanneryButton
 @onready var crew_button := $CrewButton
 @onready var crew_progress := $CrewProgress
@@ -206,6 +208,28 @@ func _update_ocean_health_ui() -> void:
     var bar_size: Vector2 = ocean_health_bar.size
     ocean_health_fill.set_deferred("size", Vector2(bar_size.x * ratio, bar_size.y))
     ocean_health_fill.color = _get_ocean_health_color(ratio)
+    ocean_trend_label.text = _format_ocean_trend(GameState.get_ocean_health_trend_per_min())
+    ocean_status_label.text = _get_ocean_status_text(ratio)
+
+func _format_ocean_trend(trend_per_min: float) -> String:
+    var pct := trend_per_min * 100.0
+    if abs(pct) < 0.5:
+        return "steady"
+    if pct < 0.0:
+        return "▼ %.1f%%/min" % abs(pct)
+    return "▲ %.1f%%/min" % pct
+
+# Status copy shifts from cozy to eerie as the ocean empties.
+func _get_ocean_status_text(ratio: float) -> String:
+    if ratio >= 0.85:
+        return "The water is teeming."
+    if ratio >= 0.6:
+        return "Catches feel a little lighter."
+    if ratio >= 0.35:
+        return "The nets come up quiet."
+    if ratio >= 0.15:
+        return "Something below has stopped singing."
+    return "The sea is holding its breath."
 
 func _get_ocean_health_color(ratio: float) -> Color:
     var clamped: float = clamp(ratio, 0.0, 1.0)

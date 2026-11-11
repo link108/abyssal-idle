@@ -326,6 +326,23 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.2, 0.6, 1, 0.85)
 
+[node name="OceanTrendLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 986.0
+offset_top = 33.0
+offset_right = 1140.0
+offset_bottom = 56.0
+tooltip_text = "Net change in ocean health over the last minute."
+text = "steady"
+
+[node name="OceanStatusLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 848.0
+offset_top = 54.0
+offset_right = 1140.0
+offset_bottom = 77.0
+text = "The water is teeming."
+
 [node name="ReputationLabel" type="Label" parent="."]
 layout_mode = 0
 offset_left = 461.0

@@ -1,5 +1,7 @@
 extends PanelContainer
 
+const EffectText = preload("res://src/ui/components/effect_text/effect_text.gd")
+
 @onready var upgrades_list := $Control/ScrollContainer/UpgradesList
 @onready var show_purchased_toggle := $Control/ShowPurchasedToggle
 
@@ -124,6 +126,16 @@ func _create_upgrade_card(def: Dictionary) -> Control:
     desc_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     vbox.add_child(desc_label)
 
+    var effects: Array = def.get("effects", [])
+    var effect_lines := EffectText.format_effects(effects)
+    if not effect_lines.is_empty():
+        var effects_label := Label.new()
+        effects_label.text = " · ".join(effect_lines)
+        effects_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+        effects_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        effects_label.add_theme_color_override("font_color", _get_effects_color(effects))
+        vbox.add_child(effects_label)
+
     var buy_btn := Button.new()
     buy_btn.text = _get_upgrade_button_text(def)
     var lock_reason := GameState.get_upgrade_lock_reason(id_str)
@@ -165,6 +177,24 @@ func _create_upgrade_card(def: Dictionary) -> Control:
     hbox.add_child(buy_btn)
 
     return card
+
+# Tint the effects line by its ocean impact so policy tradeoffs read at a glance.
+func _get_effects_color(effects: Array) -> Color:
+    var ocean_score := 0.0
+    for effect in effects:
+        if typeof(effect) != TYPE_DICTIONARY:
+            continue
+        var effect_type := str(effect.get("type", ""))
+        var value := float(effect.get("value", 0.0))
+        if effect_type == "ocean_pressure_mult":
+            ocean_score -= value
+        elif effect_type == "ocean_regen_mult":
+            ocean_score += value
+    if ocean_score > 0.0:
+        return Color(0.55, 0.85, 1.0, 1.0)
+    if ocean_score < 0.0:
+        return Color(1.0, 0.7, 0.45, 1.0)
+    return Color(0.8, 0.8, 0.8, 1.0)
 
 func _get_upgrade_button_text(def: Dictionary) -> String:
     var id := str(def.get("upgrade_id", ""))

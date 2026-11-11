@@ -10,6 +10,8 @@
 - `exclusive_group_unchosen`
 - `policy_stage_at_least`
 - `item_owned_at_least`
+- `ocean_health_at_least` (`value`: ocean health ratio 0..1)
+- `ocean_health_below` (`value`: ocean health ratio 0..1)
 
 ## Migrated files
 - `data/raw/upgrades.json`

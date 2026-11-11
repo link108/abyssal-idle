@@ -11,7 +11,9 @@ const KNOWN_REQUIRE_TYPES := [
     "upgrade_level_at_least",
     "exclusive_group_unchosen",
     "policy_stage_at_least",
-    "item_owned_at_least"
+    "item_owned_at_least",
+    "ocean_health_at_least",
+    "ocean_health_below"
 ]
 
 static func validate_all(data_registry: Object) -> void:
@@ -100,6 +102,12 @@ static func validate_requires(obj: Dictionary, file_label: String, id_for_logs: 
             "depth_tier_at_least":
                 if not _is_number(req_dict.get("value", null)):
                     _push_error(report, "%s (%s): requires[%d] depth_tier_at_least value must be numeric." % [file_label, id_for_logs, req_idx])
+            "ocean_health_at_least", "ocean_health_below":
+                var ratio_value = req_dict.get("value", null)
+                if not _is_number(ratio_value):
+                    _push_error(report, "%s (%s): requires[%d] %s value must be numeric." % [file_label, id_for_logs, req_idx, req_type])
+                elif float(ratio_value) < 0.0 or float(ratio_value) > 1.0:
+                    _push_error(report, "%s (%s): requires[%d] %s value must be a ratio in 0..1." % [file_label, id_for_logs, req_idx, req_type])
             "upgrade_purchased", "upgrade_level_at_least":
                 var upgrade_id = _get_string_id(req_dict, "upgrade_id")
                 if upgrade_id == "":

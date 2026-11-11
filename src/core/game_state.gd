@@ -27,8 +27,12 @@ const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
 const OCEAN_HEALTH_MIN := 0.0
-const OCEAN_HEALTH_FISH_COST := 1.0
-const OCEAN_HEALTH_REGEN_PER_SEC := 1000.0
+const OCEAN_HEALTH_FISH_COST := 0.5
+# Peak regen (at half health). Regen follows a logistic curve: fast mid-range,
+# slow near empty or full, so overfishing spirals and recovery takes time.
+const OCEAN_HEALTH_REGEN_PER_SEC := 0.6
+const OCEAN_HEALTH_REGEN_MIN_FACTOR := 0.15
+const OCEAN_TREND_WINDOW_SECONDS := 60
 const OCEAN_HEALTH_COLLAPSE_THRESHOLD := 0.0
 # Ending tuning and proxies (quality/legendary not implemented yet).
 const SUSTAINABLE_HEALTH_AVG_THRESHOLD := 0.85
@@ -70,6 +74,8 @@ var fish_sold: int = 0
 var ocean_health: float = OCEAN_HEALTH_MAX
 var ocean_health_time_accum: float = 0.0
 var ocean_health_time_total: float = 0.0
+var _ocean_trend_samples: Array = []
+var _ocean_trend_sample_accum: float = 0.0
 var run_time_seconds: float = 0.0
 var run_paused: bool = false
 
@@ -264,6 +270,7 @@ func new_game() -> void:
     tins_sold = 0
     fish_sold = 0
     ocean_health = OCEAN_HEALTH_MAX
+    _reset_ocean_trend()
     ocean_health_time_accum = 0.0
     ocean_health_time_total = 0.0
     visible_upgrades_by_category.clear()
@@ -344,6 +351,7 @@ func _apply_save(data: Dictionary) -> void:
     fish_sold = int(data.get("fish_sold", 0))
     meta_state = data.get("meta_state", meta_state)
     ocean_health = float(data.get("ocean_health", OCEAN_HEALTH_MAX))
+    _reset_ocean_trend()
     ocean_health_time_accum = float(data.get("ocean_health_time_accum", 0.0))
     ocean_health_time_total = float(data.get("ocean_health_time_total", 0.0))
     run_time_seconds = float(data.get("run_time_seconds", 0.0))
@@ -387,6 +395,7 @@ func _migrate_save(version: int) -> void:
         _normalize_meta_state()
     if version < 3:
         ocean_health = OCEAN_HEALTH_MAX
+        _reset_ocean_trend()
     if version < 4:
         ocean_health_time_accum = 0.0
         ocean_health_time_total = 0.0
@@ -534,6 +543,7 @@ func _process(delta: float) -> void:
         try_make_tin(tin_method_id, tin_ingredient_ids)
     _regenerate_ocean_health(delta)
     _track_ocean_health(delta)
+    _sample_ocean_trend(delta)
     _track_run_time(delta)
     _check_endings()
 
@@ -3153,6 +3163,7 @@ func _reset_run_state() -> void:
     crew_trip_remaining = 0.0
     crew_trip_paused = false
     ocean_health = OCEAN_HEALTH_MAX
+    _reset_ocean_trend()
     ocean_health_time_accum = 0.0
     ocean_health_time_total = 0.0
     last_craft_feedback = {}
@@ -3212,18 +3223,51 @@ func _get_skill_effect_total_float(effect_type: String) -> float:
 ################
 # Ocean Health
 ################
+func _get_ocean_effect_total(effect_type: String) -> float:
+    # Ocean effects come from both run upgrades (policies) and the skill tree.
+    return _get_effect_total_float(effect_type) + _get_skill_effect_total_float(effect_type)
+
+func get_ocean_pressure_mult() -> float:
+    return max(0.1, 1.0 + _get_ocean_effect_total("ocean_pressure_mult"))
+
+func get_ocean_regen_mult() -> float:
+    return max(0.1, 1.0 + _get_ocean_effect_total("ocean_regen_mult"))
+
 func _apply_ocean_health_pressure(fish_caught: int) -> void:
     if fish_caught <= 0:
         return
-    var pressure_mult: float = max(0.1, 1.0 + _get_skill_effect_total_float("ocean_pressure_mult"))
-    ocean_health = clamp(ocean_health - (float(fish_caught) * OCEAN_HEALTH_FISH_COST * pressure_mult), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
+    ocean_health = clamp(ocean_health - (float(fish_caught) * OCEAN_HEALTH_FISH_COST * get_ocean_pressure_mult()), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
+    ocean_health_changed.emit()
 
 func _regenerate_ocean_health(delta: float) -> void:
     if ocean_health >= OCEAN_HEALTH_MAX:
         return
-    var regen_mult: float = max(0.1, 1.0 + _get_skill_effect_total_float("ocean_regen_mult"))
-    ocean_health = clamp(ocean_health + (OCEAN_HEALTH_REGEN_PER_SEC * regen_mult * delta), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
+    var ratio := get_ocean_health_ratio()
+    var curve: float = max(OCEAN_HEALTH_REGEN_MIN_FACTOR, 4.0 * ratio * (1.0 - ratio))
+    ocean_health = clamp(ocean_health + (OCEAN_HEALTH_REGEN_PER_SEC * curve * get_ocean_regen_mult() * delta), OCEAN_HEALTH_MIN, OCEAN_HEALTH_MAX)
     ocean_health_changed.emit()
+
+func _sample_ocean_trend(delta: float) -> void:
+    _ocean_trend_sample_accum += delta
+    if _ocean_trend_sample_accum < 1.0 and not _ocean_trend_samples.is_empty():
+        return
+    _ocean_trend_sample_accum = 0.0
+    _ocean_trend_samples.append(ocean_health)
+    while _ocean_trend_samples.size() > OCEAN_TREND_WINDOW_SECONDS + 1:
+        _ocean_trend_samples.pop_front()
+    ocean_health_changed.emit()
+
+func _reset_ocean_trend() -> void:
+    _ocean_trend_samples.clear()
+    _ocean_trend_sample_accum = 0.0
+
+# Net change in ocean health ratio per minute, over the recent sample window.
+func get_ocean_health_trend_per_min() -> float:
+    var span := _ocean_trend_samples.size() - 1
+    if span <= 0 or OCEAN_HEALTH_MAX <= 0.0:
+        return 0.0
+    var change: float = float(_ocean_trend_samples[-1]) - float(_ocean_trend_samples[0])
+    return (change / OCEAN_HEALTH_MAX) * (60.0 / float(span))
 
 func get_ocean_health_ratio() -> float:
     if OCEAN_HEALTH_MAX <= 0.0:
