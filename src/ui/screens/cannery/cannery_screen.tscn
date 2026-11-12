@@ -214,6 +214,14 @@ offset_bottom = 500.0
 text = "Recent experiments: none"
 autowrap_mode = 3
 
+[node name="OpenLogButton" type="Button" parent="Control"]
+layout_mode = 0
+offset_left = 800.0
+offset_top = 505.0
+offset_right = 960.0
+offset_bottom = 537.0
+text = "Experiment Log"
+
 [node name="PickerModal" type="Control" parent="Control"]
 visible = false
 layout_mode = 1

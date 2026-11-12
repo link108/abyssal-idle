@@ -8,6 +8,7 @@ const PLUS_COLOR := Color(0.3, 1.0, 0.4, 1.0)
 const NORMAL_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 
 const RecipeTags = preload("res://src/data/recipe_tags.gd")
+const ExperimentLogPanel = preload("res://src/ui/components/experiment_log/experiment_log_panel.gd")
 const PROCESS_CATEGORIES := [
 	{"id": "prep", "label": "Prep (max 2)", "max": RecipeTags.PROCESS_CATEGORY_LIMITS["prep"]},
 	{"id": "transform", "label": "Transform (max 2)", "max": RecipeTags.PROCESS_CATEGORY_LIMITS["transform"]},
@@ -33,6 +34,7 @@ enum PickerMode { NONE, FISH, ADDON }
 @onready var refine_last_button := $Control/RefineLastButton
 @onready var risk_label := $Control/RiskLabel
 @onready var log_label := $Control/LogLabel
+@onready var open_log_button: Button = $Control/OpenLogButton
 @onready var prep_list := $Control/ProcessPanel/PrepGroup/PrepList
 @onready var transform_list := $Control/ProcessPanel/TransformGroup/TransformList
 @onready var heat_list := $Control/ProcessPanel/HeatGroup/HeatList
@@ -55,6 +57,7 @@ var _selected_fish_id: String = ""
 var _selected_ingredient_ids: Array = []
 var _picker_mode: PickerMode = PickerMode.NONE
 var _picker_addon_index: int = -1
+var _log_panel: Control
 
 func _ready() -> void:
 	_process_lists = {
@@ -77,6 +80,10 @@ func _ready() -> void:
 	picker_clear_button.pressed.connect(_on_picker_clear_pressed)
 	picker_close_button.pressed.connect(_close_picker_modal)
 	picker_modal.hide()
+	_log_panel = ExperimentLogPanel.new()
+	$Control.add_child(_log_panel)
+	_log_panel.attempt_applied.connect(_on_log_attempt_applied)
+	open_log_button.pressed.connect(_log_panel.open)
 	make_tin_progress.show_percentage = false
 	_sync_selection_from_game_state()
 	produce_toggle.button_pressed = GameState.cannery_produce_enabled
@@ -327,6 +334,9 @@ func _sync_selection_from_game_state() -> void:
 func _on_refine_last_button_pressed() -> void:
 	if not GameState.apply_attempt_to_selection():
 		return
+	_on_log_attempt_applied()
+
+func _on_log_attempt_applied() -> void:
 	_sync_selection_from_game_state()
 	_load_processes()
 	_refresh_selection_buttons()
@@ -433,17 +443,19 @@ func _refresh_experiment_feedback() -> void:
 	else:
 		feedback_label.text = "Score: %d%%" % int(feedback.get("score", 0))
 		hint_label.text = "Hint: %s" % str(feedback.get("hint", ""))
-	var recent: Array = GameState.get_recent_experiment_log(3)
+	var recent: Array = GameState.get_experiment_log_view("newest").slice(0, 3)
 	if recent.is_empty():
 		log_label.text = "Recent experiments: none"
 	else:
 		var lines: Array = ["Recent experiments:"]
 		for entry in recent:
-			if typeof(entry) != TYPE_DICTIONARY:
-				continue
-			lines.append("#%d  %d%%  %s" % [
+			lines.append("#%d  %d%%%s  %s" % [
 				int(entry.get("attempt_id", 0)),
 				int(entry.get("score", 0)),
+				" ★" if bool(entry.get("is_closest", false)) else "",
 				str(entry.get("result_key", "experimental_tin_rough")).replace("_", " ")
 			])
+		var closest: Dictionary = GameState.get_closest_attempt_for_fish(_selected_fish_id)
+		if not closest.is_empty():
+			lines.append("★ Closest so far for this fish: %d%% (#%d)" % [int(closest.get("score", 0)), int(closest.get("attempt_id", 0))])
 		log_label.text = "\n".join(lines)

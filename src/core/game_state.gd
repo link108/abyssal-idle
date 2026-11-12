@@ -1666,6 +1666,152 @@ func get_recent_experiment_log(limit: int = 10) -> Array:
         out.append(log_entries[i])
     return out
 
+# Experiment log view: sort is "newest" or "score"; silhouette_id filters to
+# attempts that best matched that silhouette ("" = all). Each entry gets
+# "is_closest" when it's the best attempt so far for its silhouette.
+func get_experiment_log_view(sort: String = "newest", silhouette_id: String = "") -> Array:
+    var closest := get_closest_attempt_ids()
+    var out: Array = []
+    for entry in meta_state.get("experiment_log", []):
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        if silhouette_id != "" and str(entry.get("matched_silhouette_id", "")) != silhouette_id:
+            continue
+        var view: Dictionary = (entry as Dictionary).duplicate(true)
+        view["is_closest"] = closest.get(str(view.get("matched_silhouette_id", "")), -1) == int(view.get("attempt_id", 0))
+        out.append(view)
+    if sort == "score":
+        out.sort_custom(func(a, b):
+            if int(a["score"]) != int(b["score"]):
+                return int(a["score"]) > int(b["score"])
+            return int(a["attempt_id"]) > int(b["attempt_id"])
+        )
+    else:
+        out.sort_custom(func(a, b): return int(a["attempt_id"]) > int(b["attempt_id"]))
+    return out
+
+# silhouette_id -> attempt_id of the highest-scoring attempt (earliest on ties).
+func get_closest_attempt_ids() -> Dictionary:
+    var best_scores: Dictionary = {}
+    var best_ids: Dictionary = {}
+    for entry in meta_state.get("experiment_log", []):
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var silhouette_id := str(entry.get("matched_silhouette_id", ""))
+        if silhouette_id == "":
+            continue
+        var score := int(entry.get("score", 0))
+        if not best_scores.has(silhouette_id) or score > int(best_scores[silhouette_id]):
+            best_scores[silhouette_id] = score
+            best_ids[silhouette_id] = int(entry.get("attempt_id", 0))
+    return best_ids
+
+# Best attempt so far toward any undiscovered recipe for this fish.
+func get_closest_attempt_for_fish(fish_id: String) -> Dictionary:
+    var best: Dictionary = {}
+    if fish_id == "":
+        return best
+    for silhouette_id in get_closest_attempt_ids():
+        var silhouette_def: Dictionary = silhouette_defs_by_id.get(str(silhouette_id), {})
+        if str(silhouette_def.get("required_fish_id", "")) != fish_id:
+            continue
+        if is_recipe_discovered(str(silhouette_def.get("recipe_id", ""))):
+            continue
+        var entry := get_experiment_attempt(int(get_closest_attempt_ids()[silhouette_id]))
+        if best.is_empty() or int(entry.get("score", 0)) > int(best.get("score", 0)):
+            best = entry
+    return best
+
+# Silhouettes that appear in the log, for the log filter.
+func get_experiment_log_silhouette_ids() -> Array:
+    var out: Array = []
+    for entry in meta_state.get("experiment_log", []):
+        if typeof(entry) != TYPE_DICTIONARY:
+            continue
+        var silhouette_id := str(entry.get("matched_silhouette_id", ""))
+        if silhouette_id != "" and not out.has(silhouette_id):
+            out.append(silhouette_id)
+    out.sort_custom(func(a, b): return get_silhouette_label(str(a)) < get_silhouette_label(str(b)))
+    return out
+
+# Recipe name once discovered; otherwise only the fish, so labels never
+# spoil an undiscovered recipe.
+func get_silhouette_label(silhouette_id: String) -> String:
+    var silhouette_def: Dictionary = silhouette_defs_by_id.get(silhouette_id, {})
+    var recipe_id := str(silhouette_def.get("recipe_id", silhouette_id))
+    if is_recipe_discovered(recipe_id):
+        return _format_recipe_from_key(recipe_id)
+    var fish_id := str(silhouette_def.get("required_fish_id", ""))
+    if fish_id == "":
+        fish_id = _get_recipe_fish_id(recipe_defs_by_id.get(recipe_id, {}))
+    return "Hidden %s recipe" % _get_fish_display_name(fish_id)
+
+func get_experiment_attempt(attempt_id: int) -> Dictionary:
+    for entry in meta_state.get("experiment_log", []):
+        if typeof(entry) == TYPE_DICTIONARY and int(entry.get("attempt_id", 0)) == attempt_id:
+            return (entry as Dictionary).duplicate(true)
+    return {}
+
+# One line: "Choirfin Seraph · Golden Oil, Salt · Clean, Poach".
+func format_experiment_inputs(entry: Dictionary) -> String:
+    var parts: Array = [_get_fish_display_name(str(entry.get("fish_id", "")))]
+    var addon_names: Array = []
+    for item_id in _string_array(entry.get("ingredient_ids", [])):
+        addon_names.append(_get_item_display_name(item_id))
+    parts.append(", ".join(addon_names) if not addon_names.is_empty() else "no add-ons")
+    var process_names: Array = []
+    for process_id in _string_array(entry.get("process_ids", [])):
+        if process_id == "tin_pack" or process_id == "tin_seal":
+            continue
+        process_names.append(str(get_process_def(process_id).get("display_name", process_id)))
+    parts.append(", ".join(process_names) if not process_names.is_empty() else "no processes")
+    return " · ".join(parts)
+
+# How close an attempt came to its best-matching silhouette, as counts and a
+# source-aware hint (never the hidden tags themselves).
+func get_experiment_attempt_detail(attempt_id: int) -> Dictionary:
+    var entry := get_experiment_attempt(attempt_id)
+    if entry.is_empty():
+        return {}
+    var silhouette_id := str(entry.get("matched_silhouette_id", ""))
+    var detail := {
+        "attempt_id": attempt_id,
+        "inputs": format_experiment_inputs(entry),
+        "score": int(entry.get("score", 0)),
+        "result": _format_recipe_from_key(str(entry.get("result_key", ""))),
+        "target": get_silhouette_label(silhouette_id) if silhouette_id != "" else "No recipe for this fish yet",
+        "is_closest": get_closest_attempt_ids().get(silhouette_id, -1) == attempt_id,
+        "lines": []
+    }
+    var silhouette_def: Dictionary = silhouette_defs_by_id.get(silhouette_id, {})
+    if silhouette_def.is_empty():
+        return detail
+    var attempt := {
+        "attempt_tags": _string_array(entry.get("derived_tags", [])),
+        "process_ids": _string_array(entry.get("process_ids", []))
+    }
+    var result := _score_attempt_against_silhouette(attempt, silhouette_def)
+    var required: Array = _string_array(silhouette_def.get("required_tags", []))
+    var preferred: Array = _string_array(silhouette_def.get("preferred_tags", []))
+    var missing_required: Array = result["missing_required_tags"]
+    var missing_preferred: Array = result["missing_preferred_tags"]
+    var lines: Array = []
+    lines.append("Score %d%% (needs %d%%)." % [int(result["score"]), int(result["unlock_threshold"])])
+    lines.append("Key notes: %d of %d." % [required.size() - missing_required.size(), required.size()])
+    lines.append("Flavor notes: %d of %d." % [preferred.size() - missing_preferred.size(), preferred.size()])
+    var recipe_def: Dictionary = recipe_defs_by_id.get(str(silhouette_def.get("recipe_id", "")), {})
+    if not recipe_def.is_empty():
+        var core_steps := _core_process_set(_string_array(recipe_def.get("processes", [])))
+        var tried := _core_process_set(_string_array(entry.get("process_ids", [])))
+        var matched_steps := 0
+        for process_id in core_steps:
+            if tried.has(process_id):
+                matched_steps += 1
+        lines.append("Process steps: %d of %d right, %d extra." % [matched_steps, core_steps.size(), tried.size() - matched_steps])
+    lines.append("Hint: %s" % _build_feedback_hint(result))
+    detail["lines"] = lines
+    return detail
+
 func get_last_experiment_attempt() -> Dictionary:
     var recent := get_recent_experiment_log(1)
     if recent.is_empty():

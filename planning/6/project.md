@@ -19,9 +19,11 @@ Implement a data-driven experimentation loop in the cannery where players craft 
 - [x] Subproject 1 complete (2026-11-10)
 - [x] Subproject 2 complete (2026-11-10)
 - [x] Subproject 3 complete (2026-11-10)
-- [ ] Subproject 4 complete
-- [ ] Integration pass across Cannery, Recipes/Collections views, and save/load flows
-- [ ] Smoke test: failed experiments produce lower-quality tins, near-matches progress silhouettes, exact matches register discoveries, and log entries persist across reload
+- [x] Subproject 4 complete (2026-11-11)
+- [x] Integration pass across Cannery, Recipes/Collections views, and save/load flows
+- [x] Smoke test: failed experiments produce lower-quality tins, near-matches progress silhouettes, exact matches register discoveries, and log entries persist across reload
+
+Covered by headless tests (2026-11-11): lower-value experimental tins in `test_tin_prices.gd`, silhouette progress in `test_clues.gd`, discoveries in `test_recipes.gd` and `test_use_recipe.gd`, and log/progress save normalization in `test_experiment_log.gd`.
 
 ## Constraints
 - Keep implementation behavior-driven and data-driven.
