@@ -1603,11 +1603,21 @@ func get_process_speed_equipment_ids(process_id: String) -> Array:
 
 # Display names of the processes this equipment runs or speeds up.
 func get_equipment_process_names(equipment_id: String) -> Array:
+    return get_equipment_required_process_names(equipment_id) + get_equipment_boosted_process_names(equipment_id)
+
+# Processes that need this equipment to run.
+func get_equipment_required_process_names(equipment_id: String) -> Array:
     var names: Array = []
     for def in process_defs:
-        var process_id := str(def.get("process_id", ""))
-        if get_process_speed_equipment_ids(process_id).has(equipment_id):
-            names.append(str(def.get("display_name", process_id)))
+        if _string_array(def.get("required_equipment", [])).has(equipment_id):
+            names.append(str(def.get("display_name", def.get("process_id", ""))))
+    return names
+
+# Processes this equipment only speeds up (its speeds_up list).
+func get_equipment_boosted_process_names(equipment_id: String) -> Array:
+    var names: Array = []
+    for process_id in _string_array(get_equipment_def(equipment_id).get("speeds_up", [])):
+        names.append(str(get_process_def(process_id).get("display_name", process_id)))
     return names
 
 func get_process_duration(process_id: String) -> float:
@@ -1800,7 +1810,7 @@ func get_experiment_attempt_detail(attempt_id: int) -> Dictionary:
     var missing_required: Array = result["missing_required_tags"]
     var missing_preferred: Array = result["missing_preferred_tags"]
     var lines: Array = []
-    lines.append("Score %d%% (needs %d%%)." % [int(result["score"]), int(result["unlock_threshold"])])
+    lines.append("Score %d%% (needs %d%%)." % [int(entry.get("score", 0)), int(result["unlock_threshold"])])
     lines.append("Key notes: %d of %d." % [required.size() - missing_required.size(), required.size()])
     lines.append("Flavor notes: %d of %d." % [preferred.size() - missing_preferred.size(), preferred.size()])
     var recipe_def: Dictionary = recipe_defs_by_id.get(str(silhouette_def.get("recipe_id", "")), {})

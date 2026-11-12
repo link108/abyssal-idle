@@ -49,3 +49,21 @@ To add a test, create `tests/headless/test_<name>.gd` extending
 `check(condition, label)`. Tests must never call `GameState.new_game()` or
 `save_game()`: both write the player's real `user://save.json`. Set state on
 `gs` directly instead.
+
+## Virtual Display (screenshots and play)
+
+`tools/vdisplay/` runs the real game on a hidden X display, so it never opens
+a window on the desktop. It needs `xvfb` and `xdotool`.
+
+```
+Xvfb :99 -screen 0 1152x648x24 -ac -nolisten tcp &   # once per session
+tools/vdisplay/play.sh                                # the game, on :99
+DISPLAY=:99 xdotool mousemove 575 360 click 1         # input
+tools/vdisplay/shot.py out.png                        # screenshot
+tools/vdisplay/fish_bot.py 20                         # play the catch minigame
+tools/vdisplay/play.sh --script res://tools/vdisplay/capture_example.gd
+```
+
+Runs use their own user data dir (`.vdisplay/data`, gitignored), so they
+never touch your save. `capture_example.gd` is a driver that sets state,
+opens screens and saves PNGs to `.vdisplay/shots`; copy and adapt it.

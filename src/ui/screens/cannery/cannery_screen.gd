@@ -457,5 +457,5 @@ func _refresh_experiment_feedback() -> void:
 			])
 		var closest: Dictionary = GameState.get_closest_attempt_for_fish(_selected_fish_id)
 		if not closest.is_empty():
-			lines.append("★ Closest so far for this fish: %d%% (#%d)" % [int(closest.get("score", 0)), int(closest.get("attempt_id", 0))])
+			lines.append("★ Best for this fish: %d%% (#%d)" % [int(closest.get("score", 0)), int(closest.get("attempt_id", 0))])
 		log_label.text = "\n".join(lines)

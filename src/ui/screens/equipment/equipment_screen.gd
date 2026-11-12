@@ -138,16 +138,21 @@ func _on_buy_pressed(id: String) -> void:
 func _on_upgrade_pressed(id: String) -> void:
     GameState.upgrade_equipment(id)
 
-# "Speeds up: Smoke · Lv 2/4 · speed x1.25 (next x1.50)"
+# "Runs: Smoke · Lv 2/4 · speed x1.25 (next x1.50)"
 func _format_equipment_stats(id: String) -> String:
     var parts: Array = []
-    var process_names: Array = GameState.get_equipment_process_names(id)
-    if not process_names.is_empty():
-        parts.append("Speeds up: %s" % ", ".join(process_names))
+    var runs: Array = GameState.get_equipment_required_process_names(id)
+    if not runs.is_empty():
+        parts.append("Runs: %s" % ", ".join(runs))
+    var boosts: Array = GameState.get_equipment_boosted_process_names(id)
+    if not boosts.is_empty():
+        parts.append("Speeds up: %s" % ", ".join(boosts))
     var max_level := GameState.get_equipment_max_level(id)
     var level := GameState.get_equipment_level(id)
-    if max_level > 1:
+    if level > 0 and max_level > 1:
         parts.append("Lv %d/%d" % [level, max_level])
+    elif level == 0 and max_level > 1:
+        parts.append("upgrades to Lv %d" % max_level)
     if level > 0:
         var speed := GameState.get_equipment_speed(id)
         var speed_text := "speed x%.2f" % speed

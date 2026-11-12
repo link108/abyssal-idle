@@ -25,7 +25,7 @@ func _ready() -> void:
     offset_right = -40.0
     offset_bottom = -40.0
     var style := StyleBoxFlat.new()
-    style.bg_color = Color(0.06, 0.07, 0.09, 0.98)
+    style.bg_color = Color(0.06, 0.07, 0.09, 1)
     style.border_color = Color(0.3, 0.3, 0.35, 1)
     style.set_border_width_all(1)
     style.set_corner_radius_all(6)
@@ -49,17 +49,16 @@ func _build() -> void:
     var header := HBoxContainer.new()
     header.add_theme_constant_override("separation", 8)
     root.add_child(header)
-    var title := Label.new()
-    title.text = "Experiment Log"
+    var title := _label("Experiment Log", false)
     title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     header.add_child(title)
-    header.add_child(_label("Sort"))
+    header.add_child(_label("Sort", false))
     _sort_select = OptionButton.new()
     for sort in SORTS:
         _sort_select.add_item(str(sort[1]))
     _sort_select.item_selected.connect(func(_i): _rebuild_rows())
     header.add_child(_sort_select)
-    header.add_child(_label("Recipe"))
+    header.add_child(_label("Recipe", false))
     _filter_select = OptionButton.new()
     _filter_select.custom_minimum_size = Vector2(240, 0)
     _filter_select.item_selected.connect(func(_i): _rebuild_rows())
@@ -102,10 +101,11 @@ func _build() -> void:
     detail.add_child(_label("%s = closest so far for that recipe" % CLOSEST_MARK))
 
 
-func _label(text: String) -> Label:
+func _label(text: String, wrap: bool = true) -> Label:
     var label := Label.new()
     label.text = text
-    label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    if wrap:
+        label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     return label
 
 
