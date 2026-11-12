@@ -29,6 +29,10 @@ const PROCESS_TIME_SCALE := 0.25
 # Equipment speed: base_speed_multiplier x (1 + this per level above 1).
 const EQUIPMENT_SPEED_PER_LEVEL := 0.25
 const EQUIPMENT_UPGRADE_COST_MULT := 1.6
+# Skill tree: each skill owned in the opposing branch multiplies a node's
+# cost, so the first branch expresses a style and the second is a long goal.
+const SKILL_OPPOSING_BRANCHES := {"sustainable": "industrial", "industrial": "sustainable"}
+const SKILL_CROSS_BRANCH_COST_MULT := 2.0
 const SAVE_VERSION := 14
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
@@ -2667,7 +2671,29 @@ func get_skill_cost(id: String) -> int:
     var def: Dictionary = get_skill_def(id)
     if def.is_empty():
         return 0
-    return int(def.get("cost", 0))
+    var mult := pow(SKILL_CROSS_BRANCH_COST_MULT, get_skill_opposing_owned_count(id))
+    return int(round(float(def.get("cost", 0)) * mult))
+
+# How many skills the player owns in the branch opposing this skill's.
+func get_skill_opposing_owned_count(id: String) -> int:
+    var opposing := str(SKILL_OPPOSING_BRANCHES.get(str(get_skill_def(id).get("branch", "")), ""))
+    if opposing == "":
+        return 0
+    var count := 0
+    for def in get_skill_defs_by_branch(opposing):
+        if is_skill_owned(str(def.get("id", ""))):
+            count += 1
+    return count
+
+# "x4: you own 2 Industrial skills", or "" when the cost isn't raised.
+func get_skill_cost_note(id: String) -> String:
+    if is_skill_owned(id):
+        return ""
+    var count := get_skill_opposing_owned_count(id)
+    if count <= 0:
+        return ""
+    var opposing := str(SKILL_OPPOSING_BRANCHES.get(str(get_skill_def(id).get("branch", "")), ""))
+    return "x%d: you own %d %s skill%s" % [int(pow(SKILL_CROSS_BRANCH_COST_MULT, count)), count, opposing.capitalize(), "" if count == 1 else "s"]
 
 func get_skill_prereqs(id: String) -> Array:
     var def: Dictionary = get_skill_def(id)

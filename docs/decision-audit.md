@@ -22,7 +22,7 @@ Backlog ticket for the owner to decide on.
 | Market sell mode (`sell_tick`, `sell_tins_by_key`) | Sell fish raw or which tins | Raw fish vs experimental tins (usually worse) vs recipe tins (always better); each tin kind is listed with its own price | No: depends on what's in stock | minutes | **Keep** |
 | Run upgrades (`data/raw/upgrades.json`, non-policy) | Purchase order; active (Rod/Bait: fish per manual catch) vs idle (Bigger Nets: crew haul) | Mostly pure upside stat bumps, but Rod/Bait only pay while you play the minigame (ABYSS-17) | Mostly yes: buy all in cost order | minutes | **Keep** as pacing |
 | Policies (`upgrades.json` `policy_*` groups) | Sustainable vs industrial, five exclusive stages | Catch/tin speed vs ocean pressure/regen, now applied (ABYSS-2); balanced by `test_ocean_balance.gd` | No: both paths viable (sustainable earns 71% of industrial over 30 min but keeps the ocean, rare fish and its ending; the sim checks 55-90%) | hours | **Keep**: the core decision |
-| Skill tree (`data/raw/skill_tree.json`) | Which node to buy next with reputation | Order only: no exclusivity, reputation persists across prestiges | Yes in the long run: everything gets bought | hours | **Rework**: [ABYSS-20](#proposals) |
+| Skill tree (`data/raw/skill_tree.json`) | Which branch to commit to with reputation | Each skill owned in the opposing branch (sustainable vs industrial) doubles the other branch's costs (ABYSS-20), so the first branch picks a style and the second is a long-term goal (and the dual-mastery ending) | No: committing first is far cheaper than mixing | hours | **Keep** |
 | Collections (`collections_screen.gd`) | None | n/a | n/a | n/a | **Keep**: Meier's "the world matters too"; also hosts "Use recipe" |
 | Prestige (`can_prestige`, `_apply_reputation_gain_from_run_metrics`) | When to reset (100 tins sold) | Reset progress vs reputation; gain shaped by run alignment | No: timing depends on the run | hours | **Keep** |
 | Endings (`_check_endings`) | Outcome of the policy/ocean path | Industrial collapse vs sustainable equilibrium vs dual mastery | n/a (consequence) | hours | **Keep** |
@@ -36,7 +36,7 @@ Each is a Backlog child of ABYSS-1; none are implemented.
 - ~~**ABYSS-17: Make Rod/Bait upgrades do what they say**~~ (rework, medium). Done: they add fish per manual catch (`manual_catch_add`); crew hauls use Bigger Nets.
 - ~~**ABYSS-18: Merge equipment into process unlocks, or make levels matter**~~ (merge, medium). Done: levels and process durations now set tin time; dead fields removed.
 - ~~**ABYSS-19: Cut the cannery Method dropdown**~~ (cut, low). Done: removed with `cannery_options.json`.
-- **ABYSS-20: Make skill tree branch choice matter** (rework, low). No exclusivity, so it becomes a checklist.
+- ~~**ABYSS-20: Make skill tree branch choice matter**~~ (rework, low). Done: cross-branch cost escalation (x2 per opposing skill owned).
 
 ## Notes
 

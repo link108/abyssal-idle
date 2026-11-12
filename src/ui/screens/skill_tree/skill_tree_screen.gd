@@ -163,8 +163,7 @@ func _refresh_details_panel() -> void:
     hover_buy_button.visible = false
 
 func _format_tooltip(def: Dictionary, reason: String) -> String:
-    var cost := int(def.get("cost", 0))
-    var base := "%s\nCost: %d rep" % [str(def.get("name", "Skill")), cost]
+    var base := "%s\n%s" % [str(def.get("name", "Skill")), _format_cost(def)]
     var effects := _format_effects(def)
     if reason != "" and reason != "Owned":
         var reqs := _format_requirements(def)
@@ -172,6 +171,14 @@ func _format_tooltip(def: Dictionary, reason: String) -> String:
             return "%s\n%s\n%s\n%s" % [base, effects, reason, reqs]
         return "%s\n%s\n%s" % [base, effects, reason]
     return "%s\n%s" % [base, effects]
+
+func _format_cost(def: Dictionary) -> String:
+    var id_str := str(def.get("id", ""))
+    var text := "Cost: %d rep" % GameState.get_skill_cost(id_str)
+    var note := GameState.get_skill_cost_note(id_str)
+    if note != "":
+        text += " (%s)" % note
+    return text
 
 func _format_effects(def: Dictionary) -> String:
     var effects: Array = def.get("effects", [])
@@ -189,9 +196,9 @@ func _on_skill_selected(id_str: String) -> void:
 
 func _set_details(def: Dictionary, reason: String) -> void:
     hover_title.text = str(def.get("name", "Skill"))
-    var cost := int(def.get("cost", 0))
+    var cost := GameState.get_skill_cost(str(def.get("id", "")))
     var lines := [
-        "Cost: %d rep" % cost,
+        _format_cost(def),
         _format_effects(def)
     ]
     if reason != "" and reason != "Owned":
