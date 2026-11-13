@@ -56,6 +56,11 @@ const DUAL_MIN_SECONDS := 6.0 * 60.0 * 60.0
 const INDUSTRIAL_MIN_LIFETIME_MONEY := 50000
 const SUSTAINABLE_MIN_TOTAL_UPGRADES := 12
 const DUAL_MIN_LIFETIME_MONEY := 250000
+# Endings judge the whole game: past runs (meta_state.past_runs) plus the
+# current one. The sustainable ending needs a sustainable-leaning game and the
+# collapse ending an industrial-leaning one, by time-weighted policy alignment.
+const ENDING_SUSTAINABLE_SHARE_THRESHOLD := 0.5
+const PAST_RUNS_KEYS := ["seconds", "sustainable_seconds", "ocean_health_accum", "money_earned", "fish_sold", "tins_sold"]
 const UPGRADES_VISIBLE_PER_CATEGORY := 3
 const MAX_EXPERIMENT_LOG_ENTRIES := 120
 # Selling price at which the cannery warns that an experiment uses up a valuable fish.
@@ -152,7 +157,8 @@ var meta_state: Dictionary = {
     "equipment_levels": {},
     "silhouette_progress_by_id": {},
     "experiment_log": [],
-    "attempt_counter": 0
+    "attempt_counter": 0,
+    "past_runs": {}
 }
 
 # Upgrades: Cannery
@@ -376,7 +382,8 @@ func new_game() -> void:
         "equipment_levels": {},
         "silhouette_progress_by_id": {},
         "experiment_log": [],
-        "attempt_counter": 0
+        "attempt_counter": 0,
+        "past_runs": {}
     }
     last_craft_feedback = {}
     reputation_changed.emit()
@@ -516,6 +523,14 @@ func _rescale_prestige_bonus_levels() -> void:
     meta_state["sustainable_bonus_level"] = allowed * sustainable / total
     meta_state["industrial_bonus_level"] = allowed * industrial / total
 
+func _normalize_past_runs() -> void:
+    var past = meta_state.get("past_runs", {})
+    if typeof(past) != TYPE_DICTIONARY:
+        past = {}
+    for key in PAST_RUNS_KEYS:
+        past[key] = maxf(0.0, float(past.get(key, 0.0)))
+    meta_state["past_runs"] = past
+
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
         meta_state = {}
@@ -547,6 +562,7 @@ func _normalize_meta_state() -> void:
         meta_state["experiment_log"] = []
     if not meta_state.has("attempt_counter"):
         meta_state["attempt_counter"] = 0
+    _normalize_past_runs()
     if typeof(meta_state["discovered_fish_ids"]) != TYPE_ARRAY:
         meta_state["discovered_fish_ids"] = []
     if typeof(meta_state["fish_lifetime_stats"]) != TYPE_DICTIONARY:
@@ -3806,6 +3822,7 @@ func prestige() -> bool:
         return false
     var rep_gain := _calculate_reputation_gain()
     _apply_prestige_bonus_levels()
+    _record_past_run()
     meta_state["reputation"] = int(meta_state.get("reputation", 0)) + rep_gain
     meta_state["prestige_count"] = int(meta_state.get("prestige_count", 0)) + 1
     print("Prestige complete. Rep gained:", rep_gain, "Total rep:", meta_state["reputation"])
@@ -3823,9 +3840,16 @@ func _calculate_reputation_gain() -> int:
     var mult := 1.0 + _get_skill_effect_total_float("reputation_gain_mult")
     return int(floor(base_gain * mult))
 
-# Splits this prestige's bonus levels by the run's policy alignment, or by
-# its ocean health and sales mix when no policy was bought.
+# Splits this prestige's bonus levels by the run's alignment.
 func _apply_prestige_bonus_levels() -> void:
+    var sustainable_share := _get_run_sustainable_share()
+    var gain := PRESTIGE_BONUS_LEVELS_PER_PRESTIGE
+    meta_state["sustainable_bonus_level"] = _get_bonus_level("sustainable_bonus_level") + gain * sustainable_share
+    meta_state["industrial_bonus_level"] = _get_bonus_level("industrial_bonus_level") + gain * (1.0 - sustainable_share)
+
+# The run's sustainable share (0..1): by policy alignment, or by its ocean
+# health and sales mix when no policy was bought.
+func _get_run_sustainable_share() -> float:
     var alignment := _get_policy_alignment_scores()
     var sustainable_score: float = float(alignment.get("sustainable", 0.0))
     var industrial_score: float = float(alignment.get("industrial", 0.0))
@@ -3833,11 +3857,24 @@ func _apply_prestige_bonus_levels() -> void:
         var metrics := _get_run_metric_alignment_scores()
         sustainable_score = float(metrics["sustainable"])
         industrial_score = float(metrics["industrial"])
-    var total_score: float = sustainable_score + industrial_score
-    var sustainable_share := sustainable_score / total_score
-    var gain := PRESTIGE_BONUS_LEVELS_PER_PRESTIGE
-    meta_state["sustainable_bonus_level"] = _get_bonus_level("sustainable_bonus_level") + gain * sustainable_share
-    meta_state["industrial_bonus_level"] = _get_bonus_level("industrial_bonus_level") + gain * (1.0 - sustainable_share)
+    return sustainable_score / (sustainable_score + industrial_score)
+
+# Adds the finished run to the whole-game totals the endings read.
+func _record_past_run() -> void:
+    _normalize_past_runs()
+    var past: Dictionary = meta_state["past_runs"]
+    past["seconds"] += ocean_health_time_total
+    past["sustainable_seconds"] += ocean_health_time_total * _get_run_sustainable_share()
+    past["ocean_health_accum"] += ocean_health_time_accum
+    past["money_earned"] += float(lifetime_money_earned)
+    past["fish_sold"] += float(fish_sold)
+    past["tins_sold"] += float(tins_sold)
+
+func _get_past_run_total(key: String) -> float:
+    var past = meta_state.get("past_runs", {})
+    if typeof(past) != TYPE_DICTIONARY:
+        return 0.0
+    return float(past.get(key, 0.0))
 
 func _get_bonus_level(key: String) -> float:
     return float(meta_state.get(key, 0.0))
@@ -4044,6 +4081,27 @@ func get_ocean_health_average_ratio() -> float:
         return 0.0
     return clamp(avg / OCEAN_HEALTH_MAX, 0.0, 1.0)
 
+# Whole game: past runs plus the current one, weighted by time played.
+func get_game_ocean_health_average_ratio() -> float:
+    var seconds := _get_past_run_total("seconds") + ocean_health_time_total
+    if seconds <= 0.0 or OCEAN_HEALTH_MAX <= 0.0:
+        return get_ocean_health_ratio()
+    var accum := _get_past_run_total("ocean_health_accum") + ocean_health_time_accum
+    return clamp(accum / seconds / OCEAN_HEALTH_MAX, 0.0, 1.0)
+
+func get_game_sustainable_share() -> float:
+    var seconds := _get_past_run_total("seconds") + ocean_health_time_total
+    if seconds <= 0.0:
+        return _get_run_sustainable_share()
+    var sustainable := _get_past_run_total("sustainable_seconds") + ocean_health_time_total * _get_run_sustainable_share()
+    return clamp(sustainable / seconds, 0.0, 1.0)
+
+func get_game_money_earned() -> int:
+    return int(_get_past_run_total("money_earned")) + lifetime_money_earned
+
+func _is_game_sustainable_leaning() -> bool:
+    return get_game_sustainable_share() >= ENDING_SUSTAINABLE_SHARE_THRESHOLD
+
 func _track_run_time(delta: float) -> void:
     if delta <= 0.0:
         return
@@ -4075,7 +4133,9 @@ func _check_endings() -> void:
 func _check_industrial_collapse() -> bool:
     if run_time_seconds < INDUSTRIAL_MIN_SECONDS:
         return false
-    if lifetime_money_earned < INDUSTRIAL_MIN_LIFETIME_MONEY:
+    if get_game_money_earned() < INDUSTRIAL_MIN_LIFETIME_MONEY:
+        return false
+    if _is_game_sustainable_leaning():
         return false
     return ocean_health <= OCEAN_HEALTH_COLLAPSE_THRESHOLD
 
@@ -4084,12 +4144,14 @@ func _check_sustainable_equilibrium() -> bool:
         return false
     if _get_total_upgrade_levels() < SUSTAINABLE_MIN_TOTAL_UPGRADES:
         return false
-    return get_ocean_health_average_ratio() >= SUSTAINABLE_HEALTH_AVG_THRESHOLD
+    if not _is_game_sustainable_leaning():
+        return false
+    return get_game_ocean_health_average_ratio() >= SUSTAINABLE_HEALTH_AVG_THRESHOLD
 
 func _check_dual_mastery() -> bool:
     if run_time_seconds < DUAL_MIN_SECONDS:
         return false
-    return lifetime_money_earned >= DUAL_MIN_LIFETIME_MONEY
+    return get_game_money_earned() >= DUAL_MIN_LIFETIME_MONEY
 
 func _get_total_upgrade_levels() -> int:
     var total: int = 0
@@ -4111,10 +4173,11 @@ func _clear_prestige_bonuses() -> void:
 func _build_run_summary() -> Dictionary:
     return {
         "time_seconds": run_time_seconds,
-        "fish_sold": fish_sold,
-        "tins_sold": tins_sold,
-        "lifetime_money_earned": lifetime_money_earned,
-        "avg_ocean_health_ratio": get_ocean_health_average_ratio(),
+        "fish_sold": int(_get_past_run_total("fish_sold")) + fish_sold,
+        "tins_sold": int(_get_past_run_total("tins_sold")) + tins_sold,
+        "lifetime_money_earned": get_game_money_earned(),
+        "avg_ocean_health_ratio": get_game_ocean_health_average_ratio(),
+        "sustainable_share": get_game_sustainable_share(),
         "final_ocean_health_ratio": get_ocean_health_ratio(),
         "prestige_count": int(meta_state.get("prestige_count", 0))
     }

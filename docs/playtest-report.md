@@ -52,6 +52,9 @@ runs. The bugs below were confirmed with direct headless probes.
    - An industrial-policy player got **Sustainable Equilibrium** at 3:12 total,
      8 minutes into a fresh run with a clean ocean.
    - The policy path doesn't factor into the endings at all.
+   - **Fixed (ABYSS-24):** endings now judge the whole game. The ocean
+     average, earnings, sales and the time-weighted policy path accumulate
+     across runs in `meta_state.past_runs`.
 
 ### Pacing (the early game is far too fast)
 

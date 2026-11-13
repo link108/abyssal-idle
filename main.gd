@@ -305,13 +305,16 @@ func _format_ending_stats(summary: Dictionary) -> String:
     var avg_health: float = float(summary.get("avg_ocean_health_ratio", 0.0))
     var final_health: float = float(summary.get("final_ocean_health_ratio", 0.0))
     var prestige_count: int = int(summary.get("prestige_count", 0))
-    return "Time: %s\nFish sold: %d\nTins sold: %d\nLifetime earnings: $%d\nAvg ocean health: %s\nFinal ocean health: %s\nPrestige count: %d" % [
+    var sustainable_share: float = float(summary.get("sustainable_share", 0.5))
+    return "Whole game, all runs:\nTime: %s\nFish sold: %d\nTins sold: %d\nLifetime earnings: $%d\nAvg ocean health: %s\nFinal ocean health: %s\nPath: %s sustainable / %s industrial\nPrestige count: %d" % [
         _format_time(time_seconds),
         fish_sold,
         tins_sold,
         money,
         _format_percent(avg_health),
         _format_percent(final_health),
+        _format_percent(sustainable_share),
+        _format_percent(1.0 - sustainable_share),
         prestige_count
     ]
 

@@ -25,7 +25,7 @@ Backlog ticket for the owner to decide on.
 | Skill tree (`data/raw/skill_tree.json`) | Which branch to commit to with reputation | Each skill owned in the opposing branch (sustainable vs industrial) doubles the other branch's costs (ABYSS-20), so the first branch picks a style and the second is a long-term goal (and the dual-mastery ending) | No: committing first is far cheaper than mixing | hours | **Keep** |
 | Collections (`collections_screen.gd`) | None | n/a | n/a | n/a | **Keep**: Meier's "the world matters too"; also hosts "Use recipe" |
 | Prestige (`can_prestige`, `_apply_reputation_gain_from_run_metrics`) | When to reset (100 tins sold) | Reset progress vs reputation; gain shaped by run alignment | No: timing depends on the run | hours | **Keep** |
-| Endings (`_check_endings`) | Outcome of the policy/ocean path | Industrial collapse vs sustainable equilibrium vs dual mastery | n/a (consequence) | hours | **Keep** |
+| Endings (`_check_endings`) | Outcome of the policy/ocean path | Industrial collapse vs sustainable equilibrium vs dual mastery, judged over the whole game: ocean average, earnings and the time-weighted policy path accumulate across runs (ABYSS-24). Sustainable needs a sustainable-leaning game; collapse an industrial-leaning one | n/a (consequence) | hours | **Keep** |
 | Ocean health (`game_state.gd` ocean section, HUD) | Indirect: how hard to fish | Catch now scales with health (`OCEAN_HEALTH_CATCH_FLOOR`); rare vs mutated fish; trend + status copy | No | minutes–hours | **Keep** |
 
 ## Proposals
