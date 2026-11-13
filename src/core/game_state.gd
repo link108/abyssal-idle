@@ -33,7 +33,7 @@ const EQUIPMENT_UPGRADE_COST_MULT := 1.6
 # cost, so the first branch expresses a style and the second is a long goal.
 const SKILL_OPPOSING_BRANCHES := {"sustainable": "industrial", "industrial": "sustainable"}
 const SKILL_CROSS_BRANCH_COST_MULT := 2.0
-const SAVE_VERSION := 14
+const SAVE_VERSION := 15
 const PRESTIGE_TINS_REQUIRED := 100
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
@@ -101,6 +101,10 @@ const INDUSTRIAL_FISH_SELL_ADD_PER_LEVEL := -1
 const INDUSTRIAL_FISH_SELL_COUNT_ADD_PER_LEVEL := 1
 const INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL := 1
 const INDUSTRIAL_TIN_TIME_ADD_PER_LEVEL := -0.1
+# Each prestige grants this many bonus levels in total, split between the
+# sustainable and industrial levels by how the run was played. (Levels used
+# to grow by the whole reputation gain, which compounded without bound.)
+const PRESTIGE_BONUS_LEVELS_PER_PRESTIGE := 1.0
 const RequiresEval = preload("res://src/requires/requires_eval.gd")
 const DataRegistry = preload("res://src/data/data_registry.gd")
 const RecipeTags = preload("res://src/data/recipe_tags.gd")
@@ -497,6 +501,20 @@ func _migrate_save(version: int) -> void:
         tin_fish_id = ""
     if version < 14:
         _reset_crew_destination_state()
+    if version < 15:
+        _rescale_prestige_bonus_levels()
+
+# v15: bonus levels used to grow by the whole reputation gain. Keep the
+# sustainable/industrial split but scale the total to one level per prestige.
+func _rescale_prestige_bonus_levels() -> void:
+    var sustainable := _get_bonus_level("sustainable_bonus_level")
+    var industrial := _get_bonus_level("industrial_bonus_level")
+    var total := sustainable + industrial
+    var allowed := float(int(meta_state.get("prestige_count", 0))) * PRESTIGE_BONUS_LEVELS_PER_PRESTIGE
+    if total <= allowed:
+        return
+    meta_state["sustainable_bonus_level"] = allowed * sustainable / total
+    meta_state["industrial_bonus_level"] = allowed * industrial / total
 
 func _normalize_meta_state() -> void:
     if typeof(meta_state) != TYPE_DICTIONARY:
@@ -3787,7 +3805,7 @@ func prestige() -> bool:
     if not can_prestige():
         return false
     var rep_gain := _calculate_reputation_gain()
-    _apply_reputation_gain(rep_gain)
+    _apply_prestige_bonus_levels()
     meta_state["reputation"] = int(meta_state.get("reputation", 0)) + rep_gain
     meta_state["prestige_count"] = int(meta_state.get("prestige_count", 0)) + 1
     print("Prestige complete. Rep gained:", rep_gain, "Total rep:", meta_state["reputation"])
@@ -3805,27 +3823,29 @@ func _calculate_reputation_gain() -> int:
     var mult := 1.0 + _get_skill_effect_total_float("reputation_gain_mult")
     return int(floor(base_gain * mult))
 
-func _apply_reputation_gain(rep_gain: int) -> void:
-    if rep_gain <= 0:
-        return
-    # Use policy alignment to weight sustainable vs industrial bonuses.
+# Splits this prestige's bonus levels by the run's policy alignment, or by
+# its ocean health and sales mix when no policy was bought.
+func _apply_prestige_bonus_levels() -> void:
     var alignment := _get_policy_alignment_scores()
     var sustainable_score: float = float(alignment.get("sustainable", 0.0))
     var industrial_score: float = float(alignment.get("industrial", 0.0))
+    if sustainable_score + industrial_score <= 0.0:
+        var metrics := _get_run_metric_alignment_scores()
+        sustainable_score = float(metrics["sustainable"])
+        industrial_score = float(metrics["industrial"])
     var total_score: float = sustainable_score + industrial_score
-    if total_score <= 0.0:
-        _apply_reputation_gain_from_run_metrics(rep_gain)
-        return
-    var sustainable_gain: int = int(floor(rep_gain * (sustainable_score / total_score)))
-    var industrial_gain: int = rep_gain - sustainable_gain
-    meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + sustainable_gain
-    meta_state["industrial_bonus_level"] = int(meta_state.get("industrial_bonus_level", 0)) + industrial_gain
+    var sustainable_share := sustainable_score / total_score
+    var gain := PRESTIGE_BONUS_LEVELS_PER_PRESTIGE
+    meta_state["sustainable_bonus_level"] = _get_bonus_level("sustainable_bonus_level") + gain * sustainable_share
+    meta_state["industrial_bonus_level"] = _get_bonus_level("industrial_bonus_level") + gain * (1.0 - sustainable_share)
 
-func _apply_reputation_gain_from_run_metrics(rep_gain: int) -> void:
+func _get_bonus_level(key: String) -> float:
+    return float(meta_state.get(key, 0.0))
+
+func _get_run_metric_alignment_scores() -> Dictionary:
     var total_sales: int = fish_sold + tins_sold
     if total_sales <= 0:
-        meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + rep_gain
-        return
+        return {"sustainable": 1.0, "industrial": 0.0}
     var avg_health_ratio: float = get_ocean_health_average_ratio()
     var fish_share: float = float(fish_sold) / float(total_sales)
     var tin_share: float = float(tins_sold) / float(total_sales)
@@ -3834,15 +3854,9 @@ func _apply_reputation_gain_from_run_metrics(rep_gain: int) -> void:
     # industrial_score = 0.5 * (1 - avg_health_ratio) + 0.5 * tin_share
     var sustainable_score: float = (avg_health_ratio * 0.5) + (fish_share * 0.5)
     var industrial_score: float = ((1.0 - avg_health_ratio) * 0.5) + (tin_share * 0.5)
-    var total_score: float = sustainable_score + industrial_score
-    if total_score <= 0.0:
-        sustainable_score = 0.5
-        industrial_score = 0.5
-        total_score = 1.0
-    var sustainable_gain: int = int(floor(rep_gain * (sustainable_score / total_score)))
-    var industrial_gain: int = rep_gain - sustainable_gain
-    meta_state["sustainable_bonus_level"] = int(meta_state.get("sustainable_bonus_level", 0)) + sustainable_gain
-    meta_state["industrial_bonus_level"] = int(meta_state.get("industrial_bonus_level", 0)) + industrial_gain
+    if sustainable_score + industrial_score <= 0.0:
+        return {"sustainable": 0.5, "industrial": 0.5}
+    return {"sustainable": sustainable_score, "industrial": industrial_score}
 
 func _get_policy_alignment_scores() -> Dictionary:
     var sustainable_score := 0.0
@@ -3904,21 +3918,24 @@ func _reset_run_state() -> void:
     ocean_health_time_total = 0.0
     last_craft_feedback = {}
 
+# Levels are fractional (each prestige splits one level); integer effects
+# round down, and the fish price bonus never goes negative, so industrial
+# levels can't push fish below their base value.
 func _get_meta_bonus_int(effect_type: String) -> int:
-    var sustainable_level := int(meta_state.get("sustainable_bonus_level", 0))
-    var industrial_level := int(meta_state.get("industrial_bonus_level", 0))
+    var sustainable_level := _get_bonus_level("sustainable_bonus_level")
+    var industrial_level := _get_bonus_level("industrial_bonus_level")
     match effect_type:
         "fish_sell_add":
-            return (sustainable_level * SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL) + (industrial_level * INDUSTRIAL_FISH_SELL_ADD_PER_LEVEL)
+            return maxi(0, int(floor(sustainable_level * SUSTAINABLE_FISH_SELL_ADD_PER_LEVEL + industrial_level * INDUSTRIAL_FISH_SELL_ADD_PER_LEVEL)))
         "fish_sell_count_add":
-            return (sustainable_level * SUSTAINABLE_FISH_SELL_COUNT_ADD_PER_LEVEL) + (industrial_level * INDUSTRIAL_FISH_SELL_COUNT_ADD_PER_LEVEL)
+            return int(floor(sustainable_level * SUSTAINABLE_FISH_SELL_COUNT_ADD_PER_LEVEL + industrial_level * INDUSTRIAL_FISH_SELL_COUNT_ADD_PER_LEVEL))
         "tin_sell_add":
-            return industrial_level * INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL
+            return int(floor(industrial_level * INDUSTRIAL_TIN_SELL_ADD_PER_LEVEL))
     return 0
 
 func _get_meta_bonus_float(effect_type: String) -> float:
-    var sustainable_level := int(meta_state.get("sustainable_bonus_level", 0))
-    var industrial_level := int(meta_state.get("industrial_bonus_level", 0))
+    var sustainable_level := _get_bonus_level("sustainable_bonus_level")
+    var industrial_level := _get_bonus_level("industrial_bonus_level")
     match effect_type:
         "green_zone_add_pct":
             return sustainable_level * SUSTAINABLE_GREEN_ZONE_ADD_PCT_PER_LEVEL
