@@ -6,10 +6,14 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
+# Tests get their own user data dir, so anything that saves (e.g. prestige)
+# never touches the player's save.
+TEST_DATA="$ROOT/.vdisplay/test-data"
+mkdir -p "$TEST_DATA"
 if command -v godot >/dev/null 2>&1; then
-    GODOT=(godot)
+    GODOT=(env XDG_DATA_HOME="$TEST_DATA" godot)
 else
-    GODOT=(flatpak run --filesystem="$ROOT" org.godotengine.Godot)
+    GODOT=(flatpak run --filesystem="$ROOT" --env=XDG_DATA_HOME="$TEST_DATA" org.godotengine.Godot)
 fi
 
 failed=0

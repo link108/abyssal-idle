@@ -3890,6 +3890,10 @@ func _reset_run_state() -> void:
     is_crew_discovered = false
     is_crew_unlocked = false
     upgrade_levels.clear()
+    # Policies are per-run like other upgrades; keeping the choice would lock
+    # every policy group after a prestige.
+    chosen_exclusive_groups.clear()
+    policy_stage_chosen.clear()
     crew_trip_active = false
     crew_trip_remaining = 0.0
     crew_trip_paused = false

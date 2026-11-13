@@ -46,9 +46,10 @@ PATH, otherwise the Flathub build (`flatpak run org.godotengine.Godot`).
 
 To add a test, create `tests/headless/test_<name>.gd` extending
 `res://tests/headless/test_base.gd`, override `run_tests(gs)` and call
-`check(condition, label)`. Tests must never call `GameState.new_game()` or
-`save_game()`: both write the player's real `user://save.json`. Set state on
-`gs` directly instead.
+`check(condition, label)`. The runner gives Godot its own user data dir
+(`.vdisplay/test-data`), so code that saves (`new_game()`, `prestige()`) never
+touches the player's `user://save.json`. Run tests through the runner, not
+Godot directly, and prefer setting state on `gs` directly.
 
 ## Virtual Display (screenshots and play)
 

@@ -1,8 +1,9 @@
 extends SceneTree
 
 # Base for headless tests. Subclasses override run_tests(gs).
-# Never call GameState.new_game() or save_game() here: both write the
-# player's real user://save.json. Set state directly instead.
+# Run tests through tests/run_headless_tests.sh: it gives Godot its own user
+# data dir, so code that saves (new_game(), prestige()) can't touch the
+# player's save. Prefer setting state directly anyway.
 
 var _failures := 0
 var _started := false
