@@ -68,3 +68,14 @@ tools/vdisplay/play.sh --script res://tools/vdisplay/capture_example.gd
 Runs use their own user data dir (`.vdisplay/data`, gitignored), so they
 never touch your save. `capture_example.gd` is a driver that sets state,
 opens screens and saves PNGs to `.vdisplay/shots`; copy and adapt it.
+
+## Playtest Bot and Pacing Check
+
+`tools/playtest/run.sh profile=sustainable hours=2 [runs=N seed=S]` plays the
+real game headless at fixed time and writes a JSON report;
+`tools/playtest/summarize.py` prints it. `tools/playtest/pacing.sh` plays the
+first run of both policy profiles (~15 minutes) and checks the milestones
+against the pacing targets in `tools/playtest/check_pacing.py`. Run it after
+changing costs, prices, catch rates or prestige; it is too slow for
+`run_headless_tests.sh`, which instead runs the quick ocean/income sim in
+`test_ocean_balance.gd`.

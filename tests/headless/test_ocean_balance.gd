@@ -104,29 +104,79 @@ func _simulate(gs, profile_name: String, upgrades: Dictionary, policies: Array, 
         "avg": ratio_sum / float(SIM_SECONDS),
         "collapse_at": collapse_at,
         "fish_per_sec": float(gs.fish_count) / float(SIM_SECONDS),
-        "income": _income(gs)
+        "income": _income(gs, prestige >= 2)
     }
 
 
-# Tins every fish the cannery can process (most valuable gain first) and
-# sells the rest raw.
-func _income(gs) -> int:
-    var tin_capacity := 0
+# Income over the sim: tins fish while the cannery has time (best gain per
+# second first), then sells within the per-tick sell cap, priciest first.
+# A tin uses the fish's best recipe (cost-plus price minus add-on costs, its
+# processes' time with equipment speed) when the profile knows recipes, else
+# the experimental stable tin.
+func _income(gs, knows_recipes: bool) -> int:
+    var cannery_seconds := 0.0
     if gs.is_cannery_unlocked and gs.get_auto_tin_enabled():
-        tin_capacity = int(float(SIM_SECONDS) / gs.get_tin_make_time())
+        cannery_seconds = float(SIM_SECONDS)
     var entries: Array = []
     for fish_id in gs.fish_stock_by_id:
-        var count := int(gs.fish_stock_by_id[fish_id])
-        var raw: int = gs.get_fish_sell_price_for_id(fish_id)
-        var tinned: int = gs.get_fish_cannery_yield(fish_id) * gs.get_tin_sell_price()
-        entries.append({"count": count, "raw": raw, "tinned": tinned})
-    entries.sort_custom(func(a, b): return (a["tinned"] - a["raw"]) > (b["tinned"] - b["raw"]))
-    var income := 0
+        var tin := _best_tin(gs, str(fish_id), knows_recipes)
+        entries.append({
+            "count": int(gs.fish_stock_by_id[fish_id]),
+            "raw": gs.get_fish_sell_price_for_id(str(fish_id)),
+            "yield": gs.get_fish_cannery_yield(str(fish_id)),
+            "tin_price": tin["price"],
+            "addon_cost": tin["addon_cost"],
+            "seconds": tin["seconds"]
+        })
+    entries.sort_custom(func(a, b): return _tin_gain_per_sec(a) > _tin_gain_per_sec(b))
+    var units: Array = []  # [price, count] of everything put up for sale
+    var costs := 0
     for entry in entries:
         var count: int = entry["count"]
-        var tin_count := 0
-        if entry["tinned"] > entry["raw"]:
-            tin_count = mini(count, tin_capacity)
-            tin_capacity -= tin_count
-        income += tin_count * int(entry["tinned"]) + (count - tin_count) * int(entry["raw"])
+        var tinned := 0
+        if _tin_gain_per_sec(entry) > 0.0:
+            tinned = mini(count, int(cannery_seconds / float(entry["seconds"])))
+            cannery_seconds -= float(tinned) * float(entry["seconds"])
+        costs += tinned * int(entry["addon_cost"])
+        units.append([int(entry["tin_price"]), tinned * int(entry["yield"])])
+        units.append([int(entry["raw"]), count - tinned])
+    units.sort_custom(func(a, b): return a[0] > b[0])
+    var sell_left: int = gs.get_sell_count_per_tick() * SIM_SECONDS
+    var income := -costs
+    for unit in units:
+        var sold := mini(int(unit[1]), sell_left)
+        sell_left -= sold
+        income += sold * int(unit[0])
     return income
+
+
+func _tin_gain_per_sec(entry: Dictionary) -> float:
+    var gain: float = float(entry["yield"] * entry["tin_price"] - entry["addon_cost"] - entry["raw"])
+    return gain / float(entry["seconds"])
+
+
+func _best_tin(gs, fish_id: String, knows_recipes: bool) -> Dictionary:
+    var best := {
+        "price": gs.get_tin_sell_price_for_key("experimental_tin_stable"),
+        "addon_cost": 0,
+        "seconds": gs.get_tin_make_time_for_processes(["tin_pack", "tin_seal"])
+    }
+    if not knows_recipes:
+        return best
+    for recipe_def in gs.recipe_defs:
+        if gs._get_recipe_fish_id(recipe_def) != fish_id:
+            continue
+        var addon_cost := 0
+        for item_id in gs.get_recipe_addon_ids(recipe_def):
+            addon_cost += gs.get_item_cost(str(item_id))
+        var candidate := {
+            "price": gs.get_recipe_tin_price(str(recipe_def.get("recipe_id", ""))),
+            "addon_cost": addon_cost,
+            "seconds": gs.get_tin_make_time_for_processes(recipe_def.get("processes", []))
+        }
+        var yield_count: int = gs.get_fish_cannery_yield(fish_id)
+        var candidate_rate := float(candidate["price"] * yield_count - addon_cost) / float(candidate["seconds"])
+        var best_rate := float(best["price"] * yield_count - int(best["addon_cost"])) / float(best["seconds"])
+        if candidate_rate > best_rate:
+            best = candidate
+    return best
