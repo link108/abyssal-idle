@@ -6,7 +6,7 @@
     "category": "core",
     "tier": 0,
     "max_level": 1,
-    "base_cost": 200,
+    "base_cost": 1200,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -33,10 +33,10 @@
     "category": "fishing",
     "tier": 1,
     "max_level": 5,
-    "base_cost": 10,
+    "base_cost": 40,
     "cost_model": {
       "type": "exponential",
-      "mult": 1.5
+      "mult": 1.75
     },
     "requires": [
       {
@@ -60,10 +60,10 @@
     "category": "fishing",
     "tier": 1,
     "max_level": 5,
-    "base_cost": 25,
+    "base_cost": 400,
     "cost_model": {
       "type": "exponential",
-      "mult": 1.6
+      "mult": 1.8
     },
     "requires": [
       {
@@ -92,7 +92,7 @@
     "category": "fishing",
     "tier": 1,
     "max_level": -1,
-    "base_cost": 30,
+    "base_cost": 60,
     "cost_model": {
       "type": "exponential",
       "mult": 1.7
@@ -118,15 +118,15 @@
   },
   {
     "upgrade_id": "fish_bulk_sales",
-    "display_name": "Bulk Fish Crates",
-    "description": "Sell +1 extra fish per tick.",
+    "display_name": "Bulk Crates",
+    "description": "Sell +1 extra fish or tin per tick.",
     "category": "fishing",
     "tier": 2,
     "max_level": -1,
-    "base_cost": 60,
+    "base_cost": 150,
     "cost_model": {
       "type": "exponential",
-      "mult": 1.8
+      "mult": 2.0
     },
     "requires": [
       {
@@ -154,7 +154,7 @@
     "category": "fishing",
     "tier": 1,
     "max_level": 15,
-    "base_cost": 15,
+    "base_cost": 40,
     "cost_model": {
       "type": "exponential",
       "mult": 1.45
@@ -185,7 +185,7 @@
     "category": "fishing",
     "tier": 2,
     "max_level": 10,
-    "base_cost": 40,
+    "base_cost": 100,
     "cost_model": {
       "type": "exponential",
       "mult": 1.5
@@ -216,7 +216,7 @@
     "category": "fishing",
     "tier": 2,
     "max_level": -1,
-    "base_cost": 50,
+    "base_cost": 150,
     "cost_model": {
       "type": "exponential",
       "mult": 1.6
@@ -247,7 +247,7 @@
     "category": "fishing",
     "tier": 2,
     "max_level": 1,
-    "base_cost": 120,
+    "base_cost": 1500,
     "cost_model": {
       "type": "exponential",
       "mult": 2
@@ -278,7 +278,7 @@
     "category": "cannery",
     "tier": 2,
     "max_level": -1,
-    "base_cost": 80,
+    "base_cost": 200,
     "cost_model": {
       "type": "exponential",
       "mult": 1.6
@@ -305,7 +305,7 @@
     "category": "cannery",
     "tier": 2,
     "max_level": 3,
-    "base_cost": 150,
+    "base_cost": 400,
     "cost_model": {
       "type": "exponential",
       "mult": 1.8
@@ -336,7 +336,7 @@
     "category": "cannery",
     "tier": 2,
     "max_level": 10,
-    "base_cost": 90,
+    "base_cost": 250,
     "cost_model": {
       "type": "exponential",
       "mult": 1.6
@@ -367,7 +367,7 @@
     "category": "cannery",
     "tier": 3,
     "max_level": 1,
-    "base_cost": 200,
+    "base_cost": 3000,
     "cost_model": {
       "type": "exponential",
       "mult": 2
@@ -398,7 +398,7 @@
     "category": "policy",
     "tier": 3,
     "max_level": 1,
-    "base_cost": 300,
+    "base_cost": 5000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -416,11 +416,11 @@
     "effects": [
       {
         "type": "ocean_pressure_mult",
-        "value": -0.3
+        "value": -0.4
       },
       {
         "type": "ocean_regen_mult",
-        "value": 0.2
+        "value": 0.3
       },
       {
         "type": "catch_mult",
@@ -441,7 +441,7 @@
     "category": "policy",
     "tier": 3,
     "max_level": 1,
-    "base_cost": 300,
+    "base_cost": 5000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -484,7 +484,7 @@
     "category": "policy",
     "tier": 3,
     "max_level": 1,
-    "base_cost": 450,
+    "base_cost": 15000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -528,7 +528,7 @@
     "category": "policy",
     "tier": 3,
     "max_level": 1,
-    "base_cost": 450,
+    "base_cost": 15000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -572,7 +572,7 @@
     "category": "policy",
     "tier": 4,
     "max_level": 1,
-    "base_cost": 650,
+    "base_cost": 22000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -595,11 +595,11 @@
     "effects": [
       {
         "type": "ocean_pressure_mult",
-        "value": -0.1
+        "value": -0.2
       },
       {
         "type": "ocean_regen_mult",
-        "value": 0.25
+        "value": 0.35
       },
       {
         "type": "catch_mult",
@@ -620,7 +620,7 @@
     "category": "policy",
     "tier": 4,
     "max_level": 1,
-    "base_cost": 650,
+    "base_cost": 22000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -664,7 +664,7 @@
     "category": "policy",
     "tier": 4,
     "max_level": 1,
-    "base_cost": 900,
+    "base_cost": 32000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -708,7 +708,7 @@
     "category": "policy",
     "tier": 4,
     "max_level": 1,
-    "base_cost": 900,
+    "base_cost": 32000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -752,7 +752,7 @@
     "category": "policy",
     "tier": 5,
     "max_level": 1,
-    "base_cost": 1200,
+    "base_cost": 45000,
     "cost_model": {
       "type": "exponential",
       "mult": 1
@@ -796,7 +796,7 @@
     "category": "policy",
     "tier": 5,
     "max_level": 1,
-    "base_cost": 1200,
+    "base_cost": 45000,
     "cost_model": {
       "type": "exponential",
       "mult": 1

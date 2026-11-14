@@ -34,11 +34,13 @@ const EQUIPMENT_UPGRADE_COST_MULT := 1.6
 const SKILL_OPPOSING_BRANCHES := {"sustainable": "industrial", "industrial": "sustainable"}
 const SKILL_CROSS_BRANCH_COST_MULT := 2.0
 const SAVE_VERSION := 15
-const PRESTIGE_TINS_REQUIRED := 100
+# Prestige opens at this run's earnings. Earnings (not tins sold) so both
+# policy paths reach it in similar time: industrial tins faster by design.
+const PRESTIGE_EARNINGS_REQUIRED := 400000
 const REPUTATION_MONEY_DIVISOR := 100
 const OCEAN_HEALTH_MAX := 100.0
 const OCEAN_HEALTH_MIN := 0.0
-const OCEAN_HEALTH_FISH_COST := 0.012
+const OCEAN_HEALTH_FISH_COST := 0.01
 # Peak regen (at half health). Regen follows a logistic curve: fast mid-range,
 # slow near empty or full, so overfishing spirals and recovery takes time.
 const OCEAN_HEALTH_REGEN_PER_SEC := 0.016
@@ -162,15 +164,15 @@ var meta_state: Dictionary = {
 }
 
 # Upgrades: Cannery
-const CANNERY_UNLOCK_COST := 200
-const CANNERY_DISCOVERY_EARNED := 50
+const CANNERY_UNLOCK_COST := 1200
+const CANNERY_DISCOVERY_EARNED := 600
 var is_cannery_discovered: bool = false
 var is_cannery_unlocked: bool = false
 var lifetime_money_earned: int = 0
 
 # Crew unlock
-const CREW_UNLOCK_COST := 120
-const CREW_DISCOVERY_EARNED := 80
+const CREW_UNLOCK_COST := 600
+const CREW_DISCOVERY_EARNED := 300
 var is_crew_discovered: bool = false
 var is_crew_unlocked: bool = false
 
@@ -842,11 +844,12 @@ func sell_tick() -> void:
     match sell_mode:
         SellMode.FISH:
             if fish_count > 0:
-                var count: int = min(fish_count, get_fish_sell_count())
+                var count: int = min(fish_count, get_sell_count_per_tick())
                 var sale := _sell_fish_from_stock(count)
                 _add_money(int(sale.get("revenue", 0)))
         SellMode.TINS:
-            if tin_count > 0:
+            # Bulk sales apply to tins too, or tin income caps at one per tick.
+            for _i in range(min(tin_count, get_sell_count_per_tick())):
                 tin_count -= 1
                 var sold_recipe_key := _remove_random_tin()
                 # Sanity: tins_sold should only advance when a tin is sold.
@@ -3311,7 +3314,8 @@ func get_experimental_tin_price_range() -> Vector2i:
     var high := get_tin_sell_price_for_key("experimental_tin_stable")
     return Vector2i(low, high)
 
-func get_fish_sell_count() -> int:
+# Fish or tins sold per sell tick.
+func get_sell_count_per_tick() -> int:
     var count := 1 + _get_effect_total("fish_sell_count_add") + _get_meta_bonus_int("fish_sell_count_add") + _get_skill_effect_total_int("fish_sell_count_add")
     return max(1, count)
 
@@ -3809,10 +3813,10 @@ func set_crew_trip_paused(paused: bool) -> void:
 # Prestige/Meta
 ################
 func can_prestige() -> bool:
-    return tins_sold >= PRESTIGE_TINS_REQUIRED
+    return lifetime_money_earned >= PRESTIGE_EARNINGS_REQUIRED
 
 func get_prestige_progress() -> int:
-    return tins_sold
+    return lifetime_money_earned
 
 func get_prestige_reputation_gain() -> int:
     return _calculate_reputation_gain()
@@ -3835,8 +3839,9 @@ func prestige() -> bool:
     return true
 
 func _calculate_reputation_gain() -> int:
-    # Simple measurable formula for tuning: 1 reputation per $100 earned.
-    var base_gain := float(lifetime_money_earned) / float(REPUTATION_MONEY_DIVISOR)
+    # Square root of earnings (in $100s): a long run pays more, but not
+    # proportionally, so a $300k run gives ~55 rep instead of 3000.
+    var base_gain := sqrt(float(lifetime_money_earned) / float(REPUTATION_MONEY_DIVISOR))
     var mult := 1.0 + _get_skill_effect_total_float("reputation_gain_mult")
     return int(floor(base_gain * mult))
 

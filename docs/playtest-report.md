@@ -95,6 +95,53 @@ Active player, first run (in-run times):
 - **Recipe tins and auto-tin** get used once recipes exist, and recipe tins
   beat raw fish as intended (ABYSS-16).
 
+## Retune (ABYSS-25, 2026-11-13)
+
+Findings 1-8 are fixed: 1-2 in ABYSS-22/23, 3 in ABYSS-24, 4-8 here.
+`tools/playtest/pacing.sh` now checks these targets (ABYSS-26).
+
+First run, in-run times, seeds 1 / 2:
+
+| Milestone | Target | Sustainable | Industrial | Idle (15%, seed 1) |
+|---|---|---|---|---|
+| Crew | 2-3 min | 3:30 / 3:10 | 3:30 / 3:10 | 14:25 |
+| Cannery | ~5 min | 4:40 / 5:00 | 4:35 / 5:15 | 15:45 |
+| First policy | ~15 min | 15:50 / 20:15 | 14:35 / 13:25 | 28:20 |
+| All 5 policies | 60+ min | 1:43 / 1:29 | 1:10 / 1:02 | 1:40 |
+| Prestige ready | 45-90 min | 1:20 / 1:13 | 1:06 / 0:57 | 1:24 |
+| First prestige rep | - | 74 / 72 | 66 / 66 | 72 |
+| Run ocean average | sust >= 85% | 85% / 86% | 52% / 55% | 90% |
+
+What changed:
+
+- **Costs.** Crew $600, cannery $1,200, Rod $40 (x1.75), Bait $400 (x1.8),
+  later run upgrades about 2-15x. Policies cost $5k / $15k / $22k / $32k /
+  $45k, so the exclusive choice comes after ~15 minutes of play.
+- **Bulk Crates sell tins too.** Tins sold one per tick no matter what, so
+  income flatlined once the cannery took over.
+- **Prestige opens at $400k earned in the run**, not 100 tins sold. A tin
+  count can't fit both paths: industrial policies tin far faster by design.
+  The button shows progress as a percentage.
+- **Reputation is the square root of run earnings** (in $100s). A full run
+  pays ~65-75 rep instead of thousands: a few skills per prestige.
+- **Ocean.** Each fish costs 0.010 health instead of 0.012; Harvest Standards
+  is -40% pressure / +30% regen and Protected Zones -20% / +35%.
+- **Market Entry** gives +$3 per fish and says so.
+
+Player model changes (`tools/playtest/playtest.gd`): saves for an unlock or
+policy only when it is about a minute of income away, experiments at most
+every 20 seconds, prestiges after all five policies (or 2 hours), and runs
+in its own data dir so profiles can run in parallel.
+
+Still open:
+
+- **Fishing pauses the crew** (`main.gd` `_on_fishing_visibility_changed`),
+  so manual fishing costs crew trips. The idle player out-earned the active
+  one from ~45 minutes on in pass 1, and is only slightly behind now.
+- **Equipment is bought from the first run's money** and persists, so the
+  first run spends ~$4k on it in minutes 4-15. Fine for now; watch it if
+  equipment gets more expensive.
+
 ## Recommended order
 
 1. Fix the bugs: bonus runaway (1) and the policy lock (2). Every later number

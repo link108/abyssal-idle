@@ -18,7 +18,7 @@ static func format_effect_line(effect_type: String, value) -> String:
         "tin_sell_add":
             return "Tin sell %s" % _signed_int(value)
         "fish_sell_count_add":
-            return "Fish sold/tick %s" % _signed_int(value)
+            return "Sold/tick %s" % _signed_int(value)
         "catch_add":
             return "Crew haul %s" % _signed_int(value)
         "catch_mult":

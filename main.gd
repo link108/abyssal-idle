@@ -202,7 +202,8 @@ func _update_prestige_button() -> void:
         prestige_button.text = "Prestige"
         prestige_button.disabled = false
     else:
-        prestige_button.text = "Prestige (%d/%d)" % [progress, GameState.PRESTIGE_TINS_REQUIRED]
+        # Progress toward the run-earnings requirement.
+        prestige_button.text = "Prestige (%d%%)" % (100 * progress / GameState.PRESTIGE_EARNINGS_REQUIRED)
         prestige_button.disabled = true
 
 func _update_ocean_health_ui() -> void:

@@ -9,13 +9,13 @@ func run_tests(gs) -> void:
     _test_bonus_levels(gs, "sust_harvest_standards")
     _test_bonus_levels(gs, "ind_overdrive")
     _test_migration(gs)
+    _test_reputation_gain(gs)
 
 
 func _prepare_run(gs) -> void:
     gs.is_cannery_unlocked = true
     gs.money = 1000000
-    gs.tins_sold = gs.PRESTIGE_TINS_REQUIRED
-    gs.lifetime_money_earned = 10000
+    gs.lifetime_money_earned = gs.PRESTIGE_EARNINGS_REQUIRED
 
 
 func _test_policies_reopen(gs) -> void:
@@ -70,3 +70,16 @@ func _test_migration(gs) -> void:
     gs.meta_state["prestige_count"] = 0
     gs.meta_state["sustainable_bonus_level"] = 0
     gs.meta_state["industrial_bonus_level"] = 0
+
+
+# Reputation grows with the square root of earnings: a long run pays tens of
+# points, not thousands.
+func _test_reputation_gain(gs) -> void:
+    gs.meta_state["skills_owned"] = []
+    gs.lifetime_money_earned = 300000
+    var long_run: int = gs.get_prestige_reputation_gain()
+    gs.lifetime_money_earned = 75000
+    var short_run: int = gs.get_prestige_reputation_gain()
+    check(long_run == 54, "a $300k run pays 54 rep (%d)" % long_run)
+    check(short_run * 2 == long_run, "4x the earnings pays 2x the rep (%d vs %d)" % [short_run, long_run])
+    gs.lifetime_money_earned = 0

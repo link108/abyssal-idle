@@ -6,7 +6,7 @@ import json
 import sys
 
 MILESTONES = ["earned_100", "crew_unlocked", "cannery_unlocked", "first_tin_sold", "first_recipe",
-              "crew_auto_send", "auto_tin", "all_policies", "prestige_ready", "earned_10k", "earned_50k"]
+              "crew_auto_send", "auto_tin", "first_policy", "all_policies", "prestige_ready", "earned_10k", "earned_50k"]
 
 
 def fmt(seconds):

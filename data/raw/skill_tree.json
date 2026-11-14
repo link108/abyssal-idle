@@ -2,13 +2,13 @@
   {
     "id": "core_market_entry",
     "name": "Market Entry",
-    "desc": "Foundational contracts double fish sell value.",
+    "desc": "Foundational contracts: +$3 per fish sold.",
     "branch": "core",
     "cost": 1,
     "order": 0,
     "pos": [420, 260],
     "effects": [
-      {"type": "fish_sell_add", "value": 20}
+      {"type": "fish_sell_add", "value": 3}
     ]
   },
   {

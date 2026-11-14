@@ -74,6 +74,18 @@ func _test_sell_random(gs) -> void:
     gs.sell_tick()
     check(gs.money == gs.get_recipe_tin_price("gloommaw_blood_sausage"), "auto-sell prices the tin by its kind")
 
+    # Bulk Crates sell extra tins per tick too, not just fish.
+    gs.upgrade_levels = {"fish_bulk_sales": 2}
+    gs.tin_inventory = {"experimental_tin_stable": 5}
+    gs.tin_count = 5
+    var sold_before: int = gs.tins_sold
+    gs.sell_tick()
+    check(gs.tin_count == 2 and gs.tins_sold == sold_before + 3, "a tick sells 1 + Bulk Crates level tins (%d left)" % gs.tin_count)
+    gs.upgrade_levels = {}
+    gs.tin_inventory = {}
+    gs.tin_count = 0
+    gs.sell_mode = gs.SellMode.FISH
+
 
 func _test_inventory_entries(gs) -> void:
     gs.tin_inventory = {"experimental_tin_odd": 4, "choirfin_golden_oil": 2}

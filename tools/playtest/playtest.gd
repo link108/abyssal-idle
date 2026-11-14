@@ -5,19 +5,22 @@ extends SceneTree
 # Run through tools/playtest/run.sh (headless, own user data dir).
 #
 # User args (after --): profile=sustainable|industrial hours=4 manual=0.5
-#   explore=0.5 seed=1 out=res://.vdisplay/playtest/<name>.json
+#   explore=0.5 seed=1 runs=N (stop after N prestiges)
+#   out=res://.vdisplay/playtest/<name>.json
 #
 # Player model:
 # - Alternates 2-minute blocks: fishes manually for `manual` of each block
 #   (crew trips pause while the boat screen is open, as in the UI), then
 #   tends the crew, shop and cannery for the rest.
 # - Manual fishing: one attempt per 1.5s; hit chance grows with the green zone.
-# - Shopping: crew/cannery unlocks and the profile's policies first, then the
-#   cheapest affordable upgrade or equipment.
-# - Cannery: `explore` of cannery actions are experiments that hill-climb on
-#   the score and follow the hint (it names the missing note, and item tags
-#   are visible in the market); the rest make the best discovered recipe.
-# - Prestige once all five policies are bought (or after 45 min), then spend
+# - Shopping: crew/cannery unlocks and the profile's policies first (saving
+#   up once one is about a minute of income away), then the cheapest
+#   affordable upgrade or equipment.
+# - Cannery: at most one experiment per 20s (taken with chance `explore`),
+#   hill-climbing on the score and following the hint (it names the missing
+#   note, and item tags are visible in the market); otherwise it makes the
+#   best discovered recipe, and fish without one sell raw.
+# - Prestige once all five policies are bought (or after 2 h), then spend
 #   reputation on core, own-branch and meta skills.
 
 const TICK := 0.25
@@ -25,8 +28,9 @@ const BLOCK_SECONDS := 120.0
 const ATTEMPT_SECONDS := 1.5
 const SAMPLE_SECONDS := 60.0
 const SHOP_SECONDS := 5.0
+const EXPERIMENT_SECONDS := 20.0
 const FISH_RESERVE := 12
-const PRESTIGE_FALLBACK_SECONDS := 45.0 * 60.0
+const PRESTIGE_FALLBACK_SECONDS := 120.0 * 60.0
 const POLICY_PREFIX := {"sustainable": "sust_", "industrial": "ind_"}
 
 var profile := "sustainable"
@@ -34,6 +38,7 @@ var max_seconds := 4.0 * 3600.0
 var manual_share := 0.5
 var explore_share := 0.5
 var out_path := ""
+var max_runs := -1
 
 var gs
 var main: Node
@@ -47,12 +52,14 @@ var sample_acc := 0.0
 var milestones := {}
 var events: Array = []
 var samples: Array = []
+var runs: Array = []
 var counters := {"manual_attempts": 0, "manual_catches": 0, "experiments": 0, "recipe_tins": 0, "purchases": 0}
 var last_lifetime := 0
 var runs_done := 0
 
 # Experiment state.
 var exp_fish := ""
+var last_experiment_t := -INF
 var exp_best_score := -1
 var exp_best := {}
 var exp_attempts_by_fish := {}
@@ -70,6 +77,7 @@ func _initialize() -> void:
             "explore": explore_share = float(kv[1])
             "seed": rng.seed = int(kv[1])
             "out": out_path = kv[1]
+            "runs": max_runs = int(kv[1])
     if out_path == "":
         out_path = "res://.vdisplay/playtest/%s.json" % profile
     change_scene_to_file("res://main.tscn")
@@ -91,6 +99,10 @@ func _process(delta: float) -> bool:
     _tick(delta)
     if gs.get_ending_state() != gs.EndingState.NONE:
         _event("ending", str(gs.EndingState.keys()[gs.get_ending_state()]))
+        _finish()
+        return true
+    if max_runs >= 0 and runs_done >= max_runs:
+        _event("run_cap", "%d prestige(s)" % runs_done)
         _finish()
         return true
     if t >= max_seconds:
@@ -116,6 +128,7 @@ func _tick(delta: float) -> void:
     if shop_acc >= SHOP_SECONDS:
         shop_acc = 0.0
         _shop()
+        _check_milestones()  # before a prestige starts the next run
         _maybe_prestige()
     _check_milestones()
     sample_acc += delta
@@ -178,6 +191,11 @@ func _shop() -> void:
         gs.purchase_upgrade("unlock_cannery")
         _event("buy", "unlock_cannery")
         return
+    # Save up for a visible unlock once it's within reach, as for policies.
+    if gs.crew_unlock_is_visible() and _within_reach(gs.CREW_UNLOCK_COST):
+        return
+    if gs.cannery_upgrade_is_visible() and _within_reach(gs.CANNERY_UNLOCK_COST):
+        return
     var policy := _next_policy_id()
     if policy != "":
         if gs.can_purchase_upgrade(policy):
@@ -185,7 +203,7 @@ func _shop() -> void:
             _event("policy", policy)
             return
         # Save up for the policy once it's within reach.
-        if gs.money >= gs.get_upgrade_cost(policy) * 0.5:
+        if _within_reach(gs.get_upgrade_cost(policy)):
             return
     var best_cost := INF
     var best_action := Callable()
@@ -220,6 +238,15 @@ func _shop() -> void:
         _event("buy", "%s $%d" % [best_label, int(best_cost)])
 
 
+# Worth saving for: about a minute of recent income away (a player keeps
+# buying cheap upgrades while a big purchase is still far off).
+func _within_reach(cost: int) -> bool:
+    var per_min := float(gs.lifetime_money_earned) / maxf(1.0, run_t / 60.0)
+    if not samples.is_empty() and int(samples[-1]["run"]) == runs_done:
+        per_min = float(samples[-1]["income_per_min"])
+    return float(cost - gs.money) <= per_min
+
+
 func _next_policy_id() -> String:
     var prefix := str(POLICY_PREFIX.get(profile, ""))
     for def in gs.get_upgrade_defs():
@@ -249,13 +276,17 @@ func _policies_owned() -> int:
 func _tend_cannery() -> void:
     if not gs.is_cannery_unlocked or not gs.can_make_tin():
         return
-    if gs.get_auto_tin_enabled() and rng.randf() >= explore_share:
-        return  # auto-tin handles production
-    var recipe := _best_known_recipe()
-    if recipe != "" and rng.randf() >= explore_share:
-        _make_recipe_tin(recipe)
-    else:
+    # A player thinks between experiments; otherwise the cannery makes the
+    # best known recipe (or auto-tin runs), and fish without one sell raw.
+    if t - last_experiment_t >= EXPERIMENT_SECONDS and rng.randf() < explore_share:
+        last_experiment_t = t
         _experiment()
+        return
+    if gs.get_auto_tin_enabled():
+        return
+    var recipe := _best_known_recipe()
+    if recipe != "":
+        _make_recipe_tin(recipe)
 
 
 func _best_known_recipe() -> String:
@@ -441,9 +472,13 @@ func _maybe_prestige() -> void:
     if _policies_owned() < 5 and run_t < PRESTIGE_FALLBACK_SECONDS:
         return
     var gain: int = gs.get_prestige_reputation_gain()
+    var ocean_avg: float = gs.get_ocean_health_average_ratio()
+    var earned: int = gs.lifetime_money_earned
     if gs.prestige():
+        runs.append({"run": runs_done, "seconds": int(run_t), "rep": gain, "earned": earned, "ocean_avg": snappedf(ocean_avg, 0.001)})
         runs_done += 1
-        _event("prestige", "#%d after %s, +%d rep" % [runs_done, _fmt(run_t), gain])
+        last_lifetime = 0  # lifetime earnings reset with the run
+        _event("prestige", "#%d after %s, +%d rep, $%d earned, ocean avg %d%%" % [runs_done, _fmt(run_t), gain, earned, int(round(ocean_avg * 100.0))])
         run_t = 0.0
         exp_fish = ""
         _buy_skills()
@@ -480,6 +515,7 @@ func _check_milestones() -> void:
     _milestone("first_recipe", not gs.meta_state.get("discovered_recipe_ids", []).is_empty())
     _milestone("crew_auto_send", gs.get_upgrade_level("crew_auto_send") > 0)
     _milestone("auto_tin", gs.get_auto_tin_enabled())
+    _milestone("first_policy", _policies_owned() >= 1)
     _milestone("all_policies", _policies_owned() >= 5)
     _milestone("prestige_ready", gs.can_prestige())
     _milestone("earned_10k", gs.lifetime_money_earned >= 10000)
@@ -527,6 +563,7 @@ func _finish() -> void:
         "milestones": milestones,
         "silhouette_best": _silhouette_best(),
         "events": events,
+        "runs": runs,
         "samples": samples
     }
     DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_path.get_base_dir()))

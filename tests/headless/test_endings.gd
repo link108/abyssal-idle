@@ -23,8 +23,8 @@ func _clear_game(gs) -> void:
 func _play_run(gs, policy_id: String, seconds: float, ocean_ratio: float) -> void:
     gs.is_cannery_unlocked = true
     gs.money = 1000000
-    gs.tins_sold = gs.PRESTIGE_TINS_REQUIRED
-    gs.lifetime_money_earned = 60000
+    gs.tins_sold = 100
+    gs.lifetime_money_earned = gs.PRESTIGE_EARNINGS_REQUIRED
     check(gs.purchase_upgrade(policy_id), "buy %s" % policy_id)
     gs.ocean_health_time_total = seconds
     gs.ocean_health_time_accum = seconds * ocean_ratio * gs.OCEAN_HEALTH_MAX
@@ -56,8 +56,8 @@ func _test_industrial_game_fresh_run(gs) -> void:
     check(gs._check_industrial_collapse(), "industrial game collapses when the ocean empties")
     gs.lifetime_money_earned = 5000
     var summary: Dictionary = gs.get_run_summary()
-    check(int(summary["lifetime_money_earned"]) == 65000, "summary earnings cover both runs ($%d)" % int(summary["lifetime_money_earned"]))
-    check(int(summary["tins_sold"]) == gs.PRESTIGE_TINS_REQUIRED, "summary tins include past runs (%d)" % int(summary["tins_sold"]))
+    check(int(summary["lifetime_money_earned"]) == gs.PRESTIGE_EARNINGS_REQUIRED + 5000, "summary earnings cover both runs ($%d)" % int(summary["lifetime_money_earned"]))
+    check(int(summary["tins_sold"]) == 100, "summary tins include past runs (%d)" % int(summary["tins_sold"]))
     gs.ocean_health = gs.OCEAN_HEALTH_MAX
 
 

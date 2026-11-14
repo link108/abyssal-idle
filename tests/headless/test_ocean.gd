@@ -6,8 +6,8 @@ func run_tests(gs) -> void:
     check(is_equal_approx(gs.get_ocean_regen_mult(), 1.0), "base ocean regen mult is 1.0")
 
     gs.upgrade_levels = {"sust_harvest_standards": 1}
-    check(is_equal_approx(gs.get_ocean_pressure_mult(), 0.7), "policy pressure effect applies (0.7)")
-    check(is_equal_approx(gs.get_ocean_regen_mult(), 1.2), "policy regen effect applies (1.2)")
+    check(is_equal_approx(gs.get_ocean_pressure_mult(), 0.6), "policy pressure effect applies (0.6)")
+    check(is_equal_approx(gs.get_ocean_regen_mult(), 1.3), "policy regen effect applies (1.3)")
 
     gs.upgrade_levels = {"ind_overdrive": 1}
     check(is_equal_approx(gs.get_ocean_pressure_mult(), 1.25), "industrial policy raises pressure (1.25)")
